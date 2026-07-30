@@ -181,7 +181,7 @@ export async function resolveOwnerByEmail(
     email: string
 ): Promise<ResolveOwnerResult> {
     try {
-        const response = await api.get("/owners/resolve", {
+        const response = await api.get("/clinic/resolve", {
             params: { email },
         });
         return response.data.data;

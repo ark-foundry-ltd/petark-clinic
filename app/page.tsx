@@ -8,7 +8,7 @@ export default function Home() {
         <div className="flex justify-center mb-6">
           <div className="rounded-full overflow-hidden bg-white w-20 h-20 flex items-center justify-center shadow-md">
             <Image
-              src="/pettrak_logo.png"
+              src="/petark_logo.png"
               alt="PetArk logo"
               width={80}
               height={80}

@@ -73,8 +73,8 @@ export function MobileTopBar() {
       <div className="flex items-center justify-between px-4 h-16">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image
-            src="/pettrak_logo.png"
-            alt="PetTrak logo"
+            src="/petark_logo.png"
+            alt="PetArk logo"
             width={28}
             height={28}
             priority
@@ -199,8 +199,8 @@ export function Sidebar() {
       >
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image
-            src="/pettrak_logo.png"
-            alt="PetTrak logo"
+            src="/petark_logo.png"
+            alt="PetArk logo"
             width={32}
             height={32}
             priority

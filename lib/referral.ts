@@ -6,6 +6,18 @@ import { AxiosError } from "axios";
 
 export type ReferralStatus = "pending" | "accepted" | "declined";
 
+export interface ReferralPetSummary {
+    _id: string;
+    name: string;
+    species: string;
+    breed?: string | null;
+}
+
+export interface ReferralClinicSummary {
+    _id: string;
+    clinicName: string;
+}
+
 export interface ReferralRecord {
     _id: string;
     petId: string;
@@ -20,6 +32,9 @@ export interface ReferralRecord {
     respondedAt: string | null;
     createdAt: string;
     updatedAt: string;
+    pet?: ReferralPetSummary;
+    fromClinic?: ReferralClinicSummary;
+    toClinic?: ReferralClinicSummary;
 }
 
 // Raw clinicPatient doc as inserted by acceptReferral — flat ids, not the
