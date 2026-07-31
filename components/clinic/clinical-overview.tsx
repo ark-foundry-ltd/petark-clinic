@@ -15,7 +15,7 @@ export default function ClinicalOverview() {
             </div>
 
             {/* Cards */}
-            <div className="grid gap-4 md:grid-cols-3 mb-8">
+            <div className="grid gap-4 md:grid-cols-2 mb-8">
                 <Link
                     href="/dashboard/clinical/patients"
                     className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
@@ -58,6 +58,22 @@ export default function ClinicalOverview() {
                     <p className="text-xs text-gray-400 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
                         Coming soon
+                    </p>
+                </Link>
+
+                <Link
+                    href="/dashboard/clinical/referrals"
+                    className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
+                >
+                    <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
+                        <Package className="w-5 h-5 text-acc-clr" />
+                    </div>
+                    <h3 className="font-semibold text-sec-clr mb-1">Referrals</h3>
+                    <p className="text-sm text-gray-500 mb-3">
+                        Manage and track patient referrals
+                    </p>
+                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                        Track patient referrals
                     </p>
                 </Link>
             </div>

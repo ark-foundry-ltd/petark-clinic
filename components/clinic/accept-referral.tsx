@@ -44,7 +44,7 @@ export default function AcceptReferralButton({
     return (
       <button
         onClick={() => setShowWaiverForm(true)}
-        className="px-3 py-1.5 text-sm font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+        className="w-full sm:w-auto px-3 py-1.5 text-sm font-medium rounded-md bg-acc-clr text-pry-clr hover:bg-emerald-700 transition-colors cursor-pointer"
       >
         Accept
       </button>
@@ -52,7 +52,7 @@ export default function AcceptReferralButton({
   }
 
   return (
-    <div className="border border-emerald-200 bg-emerald-50 rounded-md p-3 flex flex-col gap-2">
+    <div className="w-full border border-emerald-200 bg-emerald-50 rounded-md p-3 flex flex-col gap-2">
       <label className="flex items-center gap-2 text-sm text-gray-700">
         <input
           type="checkbox"
@@ -75,11 +75,11 @@ export default function AcceptReferralButton({
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <button
           onClick={submit}
           disabled={submitting}
-          className="px-3 py-1.5 text-sm font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+          className="w-full sm:w-auto px-3 py-1.5 text-sm font-medium rounded-md bg-acc-clr text-pry-clr hover:bg-emerald-700 disabled:opacity-50 transition-colors cursor-pointer"
         >
           {submitting ? "Accepting..." : "Confirm accept"}
         </button>
@@ -89,7 +89,7 @@ export default function AcceptReferralButton({
             setError(null);
           }}
           disabled={submitting}
-          className="px-3 py-1.5 text-sm rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
+          className="w-full sm:w-auto px-3 py-1.5 text-sm rounded-md text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
         >
           Cancel
         </button>

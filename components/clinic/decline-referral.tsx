@@ -33,7 +33,7 @@ export default function DeclineReferralButton({
     return (
       <button
         onClick={() => setConfirming(true)}
-        className="px-3 py-1.5 text-sm font-medium rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+        className="w-full sm:w-auto px-3 py-1.5 text-sm font-medium rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer"
       >
         Decline
       </button>
@@ -41,23 +41,25 @@ export default function DeclineReferralButton({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="w-full flex flex-col sm:flex-row sm:items-center gap-2">
       <span className="text-xs text-gray-500">Decline this referral?</span>
       {error && <span className="text-xs text-red-600">{error}</span>}
-      <button
-        onClick={submit}
-        disabled={submitting}
-        className="px-3 py-1.5 text-sm font-medium rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
-      >
-        {submitting ? "Declining..." : "Confirm decline"}
-      </button>
-      <button
-        onClick={() => setConfirming(false)}
-        disabled={submitting}
-        className="px-3 py-1.5 text-sm rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-      >
-        Cancel
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={submit}
+          disabled={submitting}
+          className="flex-1 sm:flex-none px-3 py-1.5 text-sm font-medium rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors cursor-pointer"
+        >
+          {submitting ? "Declining..." : "Confirm decline"}
+        </button>
+        <button
+          onClick={() => setConfirming(false)}
+          disabled={submitting}
+          className="flex-1 sm:flex-none px-3 py-1.5 text-sm rounded-md text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
