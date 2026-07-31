@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Share2, Search, X, Loader2, CheckCircle2 } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { Share2, Search, X, Loader2, CheckCircle2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import {
     createReferral,
     searchClinics,
     type ClinicSearchResult,
 } from "@/lib/referral";
+import { getVisit, type Visit } from "@/lib/visit";
 
 interface ReferralBtnProps {
     petId: string;
@@ -31,6 +32,14 @@ export default function ReferralBtn({ petId, onReferred }: Readonly<ReferralBtnP
     const [reason, setReason] = useState("");
     const [clinicalSummary, setClinicalSummary] = useState("");
     const [submitting, setSubmitting] = useState(false);
+
+    // Past visits for this pet, to pick which ones to share with the
+    // receiving clinic. getVisit() returns every visit for the clinic, so
+    // this filters down to just this pet's — same pattern record-details.tsx
+    // uses to find a single visit by _id.
+    const [pastVisits, setPastVisits] = useState<Visit[]>([]);
+    const [loadingVisits, startVisitsTransition] = useTransition();
+    const [selectedRecordIds, setSelectedRecordIds] = useState<string[]>([]);
 
     useEffect(() => {
         if (!open) return;
@@ -56,18 +65,43 @@ export default function ReferralBtn({ petId, onReferred }: Readonly<ReferralBtnP
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [query, open]);
 
+    useEffect(() => {
+        if (!open) return;
+
+        startVisitsTransition(async () => {
+            try {
+                const visits = await getVisit();
+                setPastVisits(visits.filter((v) => v.petId === petId));
+            } catch {
+                // getVisit already surfaces its own error message upstream —
+                // keep the modal usable with no records to pick from.
+                setPastVisits([]);
+            }
+        });
+    }, [open, petId]);
+
     function resetForm() {
         setQuery("");
         setClinics([]);
         setSelectedClinic(null);
         setReason("");
         setClinicalSummary("");
+        setPastVisits([]);
+        setSelectedRecordIds([]);
     }
 
     function handleClose() {
         if (submitting) return;
         setOpen(false);
         resetForm();
+    }
+
+    function toggleRecord(visitId: string) {
+        setSelectedRecordIds((prev) =>
+            prev.includes(visitId)
+                ? prev.filter((id) => id !== visitId)
+                : [...prev, visitId]
+        );
     }
 
     async function handleSubmit() {
@@ -87,6 +121,7 @@ export default function ReferralBtn({ petId, onReferred }: Readonly<ReferralBtnP
                 toClinicId: selectedClinic._id,
                 reason: reason.trim(),
                 clinicalSummary: clinicalSummary.trim() || undefined,
+                sharedRecords: selectedRecordIds.length > 0 ? selectedRecordIds : undefined,
             });
             toast.success(`Referral sent to ${selectedClinic.clinicName}`);
             setOpen(false);
@@ -116,7 +151,7 @@ export default function ReferralBtn({ petId, onReferred }: Readonly<ReferralBtnP
                     onClick={handleClose}
                 >
                     <div
-                        className="w-full max-w-md rounded-xl bg-bg-clr p-6 shadow-xl"
+                        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-bg-clr p-6 shadow-xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="mb-4 flex items-center justify-between">
@@ -219,7 +254,7 @@ export default function ReferralBtn({ petId, onReferred }: Readonly<ReferralBtnP
                         </div>
 
                         {/* Clinical summary */}
-                        <div className="mb-6">
+                        <div className="mb-4">
                             <label className="mb-1 block text-sm font-medium text-sec-clr">
                                 Clinical summary{" "}
                                 <span className="text-sec-clr/40">(optional)</span>
@@ -231,6 +266,72 @@ export default function ReferralBtn({ petId, onReferred }: Readonly<ReferralBtnP
                                 placeholder="Relevant history, findings, or notes for the receiving clinic"
                                 className="w-full resize-none rounded-lg border border-sec-clr/20 px-3 py-2 text-sm text-sec-clr outline-none focus:border-pry-clr"
                             />
+                        </div>
+
+                        {/* Shared past visit records */}
+                        <div className="mb-6">
+                            <label className="mb-1 flex items-center gap-1.5 text-sm font-medium text-sec-clr">
+                                <FileText className="h-3.5 w-3.5" />
+                                Share past visit records{" "}
+                                <span className="text-sec-clr/40 font-normal">(optional)</span>
+                            </label>
+
+                            {loadingVisits ? (
+                                <div className="flex items-center justify-center gap-2 py-4 text-sm text-sec-clr/50">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Loading visits...
+                                </div>
+                            ) : pastVisits.length === 0 ? (
+                                <p className="py-3 text-center text-sm text-sec-clr/50 rounded-lg border border-dashed border-sec-clr/15">
+                                    No past visits recorded for this pet yet
+                                </p>
+                            ) : (
+                                <div className="max-h-40 overflow-y-auto rounded-lg border border-sec-clr/10 divide-y divide-sec-clr/5">
+                                    {pastVisits.map((visit) => {
+                                        const checked = selectedRecordIds.includes(visit._id);
+                                        const snippet =
+                                            visit.soap?.assessment ||
+                                            visit.soap?.subjective ||
+                                            "No notes recorded";
+                                        return (
+                                            <label
+                                                key={visit._id}
+                                                className="flex items-start gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-acc-clr/5"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={() => toggleRecord(visit._id)}
+                                                    className="mt-0.5 rounded border-sec-clr/30"
+                                                />
+                                                <span className="min-w-0">
+                                                    <span className="flex items-center gap-2">
+                                                        <span className="font-medium text-sec-clr">
+                                                            {new Date(visit.createdAt).toLocaleDateString("en-GB", {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                year: "numeric",
+                                                            })}
+                                                        </span>
+                                                        <span
+                                                            className={`text-[10px] px-1.5 py-0.5 rounded-full capitalize ${
+                                                                visit.status === "completed"
+                                                                    ? "bg-green-100 text-green-700"
+                                                                    : "bg-yellow-100 text-yellow-700"
+                                                            }`}
+                                                        >
+                                                            {visit.status}
+                                                        </span>
+                                                    </span>
+                                                    <span className="block text-xs text-sec-clr/50 truncate">
+                                                        {snippet}
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-2">

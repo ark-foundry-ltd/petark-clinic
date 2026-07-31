@@ -2,10 +2,12 @@
 "use client";
 
 import { useEffect, useState, useCallback, useTransition } from "react";
-import { listReferrals, ReferralRecord, ReferralStatus } from "@/lib/referral";
+import { useRouter } from "next/navigation";
+import { listReferrals, AcceptReferralResult, ReferralRecord, ReferralStatus } from "@/lib/referral";
 import AcceptReferralButton from "./accept-referral";
 import DeclineReferralButton from "./decline-referral";
-import { Loader2, PawPrint, Send, Inbox, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import SharedRecordsPanel from "./shared-records-panel";
+import { Loader2, PawPrint, Send, Inbox, Clock, ChevronLeft, ChevronRight, FileText, ChevronDown, ChevronUp } from "lucide-react";
 
 type Direction = "inbound" | "outbound";
 type StatusFilter = "all" | ReferralStatus;
@@ -19,6 +21,7 @@ const STATUS_STYLES: Record<ReferralStatus, string> = {
 const PAGE_SIZE = 10;
 
 export default function ListReferrals() {
+  const router = useRouter();
   const [direction, setDirection] = useState<Direction>("inbound");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
@@ -26,6 +29,7 @@ export default function ListReferrals() {
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
   const [sortAsc, setSortAsc] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [incomingAll, setIncomingAll] = useState<ReferralRecord[]>([]);
   const [outgoingAll, setOutgoingAll] = useState<ReferralRecord[]>([]);
@@ -71,9 +75,13 @@ export default function ListReferrals() {
     fetchCounts();
   }, [fetchCounts]);
 
-  const handleAccepted = (updated: ReferralRecord) => {
+  const handleAccepted = (result: AcceptReferralResult) => {
     setReferrals((prev) =>
-      prev.map((r) => (r._id === updated._id ? { ...r, ...updated } : r))
+      prev.map((r) =>
+        r._id === result.referral._id
+          ? { ...r, ...result.referral, clinicPatientId: result.clinicPatient._id }
+          : r
+      )
     );
     fetchCounts();
   };
@@ -83,6 +91,14 @@ export default function ListReferrals() {
       prev.map((r) => (r._id === id ? { ...r, status: "declined" } : r))
     );
     fetchCounts();
+  };
+
+  const proceedToVisit = (patientId: string) => {
+    router.push(`/dashboard/clinical/records/create-visit?patientId=${patientId}`);
+  };
+
+  const toggleExpanded = (referralId: string) => {
+    setExpandedId((prev) => (prev === referralId ? null : referralId));
   };
 
   const sorted = [...referrals].sort((a, b) => {
@@ -103,6 +119,56 @@ export default function ListReferrals() {
       ? r.fromClinic?.clinicName ?? "Unknown clinic"
       : r.toClinic?.clinicName ?? "Unknown clinic";
 
+  const hasSharedRecords = (r: ReferralRecord) =>
+    Array.isArray(r.sharedRecords) && r.sharedRecords.length > 0;
+
+  const renderPatientActions = (r: ReferralRecord, layout: "row" | "stack") => {
+    const wrapperClass =
+      layout === "row" ? "flex flex-wrap gap-2" : "flex flex-wrap gap-2 pt-1 border-t border-gray-100";
+
+    if (direction === "inbound" && r.status === "pending") {
+      return (
+        <div className={wrapperClass}>
+          <AcceptReferralButton referralId={r._id} onAccepted={handleAccepted} />
+          <DeclineReferralButton referralId={r._id} onDeclined={() => handleDeclined(r._id)} />
+        </div>
+      );
+    }
+
+    if (direction === "inbound" && r.status === "accepted" && r.clinicPatientId) {
+      return (
+        <button
+          onClick={() => proceedToVisit(r.clinicPatientId!)}
+          className={`bg-acc-clr text-pry-clr px-3 py-1.5 rounded-md text-sm hover:bg-emerald-600 transition-colors cursor-pointer ${
+            layout === "stack" ? "w-full" : ""
+          }`}
+        >
+          Proceed to visit
+        </button>
+      );
+    }
+
+    return layout === "row" ? <span className="text-gray-300">—</span> : null;
+  };
+
+  const renderSharedRecordsToggle = (r: ReferralRecord, layout: "row" | "stack") => {
+    if (!hasSharedRecords(r)) return null;
+    const expanded = expandedId === r._id;
+
+    return (
+      <button
+        onClick={() => toggleExpanded(r._id)}
+        className={`flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors cursor-pointer ${
+          layout === "stack" ? "w-full justify-center pt-1 border-t border-gray-100" : ""
+        }`}
+      >
+        <FileText className="w-3.5 h-3.5" />
+        {r.sharedRecords.length} shared record{r.sharedRecords.length > 1 ? "s" : ""}
+        {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+      </button>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 pry-ff">
       <div className="mb-6">
@@ -112,7 +178,6 @@ export default function ListReferrals() {
         </p>
       </div>
 
-      {/* Stat cards — already 1-col on mobile, 3-col from sm up */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="flex items-center gap-3 bg-pry-clr border border-gray-200 rounded-lg p-4">
           <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
@@ -147,7 +212,6 @@ export default function ListReferrals() {
         </div>
       </div>
 
-      {/* Direction tabs — full-width even split on mobile, natural width from sm */}
       <div className="flex w-full sm:inline-flex sm:w-auto items-center gap-1 p-1 bg-gray-100 rounded-lg mb-4">
         {([
           { key: "inbound" as Direction, label: "Incoming", count: incomingAll.length },
@@ -177,7 +241,6 @@ export default function ListReferrals() {
         ))}
       </div>
 
-      {/* Filter bar — stacked on mobile, row from sm */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
         <select
           value={statusFilter}
@@ -214,7 +277,6 @@ export default function ListReferrals() {
         </div>
       ) : (
         <>
-          {/* Desktop / tablet table — hidden on mobile */}
           <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
@@ -230,54 +292,56 @@ export default function ListReferrals() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pageItems.map((r) => (
-                  <tr key={r._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                          <PawPrint className="w-4 h-4 text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-800">
-                            {r.pet?.name ?? "Unknown pet"}
+                  <>
+                    <tr key={r._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                            <PawPrint className="w-4 h-4 text-blue-600" />
                           </div>
-                          {r.pet?.species && (
-                            <div className="text-xs text-gray-400">
-                              {r.pet.breed ? `${r.pet.breed} · ` : ""}
-                              {r.pet.species}
+                          <div>
+                            <div className="font-medium text-gray-800">
+                              {r.pet?.name ?? "Unknown pet"}
                             </div>
-                          )}
+                            {r.pet?.species && (
+                              <div className="text-xs text-gray-400">
+                                {r.pet.breed ? `${r.pet.breed} · ` : ""}
+                                {r.pet.species}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{clinicLabel(r)}</td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {new Date(r.createdAt).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full border ${STATUS_STYLES[r.status]}`}
-                      >
-                        {r.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {direction === "inbound" && r.status === "pending" ? (
-                        <div className="flex flex-wrap gap-2">
-                          <AcceptReferralButton referralId={r._id} onAccepted={handleAccepted} />
-                          <DeclineReferralButton
-                            referralId={r._id}
-                            onDeclined={() => handleDeclined(r._id)}
-                          />
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{clinicLabel(r)}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {new Date(r.createdAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`text-xs font-medium px-2 py-0.5 rounded-full border ${STATUS_STYLES[r.status]}`}
+                        >
+                          {r.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-2 items-start">
+                          {renderPatientActions(r, "row")}
+                          {renderSharedRecordsToggle(r, "row")}
                         </div>
-                      ) : (
-                        <span className="text-gray-300">—</span>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {expandedId === r._id && hasSharedRecords(r) && (
+                      <tr key={`${r._id}-expanded`} className="bg-gray-50">
+                        <td colSpan={5} className="px-4 py-4">
+                          <SharedRecordsPanel referralId={r._id} />
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
@@ -320,7 +384,6 @@ export default function ListReferrals() {
             </div>
           </div>
 
-          {/* Mobile card list — shown below md, replaces the table entirely */}
           <div className="md:hidden flex flex-col gap-3">
             {pageItems.map((r) => (
               <div key={r._id} className="border border-gray-200 rounded-lg p-4 bg-pry-clr flex flex-col gap-3">
@@ -361,13 +424,12 @@ export default function ListReferrals() {
                   </span>
                 </div>
 
-                {direction === "inbound" && r.status === "pending" && (
-                  <div className="flex flex-wrap gap-2 pt-1 border-t border-gray-100">
-                    <AcceptReferralButton referralId={r._id} onAccepted={handleAccepted} />
-                    <DeclineReferralButton
-                      referralId={r._id}
-                      onDeclined={() => handleDeclined(r._id)}
-                    />
+                {renderPatientActions(r, "stack")}
+                {renderSharedRecordsToggle(r, "stack")}
+
+                {expandedId === r._id && hasSharedRecords(r) && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <SharedRecordsPanel referralId={r._id} />
                   </div>
                 )}
               </div>

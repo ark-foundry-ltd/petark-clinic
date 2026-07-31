@@ -2,11 +2,12 @@
 "use client";
 
 import { useState } from "react";
-import { acceptReferral, ReferralRecord } from "@/lib/referral";
+import { toast } from "sonner";
+import { acceptReferral, AcceptReferralResult } from "@/lib/referral";
 
 interface AcceptReferralButtonProps {
   referralId: string;
-  onAccepted: (updated: ReferralRecord) => void;
+  onAccepted: (result: AcceptReferralResult) => void;
 }
 
 export default function AcceptReferralButton({
@@ -32,7 +33,14 @@ export default function AcceptReferralButton({
         feeWaived,
         waiverReason: feeWaived ? waiverReason.trim() : undefined,
       });
-      onAccepted(result.referral);
+
+      toast.success(
+        result.alreadyPatient
+          ? "Referral accepted — pet is already a registered patient here"
+          : "Referral accepted — patient registered"
+      );
+
+      onAccepted(result);
     } catch (err) {
       setError("Couldn't accept this referral. Try again.");
     } finally {

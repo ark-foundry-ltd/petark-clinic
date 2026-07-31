@@ -35,6 +35,10 @@ export interface ReferralRecord {
     pet?: ReferralPetSummary;
     fromClinic?: ReferralClinicSummary;
     toClinic?: ReferralClinicSummary;
+    // The _id of the clinicPatients doc this referral produced once accepted —
+    // populated by listReferrals via a lookup on referredFrom.referralId.
+    // null/undefined for pending or declined referrals.
+    clinicPatientId?: string | null;
 }
 
 // Raw clinicPatient doc as inserted by acceptReferral — flat ids, not the
@@ -57,6 +61,33 @@ export interface ReferralClinicPatient {
     registeredAt: string;
     createdAt: string;
     updatedAt: string;
+}
+
+// Read-only shape of a visit as returned by getSharedRecords — matches the
+// $project fields in that endpoint exactly (no billing/payment fields,
+// since the receiving clinic has no business seeing the referring clinic's
+// pricing/payment data, only the clinical content).
+export interface SharedRecordVisit {
+    _id: string;
+    vitals: {
+        weight: number | null;
+        temp: number | null;
+        pulse: number | null;
+        respiration: number | null;
+        appetite: string | null;
+        activity: string | null;
+    };
+    soap: {
+        subjective: string;
+        objective: string;
+        assessment: string;
+        plan: string;
+    };
+    servicesProvided: string[];
+    selectedServices: Array<{ _id: string; name?: string; price?: number }>;
+    status: string;
+    createdAt: string;
+    completedAt: string | null;
 }
 
 // ─── Create: referring clinic sends a pet to another clinic ───────────────
@@ -104,6 +135,11 @@ export interface AcceptReferralPayload {
 export interface AcceptReferralResult {
     referral: ReferralRecord;
     clinicPatient: ReferralClinicPatient;
+    // true when the pet was already an active patient at the receiving
+    // clinic — acceptReferral skips creating a duplicate registration and
+    // reuses the existing clinicPatients record in that case.
+    alreadyPatient: boolean;
+
 }
 
 export async function acceptReferral(
@@ -171,6 +207,30 @@ export async function listReferrals(
             );
         } else {
             console.error("Error fetching referrals:", error);
+        }
+        throw error;
+    }
+}
+
+// ─── Shared records: read-only visits a referral explicitly shared ────────
+// Backed by getSharedRecords in referralController.js — the deliberate,
+// narrow exception to per-clinic data isolation. Authorized for either side
+// of the referral (from or to clinic).
+
+export async function getSharedRecords(
+    referralId: string
+): Promise<SharedRecordVisit[]> {
+    try {
+        const response = await api.get(`/referrals/${referralId}/shared-records`);
+        return response.data.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            console.error(
+                "Error fetching shared records:",
+                error.response?.data || error.message
+            );
+        } else {
+            console.error("Error fetching shared records:", error);
         }
         throw error;
     }

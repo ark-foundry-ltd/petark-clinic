@@ -1,7 +1,7 @@
 // components/clinic/clinical-overview.tsx
 
 import Link from "next/link";
-import { PawPrint, ClipboardList, Package, AlertTriangle } from "lucide-react";
+import { PawPrint, ClipboardList, Package, AlertTriangle, ArrowLeftRight } from "lucide-react";
 import GetVisits from "@/components/clinic/get-visits";
 
 export default function ClinicalOverview() {
@@ -66,7 +66,7 @@ export default function ClinicalOverview() {
                     className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
                 >
                     <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
-                        <Package className="w-5 h-5 text-acc-clr" />
+                        <ArrowLeftRight className="w-5 h-5 text-acc-clr" />
                     </div>
                     <h3 className="font-semibold text-sec-clr mb-1">Referrals</h3>
                     <p className="text-sm text-gray-500 mb-3">
