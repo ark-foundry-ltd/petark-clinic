@@ -1,7 +1,7 @@
 // components/clinic/clinical-overview.tsx
 
 import Link from "next/link";
-import { PawPrint, ClipboardList, Package, AlertTriangle, ArrowLeftRight } from "lucide-react";
+import { PawPrint, ClipboardList, Package, ArrowLeftRight } from "lucide-react";
 import GetVisits from "@/components/clinic/get-visits";
 
 export default function ClinicalOverview() {
@@ -56,8 +56,7 @@ export default function ClinicalOverview() {
                         Track drugs, supplies, and stock levels
                     </p>
                     <p className="text-xs text-gray-400 flex items-center gap-1">
-                        <AlertTriangle className="w-3 h-3" />
-                        Coming soon
+                        Manage Inventory and Stock Alerts
                     </p>
                 </Link>
 
