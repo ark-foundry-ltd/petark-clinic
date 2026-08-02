@@ -28,7 +28,7 @@ export interface ClinicService {
 }
 
 export interface Subscription {
-    plan: 'free' | 'pro';
+    plan: 'free' | 'pro' | 'standard' | 'enterprise';
     status: 'active' | 'inactive' | 'cancelled';
     startedAt: string | null;
     expiresAt: string | null;

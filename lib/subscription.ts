@@ -4,8 +4,12 @@ import { AxiosError } from "axios";
 
 // ─── Shared Types ──────────────────────────────────────────────────────────
 
-export type SubscriptionPlan = "free" | "pro";
+export type SubscriptionPlan = "free" | "standard" | "pro" | "enterprise";
 export type SubscriptionStatus = "active" | "inactive" | "cancelled";
+
+// Plans actually purchasable through initiateSubscriptionUpgrade —
+// enterprise is "coming soon" and isn't in PLAN_PRICES_KOBO on the backend yet.
+export type PurchasablePlan = "standard" | "pro";
 
 export interface SubscriptionRecord {
     plan: SubscriptionPlan;
@@ -14,21 +18,25 @@ export interface SubscriptionRecord {
     expiresAt: string | null;
     paystackSubscriptionCode: string | null;
     paystackNextPaymentDate: string | null;
-    // set while an upgrade is awaiting Paystack callback confirmation,
-    // cleared once subscriptionPaystackCallback processes it
     pendingReference?: string | null;
 }
 
-// ─── Initiate upgrade (Free → Pro) ─────────────────────────────────────
+// ─── Initiate upgrade ───────────────────────────────────────────────────
+
+export interface InitiateUpgradePayload {
+    targetPlan: PurchasablePlan;
+}
 
 export interface InitiateUpgradeResult {
     authorizationUrl: string;
     reference: string;
 }
 
-export async function initiateSubscriptionUpgrade(): Promise<InitiateUpgradeResult> {
+export async function initiateSubscriptionUpgrade(
+    payload: InitiateUpgradePayload
+): Promise<InitiateUpgradeResult> {
     try {
-        const response = await api.post("/subscription/upgrade");
+        const response = await api.post("/subscription/upgrade", payload);
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {

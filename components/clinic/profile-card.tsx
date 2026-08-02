@@ -59,9 +59,17 @@ export default function ProfileCard() {
                             <div className="pry-ff min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h2 className="text-xl font-bold text-sec-clr truncate">{profile.clinicName}</h2>
-                                    {profile.subscription?.plan === 'pro' ? (
-                                        <span className="flex items-center gap-1 text-[10px] font-semibold bg-violet-600 text-white px-2 py-0.5 rounded-full shrink-0">
+                                    {profile.subscription?.plan === 'enterprise' ? (
+                                        <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-800 text-white px-2 py-0.5 rounded-full shrink-0">
+                                            Enterprise
+                                        </span>
+                                    ) : profile.subscription?.plan === 'pro' ? (
+                                        <span className="flex items-center gap-1 text-[10px] font-semibold bg-acc-clr text-white px-2 py-0.5 rounded-full shrink-0">
                                             ✦ Pro
+                                        </span>
+                                    ) : profile.subscription?.plan === 'standard' ? (
+                                        <span className="flex items-center gap-1 text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full shrink-0">
+                                            Standard
                                         </span>
                                     ) : (
                                         <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full shrink-0">
