@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { PawPrint, ClipboardList, Package, ArrowLeftRight } from "lucide-react";
-import GetVisits from "@/components/clinic/get-visits";
+import ActivityFeed from "@/components/clinic/activity-feed";
 
 export default function ClinicalOverview() {
     return (
@@ -77,8 +77,8 @@ export default function ClinicalOverview() {
                 </Link>
             </div>
 
-            {/* Recent Visits */}
-            <GetVisits />
+            {/* Recent Activities */}
+            <ActivityFeed />
         </div>
     );
 }
