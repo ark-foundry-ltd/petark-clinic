@@ -47,8 +47,10 @@ function isRouteActive(pathname: string, href: string, exact: boolean = false) {
 }
 
 // ─── Plan Badge ───────────────────────────────────────────────────────────────
-function PlanBadge({ plan }: { plan?: string }) {
-  if (plan === 'pro') {
+function PlanBadge({ plan, status }: { plan?: string; status?: string }) {
+  const isPro = !!plan && plan !== "free" && status === "active";
+
+  if (isPro) {
     return (
       <span className="text-[9px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full shrink-0">
         ✦ Pro
@@ -115,7 +117,7 @@ export function MobileTopBar() {
                     <p className="text-sm font-semibold text-gray-900 truncate pry-ff">
                       {profile?.clinicName || "Pet Owner"}
                     </p>
-                    <PlanBadge plan={profile?.subscription?.plan} />
+                    <PlanBadge plan={profile?.subscription?.plan} status={profile?.subscription?.status} />
                   </div>
                   <p className="text-xs text-gray-500 truncate mt-0.5">
                     {profile?.email || "petark@example.com"}
@@ -291,7 +293,7 @@ export function Sidebar() {
                   <p className="text-sm font-medium text-gray-700 truncate">
                     {profile?.clinicName || "Clinic"}
                   </p>
-                  <PlanBadge plan={profile?.subscription?.plan} />
+                  <PlanBadge plan={profile?.subscription?.plan} status={profile?.subscription?.status} />
                 </div>
                 <p className="text-xs text-gray-500 truncate">
                   {profile?.email || "petark@example.com"}

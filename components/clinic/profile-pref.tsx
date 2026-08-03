@@ -21,6 +21,12 @@ export default function ProfilePreferences() {
             icon: <Users className="w-6 h-6" />,
             description: "Manage your clinic staff",
             href: "/dashboard/profile/staffs"
+        },
+        {
+            label: "Upgrade Plans",
+            icon: <CreditCard className="w-6 h-6" />,
+            description: "Manage your subscription plan",
+            href: "/dashboard/profile/upgrade"
         }
     ];
 

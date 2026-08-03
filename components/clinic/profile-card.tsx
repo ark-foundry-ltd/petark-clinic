@@ -57,26 +57,36 @@ export default function ProfileCard() {
                                 {profile.clinicName.charAt(0)}
                             </div>
                             <div className="pry-ff min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <h2 className="text-xl font-bold text-sec-clr truncate">{profile.clinicName}</h2>
-                                    {profile.subscription?.plan === 'enterprise' ? (
-                                        <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-800 text-white px-2 py-0.5 rounded-full shrink-0">
-                                            Enterprise
-                                        </span>
-                                    ) : profile.subscription?.plan === 'pro' ? (
-                                        <span className="flex items-center gap-1 text-[10px] font-semibold bg-acc-clr text-white px-2 py-0.5 rounded-full shrink-0">
-                                            ✦ Pro
-                                        </span>
-                                    ) : profile.subscription?.plan === 'standard' ? (
-                                        <span className="flex items-center gap-1 text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full shrink-0">
-                                            Standard
-                                        </span>
-                                    ) : (
-                                        <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full shrink-0">
-                                            Free
-                                        </span>
-                                    )}
-                                </div>
+<div className="flex items-center gap-2 flex-wrap">
+    <h2 className="text-xl font-bold text-sec-clr truncate">{profile.clinicName}</h2>
+    {profile.subscription?.plan === 'enterprise' ? (
+        <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-800 text-white px-2 py-0.5 rounded-full shrink-0">
+            Enterprise
+        </span>
+    ) : profile.subscription?.plan === 'pro' ? (
+        <span className="flex items-center gap-1 text-[10px] font-semibold bg-acc-clr text-white px-2 py-0.5 rounded-full shrink-0">
+            ✦ Pro
+        </span>
+    ) : profile.subscription?.plan === 'standard' ? (
+        <span className="flex items-center gap-1 text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full shrink-0">
+            Standard
+        </span>
+    ) : (
+        <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full shrink-0">
+            Free
+        </span>
+    )}
+</div>
+<p className="text-gray-500 truncate">{profile.email}</p>
+{profile.subscription?.plan !== 'free' && profile.subscription?.expiresAt && (
+    <p className="text-xs text-gray-400 mt-0.5">
+        Renews {new Date(profile.subscription.expiresAt).toLocaleDateString(undefined, {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+        })}
+    </p>
+)}
                                 <p className="text-gray-500 truncate">{profile.email}</p>
                             </div>
                         </div>
