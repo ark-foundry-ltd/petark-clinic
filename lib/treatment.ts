@@ -3,7 +3,6 @@
 import api from "./api";
 import { AxiosError } from "axios";
 
-export type TreatmentType = "vaccination" | "medication" | "deworming" | "supplement" | "surgery" | "other";
 export type TreatmentStatus = "active" | "completed" | "overdue" | "upcoming";
 
 export interface Treatment {
@@ -13,9 +12,12 @@ export interface Treatment {
     clinicId: string;
     vetId: string | null;
     visitId: string | null;
-    type: TreatmentType;
+    type: string;
     name: string;
     dosage: string | null;
+    minDoseMg: number | null;
+    maxDoseMg: number | null;
+    unit: string | null;
     frequency: string | null;
     administeredAt: string;
     nextDueAt: string | null;
@@ -35,27 +37,43 @@ export interface TreatmentSummary {
     overdueItems: Treatment[];
 }
 
+export interface PlanUsage {
+    plan: string;
+    used: number;
+    limit: number | null;
+    unlimited: boolean;
+    remaining: number | null;
+}
+
+export interface Pagination {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+}
+
 export interface TreatmentTimelineResponse {
     status: string;
     results: number;
+    pagination: Pagination;
     data: {
         timeline: Treatment[];
-        grouped: {
-            vaccination: Treatment[];
-            medication: Treatment[];
-            deworming: Treatment[];
-            supplement: Treatment[];
-        };
         summary: TreatmentSummary;
+        planUsage: PlanUsage;
     };
 }
 
 export interface AddTreatmentPayload {
     petId: string;
     visitId?: string;
-    type: TreatmentType;
+    type: string;
     name: string;
     dosage?: string;
+    minDoseMg?: number;
+    maxDoseMg?: number;
+    unit?: string;
     frequency?: string;
     administeredAt?: string;
     nextDueAt?: string;
@@ -64,14 +82,21 @@ export interface AddTreatmentPayload {
 
 export async function getPetTreatmentTimeline(
     petId: string,
-    type?: TreatmentType
-): Promise<TreatmentTimelineResponse['data']> {
+    options?: { type?: string; page?: number; limit?: number }
+): Promise<TreatmentTimelineResponse> {
     try {
-        const url = type
-            ? `/treatments/pet/${petId}?type=${type}`
+        const params = new URLSearchParams();
+        if (options?.type) params.set("type", options.type);
+        if (options?.page) params.set("page", String(options.page));
+        if (options?.limit) params.set("limit", String(options.limit));
+
+        const query = params.toString();
+        const url = query
+            ? `/treatments/pet/${petId}?${query}`
             : `/treatments/pet/${petId}`;
+
         const response = await api.get<TreatmentTimelineResponse>(url);
-        return response.data.data;
+        return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {
             throw new Error(error.response?.data?.message || "Failed to fetch treatments");

@@ -1,3 +1,5 @@
+// main component, imports and renders all three
+
 // components/clinic/treatment-timeline.tsx
 
 "use client";
@@ -6,425 +8,73 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useStore";
 import {
     getPetTreatmentTimeline,
-    addTreatment,
-    updateTreatment,
-    deleteTreatment,
     type Treatment,
-    type TreatmentType,
-    type AddTreatmentPayload,
+    type PlanUsage,
 } from "@/lib/treatment";
+import AddTreatmentForm from "./add-treatment-form";
+import TreatmentCard from "./treatment-card";
 import {
-    Syringe, Pill, Shield, Leaf, Plus, Lock, Sparkles,
-    Loader2, AlertTriangle, CheckCircle, Clock, X,
-    ChevronDown, Trash2, FolderPlus
+    Syringe, Plus, Lock, Sparkles,
+    Loader2, AlertTriangle, Clock,
+    ChevronLeft, ChevronRight,
 } from "lucide-react";
-import { toast } from "sonner";
 
 interface TreatmentTimelineProps {
     petId: string;
     visitId?: string;
+    petWeightKg?: number;
+    petSpecies?: string;
 }
 
-const TYPE_CONFIG: Record<TreatmentType, {
-    label: string;
-    color: string;
-    bg: string;
-    border: string;
-    icon: React.ReactNode;
-}> = {
-    vaccination: {
-        label: "Vaccination",
-        color: "text-blue-700",
-        bg: "bg-blue-50",
-        border: "border-blue-100",
-        icon: <Syringe size={14} />,
-    },
-    medication: {
-        label: "Medication",
-        color: "text-violet-700",
-        bg: "bg-violet-50",
-        border: "border-violet-100",
-        icon: <Pill size={14} />,
-    },
-    deworming: {
-        label: "Deworming",
-        color: "text-orange-700",
-        bg: "bg-orange-50",
-        border: "border-orange-100",
-        icon: <Shield size={14} />,
-    },
-    supplement: {
-        label: "Supplement",
-        color: "text-green-700",
-        bg: "bg-green-50",
-        border: "border-green-100",
-        icon: <Leaf size={14} />,
-    },
-    surgery: {
-        label: "Surgery",
-        color: "text-red-700",
-        bg: "bg-red-50",
-        border: "border-red-100",
-        icon: <Sparkles size={14} />,
-    },
-    other: {
-        label: "Other",
-        color: "text-gray-700",
-        bg: "bg-gray-50",
-        border: "border-gray-100",
-        icon: <FolderPlus size={14} />,
-    }
-};
+export default function TreatmentTimeline({ petId, visitId, petWeightKg, petSpecies }: Readonly<TreatmentTimelineProps>) {
+    const { profile } = useAuthStore();
+    const plan = profile?.subscription?.plan;
+    const status = profile?.subscription?.status;
+    const hasAccess = !!plan && plan !== "free" && status === "active"; // standard, pro, enterprise
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-    active:    { label: "Active",    color: "text-blue-600 bg-blue-50",   icon: <Clock size={11} /> },
-    upcoming:  { label: "Upcoming",  color: "text-amber-600 bg-amber-50", icon: <Clock size={11} /> },
-    overdue:   { label: "Overdue",   color: "text-red-600 bg-red-50",     icon: <AlertTriangle size={11} /> },
-    completed: { label: "Completed", color: "text-green-600 bg-green-50", icon: <CheckCircle size={11} /> },
-};
-
-function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString("en-GB", {
-        day: "2-digit", month: "short", year: "numeric"
-    });
-}
-
-function getDaysUntil(iso: string): string {
-    const diff = new Date(iso).getTime() - Date.now();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    if (days < 0) return `${Math.abs(days)}d overdue`;
-    if (days === 0) return "Due today";
-    if (days === 1) return "Due tomorrow";
-    return `Due in ${days}d`;
-}
-
-interface AddTreatmentFormProps {
-    petId: string;
-    visitId?: string;
-    onAdded: (t: Treatment) => void;
-    onCancel: () => void;
-}
-
-function AddTreatmentForm({ petId, visitId, onAdded, onCancel }: AddTreatmentFormProps) {
+    const [timeline, setTimeline] = useState<Treatment[]>([]);
+    const [summary, setSummary] = useState<{ upcoming: number; overdue: number } | null>(null);
+    const [planUsage, setPlanUsage] = useState<PlanUsage | null>(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState<AddTreatmentPayload>({
-        petId,
-        visitId,
-        type: "vaccination",
-        name: "",
-        dosage: "",
-        frequency: "",
-        administeredAt: new Date().toISOString().split("T")[0],
-        nextDueAt: "",
-        notes: "",
-    });
+    const [error, setError] = useState<string | null>(null);
+    const [showAdd, setShowAdd] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<string>("all");
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!form.name.trim()) {
-            toast.error("Treatment name is required");
-            return;
-        }
-
+    const fetchTimeline = async (targetPage: number) => {
+        setLoading(true);
+        setError(null);
         try {
-            setLoading(true);
-            const payload: AddTreatmentPayload = {
-                petId: form.petId,
-                type: form.type,
-                name: form.name,
-                ...(visitId && { visitId }),
-                ...(form.dosage && { dosage: form.dosage }),
-                ...(form.frequency && { frequency: form.frequency }),
-                ...(form.administeredAt && { administeredAt: form.administeredAt }),
-                ...(form.nextDueAt && { nextDueAt: form.nextDueAt }),
-                ...(form.notes && { notes: form.notes }),
-            };
-            const added = await addTreatment(payload);
-            onAdded(added);
-            toast.success("Treatment added successfully");
+            const res = await getPetTreatmentTimeline(petId, { page: targetPage, limit: 4 });
+            setTimeline(res.data.timeline);
+            setSummary({
+                upcoming: res.data.summary.upcoming,
+                overdue: res.data.summary.overdue,
+            });
+            setPlanUsage(res.data.planUsage);
+            setTotalPages(res.pagination.totalPages || 1);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to add treatment");
+            setError(err instanceof Error ? err.message : "Failed to load treatments");
         } finally {
             setLoading(false);
         }
     };
 
-    return (
-        <form onSubmit={handleSubmit} className="bg-gray-50 rounded-xl border border-gray-100 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-gray-700">Add Treatment</p>
-                <button type="button" onClick={onCancel} className="p-1 hover:bg-gray-200 rounded-lg">
-                    <X size={14} className="text-gray-400" />
-                </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-                {/* Type */}
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
-                    <div className="relative">
-                        <select
-                            value={form.type}
-                            onChange={e => setForm(f => ({ ...f, type: e.target.value as TreatmentType }))}
-                            className="w-full appearance-none px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr bg-white pr-7"
-                        >
-                            <option value="vaccination">Vaccination</option>
-                            <option value="medication">Medication</option>
-                            <option value="deworming">Deworming</option>
-                            <option value="supplement">Supplement</option>
-                            <option value="surgery">Surgery</option>
-                            <option value="other">Others</option>
-                        </select>
-                        <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                </div>
-
-                {/* Name */}
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Name <span className="text-red-500">*</span></label>
-                    <input
-                        type="text"
-                        value={form.name}
-                        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                        placeholder="e.g. Rabies Vaccine"
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                    />
-                </div>
-
-                {/* Dosage */}
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Dosage</label>
-                    <input
-                        type="text"
-                        value={form.dosage}
-                        onChange={e => setForm(f => ({ ...f, dosage: e.target.value }))}
-                        placeholder="e.g. 1ml"
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                    />
-                </div>
-
-                {/* Frequency */}
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Frequency</label>
-                    <input
-                        type="text"
-                        value={form.frequency}
-                        onChange={e => setForm(f => ({ ...f, frequency: e.target.value }))}
-                        placeholder="e.g. Annually"
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                    />
-                </div>
-
-                {/* Administered At */}
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Administered</label>
-                    <input
-                        type="date"
-                        value={form.administeredAt}
-                        onChange={e => setForm(f => ({ ...f, administeredAt: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                    />
-                </div>
-
-                {/* Next Due */}
-                <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Next Due</label>
-                    <input
-                        type="date"
-                        value={form.nextDueAt}
-                        onChange={e => setForm(f => ({ ...f, nextDueAt: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                    />
-                </div>
-            </div>
-
-            {/* Notes */}
-            <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
-                <textarea
-                    value={form.notes}
-                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                    placeholder="Any additional notes..."
-                    rows={2}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr resize-none"
-                />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-acc-clr hover:opacity-90 disabled:opacity-60 rounded-lg transition-colors"
-                >
-                    {loading ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                    Add Treatment
-                </button>
-            </div>
-        </form>
-    );
-}
-
-interface TreatmentCardProps {
-    treatment: Treatment;
-    onUpdate: (t: Treatment) => void;
-    onDelete: (id: string) => void;
-}
-
-function TreatmentCard({ treatment, onUpdate, onDelete }: Readonly<TreatmentCardProps>) {
-    const [deleting, setDeleting] = useState(false);
-    const [marking, setMarking] = useState(false);
-    const config = TYPE_CONFIG[treatment.type];
-    const statusConfig = STATUS_CONFIG[treatment.status] || STATUS_CONFIG.active;
-
-    const handleMarkComplete = async () => {
-        try {
-            setMarking(true);
-            const updated = await updateTreatment(treatment._id, { status: "completed" });
-            onUpdate(updated);
-            toast.success("Marked as completed");
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to update");
-        } finally {
-            setMarking(false);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!confirm("Delete this treatment record?")) return;
-        try {
-            setDeleting(true);
-            await deleteTreatment(treatment._id);
-            onDelete(treatment._id);
-            toast.success("Treatment deleted");
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Failed to delete");
-        } finally {
-            setDeleting(false);
-        }
-    };
-
-    return (
-        <div className={`rounded-xl border p-4 ${config.bg} ${config.border}`}>
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                    <span className={config.color}>{config.icon}</span>
-                    <div>
-                        <p className={`text-sm font-semibold ${config.color}`}>{treatment.name}</p>
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${config.bg} ${config.color}`}>
-                            {config.label}
-                        </span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusConfig.color}`}>
-                        {statusConfig.icon}
-                        {statusConfig.label}
-                    </span>
-                </div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
-                <div>
-                    <p className="text-gray-400 text-[10px] uppercase tracking-wide">Administered</p>
-                    <p className="font-medium mt-0.5">{formatDate(treatment.administeredAt)}</p>
-                </div>
-                {treatment.nextDueAt && (
-                    <div>
-                        <p className="text-gray-400 text-[10px] uppercase tracking-wide">Next Due</p>
-                        <p className={`font-medium mt-0.5 ${treatment.status === "overdue" ? "text-red-600" : ""}`}>
-                            {formatDate(treatment.nextDueAt)}
-                            <span className="text-[10px] text-gray-400 ml-1">
-                                ({getDaysUntil(treatment.nextDueAt)})
-                            </span>
-                        </p>
-                    </div>
-                )}
-                {treatment.dosage && (
-                    <div>
-                        <p className="text-gray-400 text-[10px] uppercase tracking-wide">Dosage</p>
-                        <p className="font-medium mt-0.5">{treatment.dosage}</p>
-                    </div>
-                )}
-                {treatment.frequency && (
-                    <div>
-                        <p className="text-gray-400 text-[10px] uppercase tracking-wide">Frequency</p>
-                        <p className="font-medium mt-0.5">{treatment.frequency}</p>
-                    </div>
-                )}
-            </div>
-
-            {treatment.notes && (
-                <p className="mt-2 text-xs text-gray-500 italic">{treatment.notes}</p>
-            )}
-
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/50">
-                {treatment.status !== "completed" && (
-                    <button
-                        onClick={handleMarkComplete}
-                        disabled={marking}
-                        className="flex items-center gap-1 text-[11px] font-medium text-green-700 hover:text-green-800 transition-colors"
-                    >
-                        {marking ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle size={11} />}
-                        Mark Complete
-                    </button>
-                )}
-                <button
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="flex items-center gap-1 text-[11px] font-medium text-red-500 hover:text-red-700 transition-colors ml-auto"
-                >
-                    {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
-                    Delete
-                </button>
-            </div>
-        </div>
-    );
-}
-
-export default function TreatmentTimeline({ petId, visitId }: Readonly<TreatmentTimelineProps>) {
-    const { profile } = useAuthStore();
-    const isPro = profile?.subscription?.plan === "pro";
-
-    const [timeline, setTimeline] = useState<Treatment[]>([]);
-    const [summary, setSummary] = useState<{ upcoming: number; overdue: number } | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [showAdd, setShowAdd] = useState(false);
-    const [activeFilter, setActiveFilter] = useState<TreatmentType | "all">("all");
-
     useEffect(() => {
-        if (!isPro || !petId) return;
-
-        async function fetch() {
-            setLoading(true);
-            setError(null);
-            try {
-                const data = await getPetTreatmentTimeline(petId);
-                setTimeline(data.timeline);
-                setSummary({
-                    upcoming: data.summary.upcoming,
-                    overdue: data.summary.overdue,
-                });
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to load treatments");
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetch();
-    }, [petId, isPro]);
+        if (!hasAccess || !petId) return;
+        const timer = window.setTimeout(() => {
+            void fetchTimeline(page);
+        }, 0);
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [petId, hasAccess, page]);
 
     const handleAdded = (t: Treatment) => {
-        setTimeline(prev => [t, ...prev]);
         setShowAdd(false);
+        // Refetch to keep pagination/summary/planUsage accurate rather than
+        // manually patching local state
+        fetchTimeline(page);
     };
 
     const handleUpdate = (updated: Treatment) => {
@@ -433,20 +83,22 @@ export default function TreatmentTimeline({ petId, visitId }: Readonly<Treatment
 
     const handleDelete = (id: string) => {
         setTimeline(prev => prev.filter(t => t._id !== id));
+        fetchTimeline(page);
     };
 
+    const availableTypes = Array.from(new Set(timeline.map(t => t.type)));
     const filtered = activeFilter === "all"
         ? timeline
         : timeline.filter(t => t.type === activeFilter);
 
-    // ── Free plan ─────────────────────────────────────────────────
-    if (!isPro) {
+    // ── No access (free plan) ────────────────────────────────────
+    if (!hasAccess) {
         return (
             <div className="bg-pry-clr rounded-xl border border-violet-100 p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                     <Syringe className="w-5 h-5 text-violet-400" />
                     <h3 className="font-semibold text-sec-clr">Vaccination & Medication Timeline</h3>
-                    <span className="text-[10px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-auto">Pro</span>
+                    <span className="text-[10px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-auto">Standard+</span>
                 </div>
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                     <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center mb-3">
@@ -458,15 +110,15 @@ export default function TreatmentTimeline({ petId, visitId }: Readonly<Treatment
                     </p>
                     <div className="flex items-center gap-1.5 text-xs text-violet-600 font-medium">
                         <Sparkles size={13} />
-                        Available on Pro plan
+                        Available on Standard and Pro plans
                     </div>
                 </div>
             </div>
         );
     }
 
-    // ── Loading ───────────────────────────────────────────────────
-    if (loading) {
+    // ── Loading (initial) ────────────────────────────────────────
+    if (loading && timeline.length === 0) {
         return (
             <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
@@ -486,17 +138,33 @@ export default function TreatmentTimeline({ petId, visitId }: Readonly<Treatment
             <div className="flex items-center gap-2">
                 <Syringe className="w-5 h-5 text-violet-500" />
                 <h3 className="font-semibold text-sec-clr">Vaccination & Medication Timeline</h3>
-                <span className="text-[10px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-auto">
-                    Pro ✦
+                <span className="text-[10px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-auto capitalize">
+                    {plan} ✦
                 </span>
                 <button
                     onClick={() => setShowAdd(true)}
-                    className="flex items-center gap-1 text-xs font-medium text-acc-clr hover:opacity-80 transition-opacity"
+                    disabled={planUsage ? !planUsage.unlimited && planUsage.remaining === 0 : false}
+                    className="flex items-center gap-1 text-xs font-medium text-acc-clr hover:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                 >
                     <Plus size={13} />
                     Add
                 </button>
             </div>
+
+            {/* Plan usage (only shown when capped, i.e. standard) */}
+            {planUsage && !planUsage.unlimited && (
+                <div className="flex items-center justify-between text-xs bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                    <span className="text-gray-500">
+                        Treatments this month:{" "}
+                        <span className="font-semibold text-gray-700">
+                            {planUsage.used}/{planUsage.limit}
+                        </span>
+                    </span>
+                    {planUsage.remaining === 0 && (
+                        <span className="text-amber-600 font-medium">Limit reached — upgrade to Pro for unlimited</span>
+                    )}
+                </div>
+            )}
 
             {/* Summary pills */}
             {summary && (summary.overdue > 0 || summary.upcoming > 0) && (
@@ -521,25 +189,37 @@ export default function TreatmentTimeline({ petId, visitId }: Readonly<Treatment
                 <AddTreatmentForm
                     petId={petId}
                     visitId={visitId}
+                    petWeightKg={petWeightKg}
+                    petSpecies={petSpecies}
                     onAdded={handleAdded}
                     onCancel={() => setShowAdd(false)}
                 />
             )}
 
-            {/* Filter tabs */}
+            {/* Filter tabs — built from types actually present in this page's data */}
             {timeline.length > 0 && (
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    {(["all", "vaccination", "medication", "deworming", "supplement", "surgery", "other"] as const).map(f => (
+                    <button
+                        onClick={() => setActiveFilter("all")}
+                        className={`px-2.5 py-1 text-xs font-medium rounded-full border transition-colors capitalize ${
+                            activeFilter === "all"
+                                ? "bg-sec-clr text-white border-sec-clr"
+                                : "border-gray-200 text-gray-500 hover:border-gray-400"
+                        }`}
+                    >
+                        all
+                    </button>
+                    {availableTypes.map(t => (
                         <button
-                            key={f}
-                            onClick={() => setActiveFilter(f)}
+                            key={t}
+                            onClick={() => setActiveFilter(t)}
                             className={`px-2.5 py-1 text-xs font-medium rounded-full border transition-colors capitalize ${
-                                activeFilter === f
+                                activeFilter === t
                                     ? "bg-sec-clr text-white border-sec-clr"
                                     : "border-gray-200 text-gray-500 hover:border-gray-400"
                             }`}
                         >
-                            {f}
+                            {t}
                         </button>
                     ))}
                 </div>
@@ -575,6 +255,31 @@ export default function TreatmentTimeline({ petId, visitId }: Readonly<Treatment
                     />
                 ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                    <button
+                        onClick={() => setPage(p => Math.max(p - 1, 1))}
+                        disabled={page === 1 || loading}
+                        className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        <ChevronLeft size={13} />
+                        Prev
+                    </button>
+                    <span className="text-xs text-gray-400">
+                        Page {page} of {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                        disabled={page === totalPages || loading}
+                        className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        Next
+                        <ChevronRight size={13} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

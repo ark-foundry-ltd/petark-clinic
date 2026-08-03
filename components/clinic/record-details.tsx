@@ -24,10 +24,10 @@ import {
     CheckCircle,
     XCircle,
     Pencil,
-    TrendingUp,
+    // TrendingUp,
     Plus,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
 interface RecordDetailsProps {
     visitId: string;
@@ -86,7 +86,7 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    const router = useRouter();
+    // const router = useRouter();
 
     useEffect(() => {
         async function fetchData() {
@@ -124,26 +124,26 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
         setIsEditing(false);
     }
 
-    const handleTimeline = () => {
-        if (!visit) return;
+    // const handleTimeline = () => {
+    //     if (!visit) return;
         
-        const petId = visit.petId;
-        const userId = visit.userId;
+    //     const petId = visit.petId;
+    //     const userId = visit.userId;
         
-        if (!petId) {
-            console.error('petId is missing from visit:', visit);
-            alert('Pet ID is missing. Cannot view timeline.');
-            return;
-        }
+    //     if (!petId) {
+    //         console.error('petId is missing from visit:', visit);
+    //         alert('Pet ID is missing. Cannot view timeline.');
+    //         return;
+    //     }
         
-        if (!userId) {
-            console.error('userId is missing from visit:', visit);
-            alert('User ID is missing. Cannot view timeline.');
-            return;
-        }
+    //     if (!userId) {
+    //         console.error('userId is missing from visit:', visit);
+    //         alert('User ID is missing. Cannot view timeline.');
+    //         return;
+    //     }
         
-        router.push(`/dashboard/records/pet/${petId}/timeline?userId=${userId}`);
-    };
+    //     router.push(`/dashboard/records/pet/${petId}/timeline?userId=${userId}`);
+    // };
 
     const getServiceDetails = (serviceId: string): ClinicService | undefined => {
         return clinicServices.find((s) => s._id === serviceId);
@@ -564,13 +564,13 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                 <TreatmentTimeline petId={visit.petId} visitId={visit._id} />
             )}
 
-            <button
+            {/* <button
                 onClick={handleTimeline}
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-acc-clr text-acc-clr text-sm font-semibold py-3 hover:bg-acc-clr hover:text-pry-clr cursor-pointer transition-colors"
             >
                 <TrendingUp size={15} />
                 View Health Timeline
-            </button>
+            </button> */}
         </div>
     );
 }
