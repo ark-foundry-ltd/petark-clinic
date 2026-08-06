@@ -47,7 +47,7 @@ export default function HelpTooltip({ text, label }: Readonly<HelpTooltipProps>)
                     className="absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-lg bg-slate-800 px-3 py-2 text-xs leading-snug text-pry-clr shadow-lg"
                 >
                     {text}
-                    <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                    <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-800 z-500" />
                 </span>
             )}
         </span>

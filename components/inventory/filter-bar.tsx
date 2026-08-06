@@ -1,6 +1,8 @@
 // components/inventory/filter-bar.tsx
 import { Search, Plus } from "lucide-react";
 import type { InventoryCategory } from "@/lib/inventory";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export const CATEGORY_LABELS: Record<InventoryCategory | "all", string> = {
     all: "All Categories",
@@ -31,6 +33,11 @@ export default function FilterBar({
     onSearchChange,
     onAddItem,
 }: Readonly<FilterBarProps>) {
+    const router = useRouter();
+
+    const navigateToSales = () => {
+        router.push("/dashboard/clinical/sales");
+    };
     return (
         <div className="mb-4 flex flex-wrap items-center gap-4">
             <select
@@ -87,6 +94,14 @@ export default function FilterBar({
                 <Plus className="h-4 w-4" />
                 Add Item
             </button>
+
+            <button
+                type="button"
+                onClick={navigateToSales}
+                className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-pry-clr pry-ff hover:opacity-90 cursor-pointer">
+                Go to Sales
+            </button>
+
         </div>
     );
 }

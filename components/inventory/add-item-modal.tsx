@@ -303,15 +303,32 @@ export default function AddItemModal({
                             </div>
 
                             <div className="flex items-center gap-1.5 pt-6">
-                                <label className="flex items-center gap-2 text-sm text-slate-600">
-                                    <input
-                                        type="checkbox"
-                                        checked={form.requiresBatchTracking}
-                                        onChange={(e) => update("requiresBatchTracking", e.target.checked)}
-                                        className="h-4 w-4 rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
-                                    />
-                                    Track by batch / expiry
-                                </label>
+                                <label className="flex items-center justify-between rounded-lg border border-slate-200 p-3 gap-2">
+    <div>
+        <p className="text-xs font-medium text-slate-700">
+            Track by batch / expiry
+        </p>
+    </div>
+
+    <button
+        type="button"
+        onClick={() =>
+            update("requiresBatchTracking", !form.requiresBatchTracking)
+        }
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            form.requiresBatchTracking ? "bg-acc-clr" : "bg-slate-300"
+        }`}
+        aria-pressed={form.requiresBatchTracking}
+    >
+        <span
+            className={`inline-block h-5 w-5 transform rounded-full bg-pry-clr shadow transition-transform ${
+                form.requiresBatchTracking
+                    ? "translate-x-5"
+                    : "translate-x-1"
+            }`}
+        />
+    </button>
+</label>
                                 <HelpTooltip
                                     label="What is track by batch / expiry?"
                                     text="Turn this on for items with expiry dates, like meds and vaccines. Stock is tracked in separate batches, and the earliest-expiring batch is used first. Leave it off for a simple running count (bandages, gloves, etc.)."
