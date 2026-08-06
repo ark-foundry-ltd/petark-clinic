@@ -2,7 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Minus, Plus, Search, ShoppingCart, X, Check, Warehouse, Box } from "lucide-react";
+import { Loader2, Minus, Plus, Search, ShoppingCart, X, Check, Box } from "lucide-react";
+import { toast } from "sonner";
 import { listInventoryItems, type InventoryItemRecord } from "@/lib/inventory";
 import { checkoutSale, type CheckoutSalePayload, type PaymentMethod, type SaleRecord } from "@/lib/sales";
 import { useRouter } from "next/navigation";
@@ -32,7 +33,6 @@ export default function PosCheckout() {
     const [customerUserId, setCustomerUserId] = useState("");
 
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [receipt, setReceipt] = useState<SaleRecord | null>(null);
     const router = useRouter();
 
@@ -86,7 +86,6 @@ export default function PosCheckout() {
     const totalItems = cartLines.reduce((sum, line) => sum + line.quantity, 0);
 
     function addToCart(item: InventoryItemRecord) {
-        setError(null);
         setCart((current) => {
             const existing = current[item._id];
             const nextQty = Math.min((existing?.quantity ?? 0) + 1, item.currentStock);
@@ -105,7 +104,6 @@ export default function PosCheckout() {
     }
 
     function changeQuantity(itemId: string, delta: number) {
-        setError(null);
         setCart((current) => {
             const line = current[itemId];
             if (!line) return current;
@@ -132,20 +130,18 @@ export default function PosCheckout() {
         setResults([]);
         setLastLoadedSearch(null);
         setCustomerUserId("");
-        setError(null);
         setReceipt(null);
+        toast.success("Sale complete. Ready for a new transaction.");
     }
 
     async function handleCheckout() {
-        setError(null);
-
         if (cartLines.length === 0) {
-            setError("Add at least one item to the cart.");
+            toast.error("Add at least one item to the cart.");
             return;
         }
 
         if (customerUserId.trim() && !/^[0-9a-fA-F]{24}$/.test(customerUserId.trim())) {
-            setError("Customer ID must be a valid ID format, or left blank.");
+            toast.error("Customer ID must be a valid ID format, or left blank.");
             return;
         }
 
@@ -163,7 +159,9 @@ export default function PosCheckout() {
             setReceipt(sale);
             setCart({});
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Checkout failed. Please try again.");
+            // Surfaces "Insufficient stock for X" and any other checkout
+            // failure (e.g. item deleted mid-sale) as a Sonner toast.
+            toast.error(err instanceof Error ? err.message : "Checkout failed. Please try again.");
         } finally {
             setSubmitting(false);
         }
@@ -171,8 +169,8 @@ export default function PosCheckout() {
 
     if (receipt) {
         return (
-            <div className="mx-auto max-w-md rounded-xl border border-slate-100 bg-pry-clr p-6 shadow-sm">
-                <div className="mb-4 flex items-center gap-2 text-emerald-600">
+            <div className="mx-auto max-w-md rounded-xl border border-slate-100 bg-pry-clr p-6 shadow-sm pry-ff">
+                <div className="mb-4 flex items-center gap-2 text-acc-clr">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50">
                         <Check className="h-4 w-4" />
                     </div>
@@ -219,25 +217,25 @@ export default function PosCheckout() {
             <div className="lg:col-span-3">
                 <section className="mb-4 flex items-center justify-between gap-4">
                     <div className="relative mb-3 max-w-2xl flex-1 lg:mb-0">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search items to add to cart..."
-                        className="w-full rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                    />
-                </div>
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search items to add to cart..."
+                            className="w-full rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr"
+                        />
+                    </div>
 
-                <div>
-                    <button
-                        type="button"
-                        onClick={navigateToInventory}
+                    <div>
+                        <button
+                            type="button"
+                            onClick={navigateToInventory}
                             className="rounded-lg bg-pry-clr px-3 py-2.5 text-sm font-medium text-acc-clr pry-ff hover:opacity-90 cursor-pointer shadow flex gap-2 hover:bg-acc-clr hover:text-pry-clr transition">
                             <Box className="h-4 w-4" />
-                        View inventory
-                    </button>
-                </div>
+                            View inventory
+                        </button>
+                    </div>
                 </section>
 
                 <div className="rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
@@ -297,12 +295,6 @@ export default function PosCheckout() {
                             Cart {totalItems > 0 && <span className="text-slate-400">({totalItems})</span>}
                         </h2>
                     </div>
-
-                    {error && (
-                        <div className="mx-4 mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600">
-                            {error}
-                        </div>
-                    )}
 
                     {cartLines.length === 0 ? (
                         <p className="px-4 py-8 text-center text-sm text-slate-400">Cart is empty.</p>
