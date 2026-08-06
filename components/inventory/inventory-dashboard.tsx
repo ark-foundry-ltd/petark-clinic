@@ -11,6 +11,8 @@ import {
 import FilterBar from "@/components/inventory/filter-bar";
 import StatCard from "@/components/inventory/stat-card";
 import InventoryTable from "@/components/inventory/inventory-table";
+import AddItemModal from "@/components/inventory/add-item-modal";
+import UpdateItemModal from "@/components/inventory/update-item-modal";
 
 const PAGE_SIZE = 4;
 
@@ -20,6 +22,9 @@ export default function InventoryDashboard() {
     const [lowStockOnly, setLowStockOnly] = useState(false);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
+    const [addModalOpen, setAddModalOpen] = useState(false);
+    const [editItem, setEditItem] = useState<InventoryItemRecord | null>(null);
+    const [reloadToken, setReloadToken] = useState(0);
 
     // Debounce search so we're not firing a request on every keystroke
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -28,7 +33,7 @@ export default function InventoryDashboard() {
         return () => clearTimeout(t);
     }, [search]);
 
-    const filterKey = `${category}|${lowStockOnly}|${debouncedSearch}`;
+    const filterKey = `${category}|${lowStockOnly}|${debouncedSearch}|${reloadToken}`;
 
     // Reset to page 1 whenever the filters change — done during render by
     // comparing against the previous filter key (useState, not useRef, since
@@ -101,7 +106,30 @@ export default function InventoryDashboard() {
                 search={search}
                 onSearchChange={setSearch}
                 onAddItem={() => {
-                    // TODO: open Add Item form/modal
+                    setAddModalOpen(true);
+                }}
+            />
+
+            <AddItemModal
+                open={addModalOpen}
+                onClose={() => setAddModalOpen(false)}
+                onCreated={() => setReloadToken((t) => t + 1)}
+            />
+
+            {/* key forces a full remount whenever the item being edited changes
+               (or the modal closes and reopens on a different row), so the
+               form always re-seeds from `item` instead of reusing whatever
+               state was left over from the previous edit session. */}
+            <UpdateItemModal
+                key={editItem?._id ?? "closed"}
+                item={editItem}
+                open={editItem !== null}
+                onClose={() => setEditItem(null)}
+                onUpdated={(updatedItem) => {
+                    setItems((current) =>
+                        current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+                    );
+                    setEditItem(null);
                 }}
             />
 
@@ -114,7 +142,7 @@ export default function InventoryDashboard() {
                 />
                 <StatCard
                     label="Inventory Value"
-                    value={`$${stats.inventoryValue.toLocaleString(undefined, {
+                    value={`₦${stats.inventoryValue.toLocaleString(undefined, {
                         maximumFractionDigits: 0,
                     })}`}
                 />
@@ -128,9 +156,7 @@ export default function InventoryDashboard() {
                 pageSize={PAGE_SIZE}
                 totalCount={items.length}
                 onPageChange={setPage}
-                onEditItem={(item) => {
-                    // TODO: open Edit Item form/modal, prefilled with `item`
-                }}
+                onEditItem={(item) => setEditItem(item)}
             />
         </div>
     );

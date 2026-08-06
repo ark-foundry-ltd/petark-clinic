@@ -1,9 +1,8 @@
 // components/inventory/inventory-table.tsx
 
-import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Loader2 } from "lucide-react";
 import type { InventoryItemRecord } from "@/lib/inventory";
 import { CATEGORY_LABELS } from "@/components/inventory/filter-bar";
-import { Loader2 } from "lucide-react";
 
 interface InventoryTableProps {
     items: InventoryItemRecord[];
@@ -100,7 +99,7 @@ export default function InventoryTable({
                                                     isLow ? "text-red-500" : "text-slate-700"
                                                 }`}
                                             >
-                                                {item.currentStock} units
+                                                {item.currentStock} {item.unit}
                                             </span>
                                             {isLow && (
                                                 <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
@@ -118,7 +117,7 @@ export default function InventoryTable({
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 font-medium text-slate-700">
-                                        ${item.sellingPrice.toFixed(2)}
+                                        ₦{item.sellingPrice.toFixed(2)}
                                     </td>
                                     <td className="px-4 py-3">
                                         <button

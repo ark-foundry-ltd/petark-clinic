@@ -45,6 +45,7 @@ export interface CreateInventoryItemPayload {
     category: InventoryCategory;
     unit: string;
     sku: string;
+    currentStock: number;
     costPrice?: number;
     sellingPrice: number;
     reorderThreshold?: number;
@@ -133,14 +134,17 @@ export interface UpdateInventoryItemPayload {
     name?: string;
     category?: InventoryCategory;
     unit?: string;
+    currentStock?: number;
     costPrice?: number;
     sellingPrice?: number;
     reorderThreshold?: number;
     requiresBatchTracking?: boolean;
     isActive?: boolean;
-    // New image files to upload — max 2 total (existing + new) enforced server-side
+    // New image files to upload — server caps at MAX_IMAGES (2) total
+    // (existing kept + new), enforced in the controller against req.files.length.
     newImages?: File[];
-    // publicIds of existing images to delete from Cloudinary + strip from the doc
+    // publicIds of existing images to delete. Controller JSON.parses this
+    // off req.body, so it must travel as a JSON string when sent via FormData.
     removeImagePublicIds?: string[];
 }
 
@@ -148,46 +152,83 @@ export async function updateInventoryItem(
     itemId: string,
     payload: UpdateInventoryItemPayload
 ): Promise<InventoryItemRecord> {
+    if (!itemId || !/^[0-9a-fA-F]{24}$/.test(itemId)) {
+        throw new Error('Invalid item ID format');
+    }
+
     const { newImages, removeImagePublicIds, ...fields } = payload;
-    const hasFiles = newImages && newImages.length > 0;
-    const hasRemovals = removeImagePublicIds && removeImagePublicIds.length > 0;
+    const hasFiles = !!newImages?.length;
+    const hasRemovals = !!removeImagePublicIds?.length;
+
+    const NUMERIC_FIELDS = ['currentStock', 'sellingPrice', 'costPrice', 'reorderThreshold'] as const;
+    const BOOLEAN_FIELDS = ['requiresBatchTracking', 'isActive'] as const;
 
     try {
+        let response;
+
         if (hasFiles || hasRemovals) {
             const formData = new FormData();
 
-            Object.entries(fields).forEach(([key, value]) => {
-                if (value !== undefined) formData.append(key, String(value));
-            });
+            for (const [key, value] of Object.entries(fields)) {
+                if (value === undefined || value === null) continue;
 
+                if ((NUMERIC_FIELDS as readonly string[]).includes(key)) {
+                    const numValue = Number(value);
+                    if (Number.isNaN(numValue)) {
+                        throw new Error(`${key} must be a valid number`);
+                    }
+                    formData.append(key, numValue.toString());
+                } else if ((BOOLEAN_FIELDS as readonly string[]).includes(key)) {
+                    formData.append(key, value ? 'true' : 'false');
+                } else {
+                    formData.append(key, String(value));
+                }
+            }
+
+            // Controller does JSON.parse(req.body.removeImagePublicIds) — must be a JSON string.
             if (hasRemovals) {
-                formData.append(
-                    "removeImagePublicIds",
-                    JSON.stringify(removeImagePublicIds)
-                );
+                formData.append('removeImagePublicIds', JSON.stringify(removeImagePublicIds));
             }
 
+            // Field name must be "images" — matches upload.array('images', 2) in inventoryRoute.js
             if (hasFiles) {
-                newImages.forEach((file) => formData.append("images", file));
+                newImages.forEach((file) => formData.append('images', file));
             }
 
-            const response = await api.patch(`/inventory/${itemId}`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            return response.data.data;
+            response = await api.patch(`/inventory/${itemId}`, formData);
+        } else {
+            const jsonPayload: Record<string, unknown> = {};
+            for (const [key, value] of Object.entries(fields)) {
+                if (value === undefined || value === null) continue;
+                if ((NUMERIC_FIELDS as readonly string[]).includes(key) && typeof value === 'string') {
+                    const numValue = Number(value);
+                    if (Number.isNaN(numValue)) {
+                        throw new Error(`${key} must be a valid number`);
+                    }
+                    jsonPayload[key] = numValue;
+                } else {
+                    jsonPayload[key] = value;
+                }
+            }
+            response = await api.patch(`/inventory/${itemId}`, jsonPayload);
         }
 
-        const response = await api.patch(`/inventory/${itemId}`, fields);
+        if (!response.data?.data) {
+            throw new Error('Invalid response from server');
+        }
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {
-            console.error(
-                "Error updating inventory item:",
-                error.response?.data || error.message
-            );
-        } else {
-            console.error("Error updating inventory item:", error);
+            const message = error.response?.data?.message || error.message;
+            console.error('Error updating inventory item:', error.response?.data ?? message, `Item ID: ${itemId}`);
+
+            if (error.response?.status === 404) {
+                throw new Error('Item not found. It may have been deleted by another user.');
+            }
+            throw new Error(`Failed to update item: ${message}`);
         }
+        if (error instanceof Error) throw error;
+        console.error('Error updating inventory item:', error);
         throw error;
     }
 }
