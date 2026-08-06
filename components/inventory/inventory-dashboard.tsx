@@ -121,17 +121,23 @@ export default function InventoryDashboard() {
                form always re-seeds from `item` instead of reusing whatever
                state was left over from the previous edit session. */}
             <UpdateItemModal
-                key={editItem?._id ?? "closed"}
-                item={editItem}
-                open={editItem !== null}
-                onClose={() => setEditItem(null)}
-                onUpdated={(updatedItem) => {
-                    setItems((current) =>
-                        current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
-                    );
-                    setEditItem(null);
-                }}
-            />
+    key={editItem?._id ?? "closed"}
+    item={editItem}
+    open={editItem !== null}
+    onClose={() => setEditItem(null)}
+    onUpdated={(updatedItem) => {
+        setItems((current) =>
+            current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+        );
+        setEditItem(null);
+    }}
+    onStockAdjusted={(updatedItem) => {
+        setItems((current) =>
+            current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+        );
+        // deliberately no setEditItem(null) — modal stays open after a stock adjustment
+    }}
+/>
 
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard label="Total SKUs" value={stats.totalSkus.toLocaleString()} />

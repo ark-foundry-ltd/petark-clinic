@@ -134,7 +134,6 @@ export interface UpdateInventoryItemPayload {
     name?: string;
     category?: InventoryCategory;
     unit?: string;
-    currentStock?: number;
     costPrice?: number;
     sellingPrice?: number;
     reorderThreshold?: number;
@@ -160,7 +159,7 @@ export async function updateInventoryItem(
     const hasFiles = !!newImages?.length;
     const hasRemovals = !!removeImagePublicIds?.length;
 
-    const NUMERIC_FIELDS = ['currentStock', 'sellingPrice', 'costPrice', 'reorderThreshold'] as const;
+    const NUMERIC_FIELDS = ['sellingPrice', 'costPrice', 'reorderThreshold'] as const;
     const BOOLEAN_FIELDS = ['requiresBatchTracking', 'isActive'] as const;
 
     try {

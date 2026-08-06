@@ -7,7 +7,7 @@ import type { InventoryItemRecord, UpdateInventoryItemPayload } from "@/lib/inve
 import { updateInventoryItem } from "@/lib/inventory";
 import { CATEGORY_LABELS } from "@/components/inventory/filter-bar";
 import HelpTooltip from "@/components/inventory/help-tooltip";
-import { toast } from "sonner"; 
+import AdjustStock from "@/components/inventory/adjust-stock";
 
 const MAX_IMAGES = 2;
 
@@ -16,13 +16,15 @@ interface UpdateItemModalProps {
     open: boolean;
     onClose: () => void;
     onUpdated: (item: InventoryItemRecord) => void;
+    // Fired after a stock adjustment — updates the row in the parent list
+    // without closing the modal (unlike onUpdated, which closes on field save).
+    onStockAdjusted: (item: InventoryItemRecord) => void;
 }
 
 interface FormState {
     name: string;
     category: InventoryItemRecord["category"] | "";
     unit: string;
-    currentStock: string;
     costPrice: string;
     sellingPrice: string;
     reorderThreshold: string;
@@ -41,7 +43,6 @@ function toFormState(item: InventoryItemRecord): FormState {
         name: item.name,
         category: item.category,
         unit: item.unit,
-        currentStock: String(item.currentStock),
         costPrice: item.costPrice === undefined ? "" : String(item.costPrice),
         sellingPrice: String(item.sellingPrice),
         reorderThreshold:
@@ -60,14 +61,18 @@ export default function UpdateItemModal({
     open,
     onClose,
     onUpdated,
+    onStockAdjusted,
 }: Readonly<UpdateItemModalProps>) {
     const [form, setForm] = useState<FormState>(() =>
         item ? toFormState(item) : {
-            name: "", category: "", unit: "", currentStock: "", costPrice: "",
+            name: "", category: "", unit: "", costPrice: "",
             sellingPrice: "", reorderThreshold: "", requiresBatchTracking: false,
             isActive: true, newImages: [], removeImagePublicIds: [],
         }
     );
+    // Local mirror of currentStock so the UI reflects an adjustment
+    // immediately — the adjust endpoint only returns a status message.
+    const [stockDisplay, setStockDisplay] = useState(item?.currentStock ?? 0);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +117,11 @@ export default function UpdateItemModal({
         update("newImages", files);
     }
 
+    function handleStockAdjusted(newCurrentStock: number) {
+        setStockDisplay(newCurrentStock);
+        onStockAdjusted({ ...selectedItem, currentStock: newCurrentStock, updatedAt: new Date().toISOString() });
+    }
+
     async function handleSubmit(e: { preventDefault: () => void }) {
         e.preventDefault();
         setError(null);
@@ -122,12 +132,6 @@ export default function UpdateItemModal({
         }
         if (!form.name.trim() || !form.category || !form.unit.trim()) {
             setError("Name, category, and unit are required.");
-            return;
-        }
-
-        const currentStock = Number(form.currentStock);
-        if (form.currentStock === "" || Number.isNaN(currentStock) || currentStock < 0) {
-            setError("Current stock is required and can't be negative.");
             return;
         }
         const sellingPrice = Number(form.sellingPrice);
@@ -158,13 +162,10 @@ export default function UpdateItemModal({
             return;
         }
 
-        // Only send fields that actually changed from the loaded item —
-        // matches PATCH semantics and keeps the request minimal.
         const payload: UpdateInventoryItemPayload = {};
         if (form.name.trim() !== selectedItem.name) payload.name = form.name.trim();
         if (form.category !== selectedItem.category) payload.category = form.category;
         if (form.unit.trim() !== selectedItem.unit) payload.unit = form.unit.trim();
-        if (currentStock !== selectedItem.currentStock) payload.currentStock = currentStock;
         if (sellingPrice !== selectedItem.sellingPrice) payload.sellingPrice = sellingPrice;
         if (costPrice !== selectedItem.costPrice) payload.costPrice = costPrice;
         if (reorderThreshold !== (selectedItem.reorderThreshold ?? undefined)) {
@@ -187,7 +188,6 @@ export default function UpdateItemModal({
             const updatedItem = await updateInventoryItem(selectedItem._id, payload);
             onUpdated(updatedItem);
             onClose();
-            toast.success("Item updated successfully.");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Couldn't update this item. Please try again.");
             setSubmitting(false);
@@ -259,22 +259,15 @@ export default function UpdateItemModal({
 
                             <div>
                                 <div className="mb-1 flex items-center gap-1.5">
-                                    <label htmlFor="item-current-stock" className="text-xs font-medium text-slate-500">
-                                        Current stock
-                                    </label>
-                                    <HelpTooltip label="What is current stock?" text="How many you have right now, counted in the unit you set below." />
+                                    <span className="text-xs font-medium text-slate-500">Current stock</span>
+                                    <HelpTooltip
+                                        label="Why is this read-only?"
+                                        text="Stock changes go through 'Adjust stock' below so there's always a record of what happened and why."
+                                    />
                                 </div>
-                                <input
-                                    id="item-current-stock"
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    value={form.currentStock}
-                                    onChange={(e) => update("currentStock", e.target.value)}
-                                    disabled={submitting}
-                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
-                                    placeholder="e.g. 40"
-                                />
+                                <div className="flex h-[38px] items-center rounded-lg border border-slate-100 bg-slate-50 px-3 text-sm font-medium text-slate-600">
+                                    {stockDisplay} {form.unit || selectedItem.unit}
+                                </div>
                             </div>
 
                             <div>
@@ -290,6 +283,16 @@ export default function UpdateItemModal({
                                     disabled={submitting}
                                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
                                     placeholder="e.g. vial, box, tablet"
+                                />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                                <AdjustStock
+                                    itemId={selectedItem._id}
+                                    currentStock={stockDisplay}
+                                    unit={form.unit || selectedItem.unit}
+                                    disabled={submitting}
+                                    onAdjusted={handleStockAdjusted}
                                 />
                             </div>
 
