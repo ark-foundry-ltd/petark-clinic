@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Loader2, Plus, Minus } from "lucide-react";
 import { adjustStock, type StockAdjustmentType } from "@/lib/inventory";
 import HelpTooltip from "@/components/inventory/help-tooltip";
+import { toast } from "sonner";
 
 interface AdjustStockProps {
     itemId: string;
@@ -66,6 +67,7 @@ export default function AdjustStock({
             onAdjusted(projected);
             setAmount("");
             setNote("");
+            toast.success(`Stock ${direction === "add" ? "added" : "removed"} successfully.`);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Couldn't adjust stock. Please try again.");
         } finally {
