@@ -7,6 +7,7 @@ import {
     listInventoryItems,
     type InventoryItemRecord,
     type InventoryCategory,
+    getInventoryStats,
 } from "@/lib/inventory";
 import FilterBar from "@/components/inventory/filter-bar";
 import StatCard from "@/components/inventory/stat-card";
@@ -25,6 +26,8 @@ export default function InventoryDashboard() {
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [editItem, setEditItem] = useState<InventoryItemRecord | null>(null);
     const [reloadToken, setReloadToken] = useState(0);
+    const [growthPercent, setGrowthPercent] = useState<number | null>(null);
+    const [statsToken, setStatsToken] = useState(0);
 
     // Debounce search so we're not firing a request on every keystroke
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -80,6 +83,20 @@ export default function InventoryDashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filterKey]);
 
+    useEffect(() => {
+        let cancelled = false;
+        getInventoryStats()
+            .then((data) => {
+                if (!cancelled) setGrowthPercent(data.monthlyGrowthPercent);
+            })
+            .catch(() => {
+                if (!cancelled) setGrowthPercent(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [statsToken]);
+
     const stats = useMemo(() => {
         const totalSkus = items.length;
         const lowStock = items.filter(
@@ -113,7 +130,10 @@ export default function InventoryDashboard() {
             <AddItemModal
                 open={addModalOpen}
                 onClose={() => setAddModalOpen(false)}
-                onCreated={() => setReloadToken((t) => t + 1)}
+                onCreated={() => {
+                    setReloadToken((t) => t + 1);
+                    setStatsToken((t) => t + 1);
+                }}
             />
 
             {/* key forces a full remount whenever the item being edited changes
@@ -121,20 +141,22 @@ export default function InventoryDashboard() {
                form always re-seeds from `item` instead of reusing whatever
                state was left over from the previous edit session. */}
             <UpdateItemModal
-    key={editItem?._id ?? "closed"}
-    item={editItem}
-    open={editItem !== null}
-    onClose={() => setEditItem(null)}
-    onUpdated={(updatedItem) => {
-        setItems((current) =>
-            current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
-        );
-        setEditItem(null);
-    }}
-    onStockAdjusted={(updatedItem) => {
-        setItems((current) =>
-            current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
-        );
+                key={editItem?._id ?? "closed"}
+                item={editItem}
+                open={editItem !== null}
+                onClose={() => setEditItem(null)}
+                onUpdated={(updatedItem) => {
+                    setItems((current) =>
+                    current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+                );
+                setEditItem(null);
+                setStatsToken((t) => t + 1);
+            }}
+            onStockAdjusted={(updatedItem) => {
+                setItems((current) =>
+                current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+            );
+            setStatsToken((t) => t + 1);
         // deliberately no setEditItem(null) — modal stays open after a stock adjustment
     }}
 />
@@ -152,7 +174,17 @@ export default function InventoryDashboard() {
                         maximumFractionDigits: 0,
                     })}`}
                 />
-                <StatCard label="Monthly Growth" value="+8.4%" valueClassName="text-acc-clr" />
+                <StatCard
+                    label="Monthly Growth"
+                    value={growthPercent === null ? "—" : `${growthPercent >= 0 ? "+" : ""}${growthPercent}%`}
+                    valueClassName={
+                        growthPercent === null
+                        ? "text-slate-400"
+                        : growthPercent >= 0
+                        ? "text-acc-clr"
+                        :"text-red-600"
+                    }
+                />
             </div>
 
             <InventoryTable

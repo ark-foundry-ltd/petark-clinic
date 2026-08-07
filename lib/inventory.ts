@@ -265,3 +265,29 @@ export async function adjustStock(
         throw error;
     }
 }
+
+// ─── Stats ──────────────────────────────────────────────────────────────
+
+export interface InventoryStats {
+    totalSkus: number;
+    lowStock: number;
+    inventoryValue: number;
+    monthlyGrowthPercent: number;
+}
+
+export async function getInventoryStats(): Promise<InventoryStats> {
+    try {
+        const response = await api.get("/inventory/stats");
+        return response.data.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            console.error(
+                "Error fetching inventory stats:",
+                error.response?.data || error.message
+            );
+        } else {
+            console.error("Error fetching inventory stats:", error);
+        }
+        throw error;
+    }
+}
