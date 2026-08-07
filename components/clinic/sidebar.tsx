@@ -14,6 +14,8 @@ import {
   LogOut,
   Settings,
   ChevronDown,
+  Users,
+  UserCircle2,
 } from "lucide-react";
 import { useSidebar } from "@/context/sidebar-context";
 import { useAuthStore } from "@/store/useStore";
@@ -129,8 +131,8 @@ export function MobileTopBar() {
                     onClick={() => setIsDropdownOpen(false)}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                   >
-                    <Settings className="h-4 w-4 text-gray-500" />
-                    Settings
+                    <UserCircle2 className="h-4 w-4 text-gray-500" />
+                    Profile
                   </Link>
                   <button
                     onClick={() => {
