@@ -244,12 +244,19 @@ export interface AdjustStockPayload {
     quantity: number; // signed — positive for purchase/restock, negative for wastage/expiry
     type: StockAdjustmentType;
     note?: string;
+    // Required when type is "purchase" — the actual unit cost paid for this
+    // restock. Snapshotted on the movement so expense reports stay accurate
+    // even if the item's costPrice changes later.
+    unitCost?: number;
 }
 
 export async function adjustStock(
     itemId: string,
     payload: AdjustStockPayload
 ): Promise<{ message: string }> {
+    if (payload.type === "purchase" && (payload.unitCost === undefined || payload.unitCost < 0)) {
+        throw new Error("unitCost is required for purchase adjustments");
+    }
     try {
         const response = await api.post(`/inventory/${itemId}/adjust`, payload);
         return response.data;

@@ -12,8 +12,6 @@ interface AdjustStockProps {
     currentStock: number;
     unit: string;
     disabled?: boolean;
-    // Called after a successful adjustment with the new stock total —
-    // computed client-side (endpoint only returns a status message, not the item).
     onAdjusted: (newCurrentStock: number) => void;
 }
 
@@ -36,9 +34,21 @@ export default function AdjustStock({
     const [direction, setDirection] = useState<"add" | "remove">("add");
     const [amount, setAmount] = useState("");
     const [type, setType] = useState<StockAdjustmentType>("adjustment");
+    const [unitCost, setUnitCost] = useState("");
     const [note, setNote] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const isPurchase = type === "purchase";
+
+    function handleTypeChange(next: StockAdjustmentType) {
+        setType(next);
+        setError(null);
+        // "purchase" only makes sense as an addition — steer direction along with it
+        // so the amount field doesn't end up removing stock under a "restock" label.
+        if (next === "purchase") setDirection("add");
+        if (next !== "purchase") setUnitCost("");
+    }
 
     async function handleAdjust() {
         setError(null);
@@ -47,6 +57,15 @@ export default function AdjustStock({
         if (amount === "" || !Number.isInteger(parsed) || parsed <= 0) {
             setError("Enter a whole number greater than 0.");
             return;
+        }
+
+        let parsedUnitCost: number | undefined;
+        if (isPurchase) {
+            parsedUnitCost = Number(unitCost);
+            if (unitCost === "" || Number.isNaN(parsedUnitCost) || parsedUnitCost < 0) {
+                setError("Enter the unit cost paid for this purchase.");
+                return;
+            }
         }
 
         const signedQuantity = direction === "add" ? parsed : -parsed;
@@ -63,9 +82,11 @@ export default function AdjustStock({
                 quantity: signedQuantity,
                 type,
                 note: note.trim() || undefined,
+                unitCost: isPurchase ? parsedUnitCost : undefined,
             });
             onAdjusted(projected);
             setAmount("");
+            setUnitCost("");
             setNote("");
             toast.success(`Stock ${direction === "add" ? "added" : "removed"} successfully.`);
         } catch (err) {
@@ -96,22 +117,22 @@ export default function AdjustStock({
                     <button
                         type="button"
                         onClick={() => setDirection("add")}
-                        disabled={disabled || submitting}
+                        disabled={disabled || submitting || isPurchase}
                         aria-pressed={direction === "add"}
                         className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition ${
                             direction === "add" ? "bg-acc-clr text-white" : "bg-white text-slate-500 hover:bg-slate-50"
-                        }`}
+                        } disabled:cursor-not-allowed`}
                     >
                         <Plus className="h-3.5 w-3.5" /> Add
                     </button>
                     <button
                         type="button"
                         onClick={() => setDirection("remove")}
-                        disabled={disabled || submitting}
+                        disabled={disabled || submitting || isPurchase}
                         aria-pressed={direction === "remove"}
                         className={`flex items-center gap-1 border-l border-slate-200 px-3 py-2 text-sm font-medium transition ${
                             direction === "remove" ? "bg-red-500 text-white" : "bg-white text-slate-500 hover:bg-slate-50"
-                        }`}
+                        } disabled:cursor-not-allowed`}
                     >
                         <Minus className="h-3.5 w-3.5" /> Remove
                     </button>
@@ -137,7 +158,7 @@ export default function AdjustStock({
                     <select
                         id="adjust-type"
                         value={type}
-                        onChange={(e) => setType(e.target.value as StockAdjustmentType)}
+                        onChange={(e) => handleTypeChange(e.target.value as StockAdjustmentType)}
                         disabled={disabled || submitting}
                         className="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
                     >
@@ -146,6 +167,23 @@ export default function AdjustStock({
                         ))}
                     </select>
                 </div>
+
+                {isPurchase && (
+                    <div className="w-32">
+                        <label htmlFor="adjust-unit-cost" className="sr-only">Unit cost paid</label>
+                        <input
+                            id="adjust-unit-cost"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={unitCost}
+                            onChange={(e) => setUnitCost(e.target.value)}
+                            disabled={disabled || submitting}
+                            placeholder="Unit cost"
+                            className="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
+                        />
+                    </div>
+                )}
 
                 <button
                     type="button"
@@ -157,6 +195,12 @@ export default function AdjustStock({
                     Apply
                 </button>
             </div>
+
+            {isPurchase && (
+                <p className="mt-1.5 text-[11px] text-slate-400">
+                    Enter what you actually paid per {unit} {" "} for this restock — it&apos;s recorded against this purchase for expense reporting, separate from the item&apos;s listed cost price.
+                </p>
+            )}
 
             <input
                 type="text"
