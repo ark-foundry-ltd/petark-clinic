@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner"; // import Toaster
 import "./globals.css";
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 
 export const metadata: Metadata = {
   title: "PetArk",
   description: "PetArk for Clinics",
+  manifest: "/manifest.json",
+  themeColor: "#22c55e",
 }
 
 export default function RootLayout({
@@ -33,6 +36,7 @@ export default function RootLayout({
           richColors
           closeButton
         />
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

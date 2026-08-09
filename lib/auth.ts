@@ -1,7 +1,8 @@
-// src/lib/auth.ts
+// lib/auth.ts
 
 import api from "./api";
 import { AxiosError } from "axios";
+import { unsubscribeFromPush } from "@/lib/push";
 
 interface Address {
     street: string;
@@ -142,6 +143,14 @@ export async function loginClinic(data: LoginData) {
 
 // Updated logout function with clinic_token
 export async function logoutClinic(): Promise<void> {
+    try {
+        // Unsubscribe from push before the token is cleared — /push/unsubscribe needs auth
+        await unsubscribeFromPush();
+    } catch (error) {
+        // Don't block logout if this fails (e.g. no active subscription, or already unsubscribed)
+        console.error("Push unsubscribe error (ignoring):", error);
+    }
+
     try {
         // Attempt to call logout endpoint if it exists
         await api.post("/auth/clinic/logout");
