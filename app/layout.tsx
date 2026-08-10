@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner"; // import Toaster
 import "./globals.css";
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: "PetArk",
   description: "PetArk for Clinics",
   manifest: "/manifest.json",
+}
+
+export const viewport: Viewport = {
   themeColor: "#22c55e",
 }
 
