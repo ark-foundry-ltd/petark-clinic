@@ -1,14 +1,22 @@
+// components/notifications/NotificationPermissionBanner.tsx
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Bell, X } from 'lucide-react';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
+import { isIOS, isStandalone } from '@/lib/platform';
 import { toast } from 'sonner';
 
 export function NotificationPermissionBanner() {
   const { permission, isSubscribed, loading, subscribe } = usePushSubscription();
   const [dismissed, setDismissed] = useState(false);
+  const [suppressForIOS, setSuppressForIOS] = useState(false);
 
-  // Only show on first login: permission not yet decided, not subscribed, not dismissed this session
-  if (loading || dismissed || permission !== 'default' || isSubscribed) return null;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSuppressForIOS(isIOS() && !isStandalone());
+  }, []);
+
+  if (loading || dismissed || suppressForIOS || permission !== 'default' || isSubscribed) return null;
 
   const handleEnable = async () => {
     try {
@@ -21,11 +29,37 @@ export function NotificationPermissionBanner() {
   };
 
   return (
-    <div className="flex items-center justify-between rounded-lg bg-acc-clr/10 border border-acc-clr px-4 py-3 mb-4">
-      <p className="text-sm text-pry-clr">Turn on notifications to get reminders and updates.</p>
-      <div className="flex gap-2">
-        <button onClick={handleEnable} className="text-sm font-medium text-acc-clr">Enable</button>
-        <button onClick={() => setDismissed(true)} className="text-sm text-sec-clr">Not now</button>
+    <div className="relative z-20 flex items-center gap-4 p-4 bg-pry-clr rounded-xl border border-gray-100 mb-4 pry-ff">
+      <button
+        onClick={() => setDismissed(true)}
+        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+        aria-label="Dismiss"
+      >
+        <X className="w-4 h-4" />
+      </button>
+
+      <div className="p-2 bg-gray-50 rounded-lg text-acc-clr shrink-0">
+        <Bell className="w-6 h-6" />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-sec-clr">Enable Notifications</h3>
+        <p className="text-sm text-gray-500">Turn on notifications to get reminders and updates.</p>
+      </div>
+
+      <div className="flex items-center gap-3 shrink-0">
+        <button
+          onClick={handleEnable}
+          className="px-4 py-1.5 bg-acc-clr text-pry-clr text-sm font-medium rounded-full hover:opacity-90 transition-opacity cursor-pointer"
+        >
+          Enable
+        </button>
+        <button
+          onClick={() => setDismissed(true)}
+          className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
+        >
+          Not now
+        </button>
       </div>
     </div>
   );

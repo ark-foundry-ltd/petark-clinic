@@ -1,4 +1,5 @@
 // hooks/usePushSubscription.ts
+
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { subscribeToPush, unsubscribeFromPush } from '@/lib/push';
@@ -9,19 +10,22 @@ export function usePushSubscription() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    await Promise.resolve(); // defer — avoids "setState synchronously within an effect"
-
     if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing to external browser API state, not deriving from props
       setLoading(false);
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing to external browser API state, not deriving from props
     setPermission(Notification.permission);
     const registration = await navigator.serviceWorker.ready;
     const sub = await registration.pushManager.getSubscription();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing to external browser API state, not deriving from props
     setIsSubscribed(!!sub);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing to external browser API state, not deriving from props
     setLoading(false);
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { refresh(); }, [refresh]);
 
   const subscribe = async () => {

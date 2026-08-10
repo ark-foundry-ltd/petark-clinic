@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/store/useStore";
 import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
 import { MobileTopBar, MobileBottomNav, Sidebar } from "@/components/clinic/sidebar";
+import { NotificationPermissionBanner } from "@/components/notifications/NotificationPermissionBanner";
 import { Loader2 } from "lucide-react";
 
 function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -16,6 +17,9 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
       <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
         <MobileTopBar />
         <main className="flex-1 min-w-0 overflow-y-auto pb-16">
+          <div className="p-4">
+            <NotificationPermissionBanner />
+          </div>
           {children}
         </main>
         <MobileBottomNav />
@@ -27,6 +31,9 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-y-auto">
+        <div className="p-4">
+          <NotificationPermissionBanner />
+        </div>
         {children}
       </main>
     </div>

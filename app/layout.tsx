@@ -1,5 +1,7 @@
+// app/layout.tsx
+
 import type { Metadata, Viewport } from "next";
-import { Toaster } from "sonner"; // import Toaster
+import { Toaster } from "sonner";
 import "./globals.css";
 import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 
@@ -21,13 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Manrope Google Fonts link */}
         <link
           href="https://fonts.googleapis.com/css2?family=Manrope&display=swap"
           rel="stylesheet"
         />
-        
-        {/* Google Sans */}
         <link href="https://fonts.cdnfonts.com/css/google-sans"
           rel="stylesheet"
         />
