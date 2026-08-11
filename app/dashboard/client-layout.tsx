@@ -17,7 +17,7 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
       <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
         <MobileTopBar />
         <main className="flex-1 min-w-0 overflow-y-auto pb-16">
-          <div className="p-4">
+          <div className="p-4 absolute z-20">
             <NotificationPermissionBanner />
           </div>
           {children}
