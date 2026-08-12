@@ -38,7 +38,7 @@ export interface Appointment {
     appointmentTime: string;
     date?: string; // for backwards compatibility
     notes?: string;
-    status: "pending" | "confirmed" | "cancelled" | "completed" | "missed";
+    status: "pending" | "confirmed" | "cancelled" | "completed" | "missed" | "expired";
     createdAt: string;
     updatedAt?: string;
     confirmedBy?: string;

@@ -16,6 +16,10 @@ import {
     ArrowRight,
     MessageCircle,
     XCircle,
+    AlarmClockOff,
+    CheckCheck,
+    CalendarX,
+    CheckCircle2,
 } from "lucide-react";
 import { getAppointmentById, type Appointment } from "@/lib/appointment";
 import { getVisit, type Visit } from "@/lib/visit";
@@ -23,19 +27,21 @@ import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import Link from "next/link";
 
 const STATUS_STYLES: Record<Appointment["status"], string> = {
-    pending: "bg-amber-50 text-amber-700 border-amber-200",
-    confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    cancelled: "bg-red-50 text-red-700 border-red-200",
-    completed: "bg-blue-50 text-blue-700 border-blue-200",
-    missed: "bg-gray-50 text-gray-700 border-gray-200",
+    pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
+    confirmed: "bg-green-50 text-green-700 border border-green-200",
+    cancelled: "bg-red-50 text-red-700 border border-red-200",
+    completed: "bg-blue-50 text-blue-700 border border-blue-200",
+    missed: "bg-gray-50 text-gray-700 border border-gray-200",
+    expired: "bg-orange-50 text-orange-700 border border-orange-200",
 };
 
 const STATUS_ICONS: Record<Appointment["status"], React.ReactNode> = {
     pending: <Clock size={14} />,
-    confirmed: <CheckCircle size={14} />,
-    cancelled: <AlertCircle size={14} />,
-    completed: <CheckCircle size={14} />,
-    missed: <XCircle size={14} />,
+    confirmed: <CheckCircle2 size={14} />,
+    cancelled: <XCircle size={14} />,
+    completed: <CheckCheck size={14} />,
+    missed: <CalendarX size={14} />,
+    expired: <AlarmClockOff size={14} />,
 };
 
 function formatDate(dateString: string) {
@@ -388,12 +394,14 @@ export default function AppointmentDetails() {
                         </div>
 
                         {/* Action Buttons */}
-                        {/* <div className="space-y-3">
-                            <button className="w-full bg-red-50 border border-red-200 text-red-600 py-2.5 px-4 rounded-xl font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
-                                <AlertCircle size={16} />
-                                Reassess / Reschedule
-                            </button>
-                        </div> */}
+                        <div className="space-y-3">
+                            {appointment.status === "expired" && (
+                                <button className="w-full bg-acc-clr text-pry-clr py-2.5 px-4 rounded-xl font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                                    <AlertCircle size={16} />
+                                    Reschedule
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -8,14 +8,15 @@ import { getAppointments, type Appointment, type DateRange, type AppointmentsPag
 import { getVisit } from "@/lib/visit";
 import { useAppointmentsContext } from "@/context/appointments-context";
 import VisitBtn from "@/components/clinic/visit-btn";
-import { CalendarDays, Clock, AlertCircle, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { CalendarDays, Clock, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, CheckCheck, CalendarX, AlarmClockOff } from "lucide-react";
 
-const STATUS_STYLES: Record<Appointment["status"], string> = {
-    pending:   "bg-yellow-50 text-yellow-700 border border-yellow-200",
-    confirmed: "bg-green-50 text-green-700 border border-green-200",
-    cancelled: "bg-red-50 text-red-700 border border-red-200",
-    completed: "bg-blue-50 text-blue-700 border border-blue-200",
-    missed:    "bg-gray-50 text-gray-700 border border-gray-200",
+const STATUS_STYLES = {
+  pending:   { className: "bg-yellow-50 text-yellow-700 border border-yellow-200", icon: Clock },
+  confirmed: { className: "bg-green-50 text-green-700 border border-green-200", icon: CheckCircle2 },
+  cancelled: { className: "bg-red-50 text-red-700 border border-red-200", icon: XCircle },
+  completed: { className: "bg-blue-50 text-blue-700 border border-blue-200", icon: CheckCheck },
+  missed:    { className: "bg-gray-50 text-gray-700 border border-gray-200", icon: CalendarX },
+  expired:   { className: "bg-orange-50 text-orange-700 border border-orange-200", icon: AlarmClockOff },
 };
 
 const DATE_RANGES: { label: string; value: DateRange }[] = [
@@ -178,7 +179,11 @@ export default function GetAppointments() {
                                 </td>
                             </tr>
                         ) : (
-                            appointments.map((appt) => (
+                            appointments.map((appt) => {
+                                const statusStyle = STATUS_STYLES[appt.status];
+                                const StatusIcon = statusStyle?.icon;
+
+                                return (
                                 <tr
                                     key={appt._id}
                                     onClick={() => handleRowClick(appt._id)}
@@ -229,17 +234,21 @@ export default function GetAppointments() {
                                             <span className="text-gray-300 italic text-xs">Unknown</span>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-600 max-w-[240px] truncate">
+                                    <td className="px-4 py-3 text-gray-600 max-w-60 truncate">
                                         {appt.notes || <span className="text-gray-300 italic">No notes</span>}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[appt.status]}`}>
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${statusStyle?.className ?? ""}`}>
+                                            {StatusIcon && <StatusIcon size={12} />}
                                             {appt.status}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <div onClick={(e) => e.stopPropagation()}>
-                                            <VisitBtn
+                                            {
+                                                (appt.status === "expired") 
+                                                    ? <button className="bg-acc-clr text-pry-clr pry-ff px-4 py-2 rounded-lg"> Reschedule </button>
+                                                    : <VisitBtn
                                                 appointmentId={appt._id}
                                                 status={appt.status}
                                                 visitStatus={visitStatusMap.get(appt._id)}
@@ -250,10 +259,12 @@ export default function GetAppointments() {
                                                     ),
                                                 }))}
                                             />
+                                            }
                                         </div>
                                     </td>
                                 </tr>
-                            ))
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
