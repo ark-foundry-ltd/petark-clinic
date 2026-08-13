@@ -87,7 +87,7 @@ export default function ProfileCard() {
         })}
     </p>
 )}
-                                <p className="text-gray-500 truncate">{profile.email}</p>
+                                {/* <p className="text-gray-500 truncate">{profile.email}</p> */}
                             </div>
                         </div>
 
