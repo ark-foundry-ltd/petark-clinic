@@ -14,6 +14,7 @@ interface Address {
 
 interface RegisterData {
     clinicName: string;
+    ownerName: string;
     email: string;
     password: string;
     address: Address;
@@ -45,14 +46,19 @@ export async function registerClinic(data: RegisterData) {
         const formData = new FormData();
 
         formData.append("clinicName", data.clinicName);
+        formData.append("ownerName", data.ownerName);
         formData.append("email", data.email);
         formData.append("password", data.password);
         formData.append("phoneNumber", data.phoneNumber);
         formData.append("licenseNumber", data.licenseNumber);
 
-        Object.entries(data.address).forEach(([key, value]) => {
-            if (value) formData.append(`address[${key}]`, value);
-        });
+        formData.append("street", data.address.street);
+        formData.append("city", data.address.city);
+        formData.append("state", data.address.state);
+        formData.append("country", data.address.country);
+        if (data.address.zipCode) {
+            formData.append("zipCode", data.address.zipCode);
+        }
 
         formData.append("licenseDocument", data.licenseDocument);
         formData.append("ownerIDCard", data.ownerIDCard);

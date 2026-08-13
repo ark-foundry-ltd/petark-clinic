@@ -20,7 +20,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Award,
-    FileCheck
+    FileCheck,
+    User
 } from "lucide-react";
 
 interface RegisterError {
@@ -44,6 +45,7 @@ export default function RegisterComp() {
     
     // Step 1: Clinic Info
     const [clinicName, setClinicName] = useState("");
+    const [ownerName, setOwnerName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
@@ -75,6 +77,10 @@ export default function RegisterComp() {
         if (step === 1) {
             if (!clinicName.trim()) {
                 setError("Clinic name is required");
+                return;
+            }
+            if (!ownerName.trim()) {
+                setError("Owner name is required");
                 return;
             }
             if (!email.trim()) {
@@ -155,6 +161,7 @@ export default function RegisterComp() {
         try {
             const formData = {
                 clinicName,
+                ownerName,
                 email,
                 password,
                 address: {
@@ -290,6 +297,21 @@ const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'license
                                     required
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-transparent transition-all duration-200"
                                     placeholder="PetArk Veterinary Clinic"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-sec-clr mb-1">
+                                    <User className="inline h-4 w-4 mr-1" />
+                                    Owner Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={ownerName}
+                                    onChange={(e) => setOwnerName(e.target.value)}
+                                    required
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-transparent transition-all duration-200"
+                                    placeholder="Jane Doe"
                                 />
                             </div>
 
