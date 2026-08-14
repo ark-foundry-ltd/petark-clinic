@@ -36,7 +36,12 @@ export async function initiateSubscriptionUpgrade(
     payload: InitiateUpgradePayload
 ): Promise<InitiateUpgradeResult> {
     try {
-        const response = await api.post("/subscription/upgrade", payload);
+        // billingCycle is hardcoded to "monthly" for now — there's no cycle
+        // selector in the UI yet. Revisit if/when annual billing is added.
+        const response = await api.post("/subscription/upgrade", {
+            ...payload,
+            billingCycle: "monthly",
+        });
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {
