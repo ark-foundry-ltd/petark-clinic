@@ -157,3 +157,30 @@ export async function updateAppointmentStatus(
         throw error;
     }
 }
+
+export interface RescheduleResult {
+  appointmentId: string;
+  date: string;
+  status: string;
+}
+
+export async function rescheduleAppointment(
+    appointmentId: string,
+    date: string, // YYYY-MM-DD
+    time: string  // "10:30 AM"
+): Promise<RescheduleResult> {
+    const token = localStorage.getItem("token") || "";
+
+    const response = await api.patch(
+        `${process.env.NEXT_PUBLIC_API_URL}/appointment/${appointmentId}/reschedule`,
+        { date, time },
+        {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    return response.data.data as RescheduleResult;
+}

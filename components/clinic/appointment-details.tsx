@@ -395,7 +395,7 @@ export default function AppointmentDetails() {
 
                         {/* Action Buttons */}
                         <div className="space-y-3">
-                            {appointment.status === "expired" && (
+                            {(appointment.status === "expired" || appointment.status === "missed") && (
                                 <button className="w-full bg-acc-clr text-pry-clr py-2.5 px-4 rounded-xl font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 cursor-pointer">
                                     <AlertCircle size={16} />
                                     Reschedule
