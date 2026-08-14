@@ -167,13 +167,14 @@ export interface RescheduleResult {
 export async function rescheduleAppointment(
     appointmentId: string,
     date: string, // YYYY-MM-DD
-    time: string  // "10:30 AM"
+    time: string,  // "10:30 AM"
+    reason: string
 ): Promise<RescheduleResult> {
     const token = localStorage.getItem("token") || "";
 
     const response = await api.patch(
         `${process.env.NEXT_PUBLIC_API_URL}/appointment/${appointmentId}/reschedule`,
-        { date, time },
+        { date, time, reason },
         {
             headers: {
                 "Content-Type": "application/json",
@@ -183,4 +184,29 @@ export async function rescheduleAppointment(
     );
 
     return response.data.data as RescheduleResult;
+}
+
+export interface ClinicAvailabilitySlot {
+  time: string;
+  available: boolean;
+}
+
+export async function getClinicAvailability(
+  clinicId: string,
+  date: string
+): Promise<ClinicAvailabilitySlot[]> {
+  try {
+    const response = await api.get<{ status: string; data: { slots: ClinicAvailabilitySlot[] } }>(
+      `/appointment/clinic/${clinicId}/availability`,
+      { params: { date } }
+    );
+    return response.data.data.slots;
+  } catch (error) {
+    if (axiosError.isAxiosError(error)) {
+      console.error("Error fetching clinic availability:", error.response?.data || error.message);
+    } else {
+      console.error("Error fetching clinic availability:", error);
+    }
+    throw error;
+  }
 }

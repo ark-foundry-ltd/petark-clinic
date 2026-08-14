@@ -25,6 +25,7 @@ import { getAppointmentById, type Appointment } from "@/lib/appointment";
 import { getVisit, type Visit } from "@/lib/visit";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import Link from "next/link";
+import RescheduleAppointmentModal from "@/components/clinic/reschedule-appt-modal";
 
 const STATUS_STYLES: Record<Appointment["status"], string> = {
     pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
@@ -394,14 +395,28 @@ export default function AppointmentDetails() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="space-y-3">
-                            {(appointment.status === "expired" || appointment.status === "missed") && (
-                                <button className="w-full bg-acc-clr text-pry-clr py-2.5 px-4 rounded-xl font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 cursor-pointer">
-                                    <AlertCircle size={16} />
-                                    Reschedule
-                                </button>
-                            )}
-                        </div>
+<div className="space-y-3">
+    {(appointment.status === "expired" || appointment.status === "missed") && (
+        <RescheduleAppointmentModal
+            appointmentId={appointment._id}
+            clinicId={appointment.clinicId}
+            currentDate={appointment.date || appointment.appointmentDate}
+            pet={{
+                name: appointment.pet?.name ?? "Pet",
+                breed: appointment.pet?.breed,
+                species: appointment.pet?.species,
+                photo: appointment.pet?.photo,
+            }}
+            ownerName={appointment.user?.fullname}
+            onRescheduled={({ date, status }) => {
+                setAppointment((prev) =>
+                    prev ? { ...prev, date, status: status as Appointment["status"] } : prev
+                );
+                setVisit(null);
+            }}
+        />
+    )}
+</div>
                     </div>
                 </div>
             </div>
