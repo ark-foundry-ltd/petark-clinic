@@ -6,25 +6,65 @@ import { AxiosError } from "axios";
 
 export type SubscriptionPlan = "free" | "standard" | "pro" | "enterprise";
 export type SubscriptionStatus = "active" | "inactive" | "cancelled";
+export type BillingCycle = "monthly" | "annual";
 
 // Plans actually purchasable through initiateSubscriptionUpgrade —
-// enterprise is "coming soon" and isn't in PLAN_PRICES_KOBO on the backend yet.
+// enterprise is "coming soon" and isn't in PLAN_PRICING on the backend yet.
 export type PurchasablePlan = "standard" | "pro";
+
+export interface TrialInfo {
+    startedAt: string | null;
+    endsAt: string | null;
+    convertedAt: string | null;
+}
 
 export interface SubscriptionRecord {
     plan: SubscriptionPlan;
     status: SubscriptionStatus;
+    billingCycle: BillingCycle | null;
     startedAt: string | null;
     expiresAt: string | null;
     paystackSubscriptionCode: string | null;
     paystackNextPaymentDate: string | null;
     pendingReference?: string | null;
+    trial: TrialInfo | null;
+    annualDiscountEligible: boolean;
+    annualDiscountRate: number;
 }
+
+// ─── Pricing (display only — mirrors backend PLAN_PRICING; the real charge
+// is always resolved server-side in initiateSubscriptionUpgrade) ───────────
+
+interface PlanPricingEntry {
+    monthly: number;
+    annual: {
+        standard: number;
+        discounted: number;
+    };
+}
+
+export const PLAN_PRICING: Record<PurchasablePlan, PlanPricingEntry> = {
+    standard: {
+        monthly: 28000,
+        annual: {
+            standard: 280000,
+            discounted: 238000,
+        },
+    },
+    pro: {
+        monthly: 38000,
+        annual: {
+            standard: 380000,
+            discounted: 323000,
+        },
+    },
+};
 
 // ─── Initiate upgrade ───────────────────────────────────────────────────
 
 export interface InitiateUpgradePayload {
     targetPlan: PurchasablePlan;
+    billingCycle: BillingCycle;
 }
 
 export interface InitiateUpgradeResult {
@@ -36,12 +76,7 @@ export async function initiateSubscriptionUpgrade(
     payload: InitiateUpgradePayload
 ): Promise<InitiateUpgradeResult> {
     try {
-        // billingCycle is hardcoded to "monthly" for now — there's no cycle
-        // selector in the UI yet. Revisit if/when annual billing is added.
-        const response = await api.post("/subscription/upgrade", {
-            ...payload,
-            billingCycle: "monthly",
-        });
+        const response = await api.post("/subscription/upgrade", payload);
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {
@@ -60,7 +95,12 @@ export async function initiateSubscriptionUpgrade(
 
 export async function getSubscriptionStatus(): Promise<SubscriptionRecord> {
     try {
-        const response = await api.get("/subscription/status");
+        const response = await api.get("/subscription/status", {
+            headers: {
+                "Cache-Control": "no-cache",
+                Pragma: "no-cache",
+            },
+        });
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {

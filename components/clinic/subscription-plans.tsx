@@ -6,8 +6,11 @@ import { useEffect, useState } from "react";
 import {
     getSubscriptionStatus,
     initiateSubscriptionUpgrade,
+    PLAN_PRICING,
     type SubscriptionPlan,
+    type SubscriptionRecord,
     type PurchasablePlan,
+    type BillingCycle,
 } from "@/lib/subscription";
 import { Check, Loader2, Zap, Rocket, Sparkles, Building2 } from "lucide-react";
 
@@ -15,8 +18,6 @@ interface PlanDefinition {
     id: SubscriptionPlan;
     name: string;
     icon: typeof Zap;
-    price: string;
-    period?: string;
     tagline: string;
     features: string[];
     purchasable: boolean;
@@ -28,7 +29,6 @@ const PLANS: PlanDefinition[] = [
     id: "free",
     name: "Free",
     icon: Zap,
-    price: "₦0",
     tagline: "Get started with core clinic management",
     features: [
       "1 staff account",
@@ -44,8 +44,6 @@ const PLANS: PlanDefinition[] = [
     id: "standard",
     name: "Standard",
     icon: Rocket,
-    price: "₦31,000",
-    period: "/mo",
     tagline: "For growing clinics that need inventory & POS",
     features: [
       "Up to 5 staff accounts",
@@ -63,8 +61,6 @@ const PLANS: PlanDefinition[] = [
     id: "pro",
     name: "Pro",
     icon: Sparkles,
-    price: "₦41,000",
-    period: "/mo",
     tagline: "For clinics that need advanced tools and analytics",
     features: [
       "Up to 12 staff accounts",
@@ -86,7 +82,6 @@ const PLANS: PlanDefinition[] = [
     id: "enterprise",
     name: "Enterprise",
     icon: Building2,
-    price: "Custom",
     tagline: "For multi-location and franchise clinics",
     features: [
       "Unlimited staff accounts",
@@ -104,15 +99,17 @@ const PLANS: PlanDefinition[] = [
   },
 ];
 
+function formatNaira(amount: number): string {
+    return `₦${amount.toLocaleString("en-NG")}`;
+}
+
 export default function SubscriptionPlans() {
-    const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(
-        null
-    );
-    const [upgradingPlan, setUpgradingPlan] = useState<PurchasablePlan | null>(
-        null
-    );
+    const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
+    const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+    const [cycleInitialized, setCycleInitialized] = useState(false);
+    const [upgradingPlan, setUpgradingPlan] = useState<PurchasablePlan | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const loading = currentPlan === null && !errorMessage;
+    const loading = subscription === null && !errorMessage;
 
     useEffect(() => {
         let cancelled = false;
@@ -120,7 +117,14 @@ export default function SubscriptionPlans() {
         getSubscriptionStatus()
             .then((data) => {
                 if (cancelled) return;
-                setCurrentPlan(data.plan);
+                setSubscription(data);
+                // Default to annual only the first time we learn the clinic is
+                // discount-eligible — don't fight the user if they've already
+                // toggled it themselves.
+                if (!cycleInitialized) {
+                    setBillingCycle(data.annualDiscountEligible ? "annual" : "monthly");
+                    setCycleInitialized(true);
+                }
             })
             .catch(() => {
                 if (cancelled) return;
@@ -130,6 +134,7 @@ export default function SubscriptionPlans() {
         return () => {
             cancelled = true;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     async function handleUpgrade(targetPlan: PurchasablePlan) {
@@ -138,17 +143,41 @@ export default function SubscriptionPlans() {
         try {
             const { authorizationUrl } = await initiateSubscriptionUpgrade({
                 targetPlan,
+                billingCycle,
             });
             window.location.assign(authorizationUrl);
-        } catch {
+        } catch (err) {
+            console.error("Upgrade checkout failed:", err);
             setErrorMessage("Couldn't start checkout. Please try again.");
             setUpgradingPlan(null);
         }
     }
 
+    const discountEligible = subscription?.annualDiscountEligible ?? false;
+    const discountRate = subscription?.annualDiscountRate ?? 0.15;
+
+    function priceFor(planId: SubscriptionPlan): { price: string; period?: string; strikethrough?: string } {
+        if (planId === "free") return { price: "₦0" };
+        if (planId === "enterprise") return { price: "Custom" };
+
+        const pricing = PLAN_PRICING[planId as PurchasablePlan];
+        if (billingCycle === "monthly") {
+            return { price: formatNaira(pricing.monthly), period: "/mo" };
+        }
+        // annual
+        if (discountEligible) {
+            return {
+                price: formatNaira(pricing.annual.discounted),
+                period: "/yr",
+                strikethrough: formatNaira(pricing.annual.standard),
+            };
+        }
+        return { price: formatNaira(pricing.annual.standard), period: "/yr" };
+    }
+
     return (
         <div className="mx-auto max-w-6xl px-6 py-14 pry-ff">
-            <div className="mb-12 text-center">
+            <div className="mb-8 text-center">
                 <span className="mb-3 inline-block rounded-full bg-acc-clr/10 px-3 py-1 text-xs font-medium text-acc-clr">
                     Pricing
                 </span>
@@ -161,6 +190,39 @@ export default function SubscriptionPlans() {
                 </p>
             </div>
 
+            {/* Billing cycle toggle */}
+            <div className="mb-10 flex flex-col items-center gap-2">
+                <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
+                    <button
+                        type="button"
+                        onClick={() => setBillingCycle("monthly")}
+                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                            billingCycle === "monthly"
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        }`}
+                    >
+                        Monthly
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setBillingCycle("annual")}
+                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                            billingCycle === "annual"
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        }`}
+                    >
+                        Annual
+                    </button>
+                </div>
+                {billingCycle === "annual" && discountEligible && (
+                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 border border-green-100">
+                        {Math.round(discountRate * 100)}% off — limited-time trial offer
+                    </span>
+                )}
+            </div>
+
             {errorMessage && (
                 <div className="mx-auto mb-8 max-w-md rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-center text-sm text-red-600">
                     {errorMessage}
@@ -169,9 +231,10 @@ export default function SubscriptionPlans() {
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {PLANS.map((plan) => {
-                    const isCurrent = currentPlan === plan.id;
+                    const isCurrent = subscription?.plan === plan.id;
                     const isUpgrading = upgradingPlan === plan.id;
                     const Icon = plan.icon;
+                    const { price, period, strikethrough } = priceFor(plan.id);
 
                     return (
                         <div
@@ -205,13 +268,20 @@ export default function SubscriptionPlans() {
                                 {plan.tagline}
                             </p>
 
-                            <div className="mt-5 flex h-9 items-baseline gap-1">
-                                <span className="text-3xl font-bold tracking-tight text-slate-900">
-                                    {plan.price}
-                                </span>
-                                <span className="text-sm font-medium text-slate-400">
-                                    {plan.period ?? ""}
-                                </span>
+                            <div className="mt-5 flex flex-col justify-center h-9">
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-3xl font-bold tracking-tight text-slate-900">
+                                        {price}
+                                    </span>
+                                    <span className="text-sm font-medium text-slate-400">
+                                        {period ?? ""}
+                                    </span>
+                                </div>
+                                {strikethrough && (
+                                    <span className="text-xs text-slate-400 line-through">
+                                        {strikethrough}/yr
+                                    </span>
+                                )}
                             </div>
 
                             <div className="my-5 h-px bg-slate-100" />

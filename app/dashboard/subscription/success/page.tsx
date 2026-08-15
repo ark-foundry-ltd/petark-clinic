@@ -9,6 +9,7 @@ import {
     getSubscriptionStatus,
     type SubscriptionRecord,
 } from "@/lib/subscription";
+import { useAuthStore } from "@/store/useStore";
 import { CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 
 const PLAN_LABELS: Record<string, string> = {
@@ -21,6 +22,7 @@ const PLAN_LABELS: Record<string, string> = {
 function SubscriptionSuccessContent() {
     const searchParams = useSearchParams();
     const reference = searchParams.get("reference");
+    const fetchProfile = useAuthStore((state) => state.fetchProfile);
 
     const [subscription, setSubscription] = useState<SubscriptionRecord | null>(
         null
@@ -35,6 +37,14 @@ function SubscriptionSuccessContent() {
             .then((data) => {
                 if (cancelled) return;
                 setSubscription(data);
+                // Refresh the auth store so the sidebar/nav plan badge reflects
+                // the new plan immediately, instead of showing whatever was
+                // cached at login.
+                fetchProfile().catch(() => {
+                    // Non-fatal — this page's own subscription state already
+                    // shows the correct plan; a failed refresh here only means
+                    // the sidebar badge stays stale until the next reload.
+                });
             })
             .catch(() => {
                 if (cancelled) return;
@@ -44,6 +54,7 @@ function SubscriptionSuccessContent() {
         return () => {
             cancelled = true;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
