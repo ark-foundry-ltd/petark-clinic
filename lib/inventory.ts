@@ -18,6 +18,14 @@ export interface InventoryImage {
     publicId: string;
 }
 
+export interface StockByLocation {
+    locationId: string;
+    locationName: string;
+    currentStock: number;
+    reorderThreshold: number | null;
+    isLow: boolean;
+}
+
 export interface InventoryItemRecord {
     _id: string;
     clinicId: string;
@@ -25,15 +33,17 @@ export interface InventoryItemRecord {
     category: InventoryCategory;
     unit: string;
     sku: string;
-    // Omitted entirely (not just null) for roles without VIEW_INVENTORY_COST —
-    // shapeItemForRole strips this key server-side, it doesn't zero it out.
     costPrice?: number;
     sellingPrice: number;
     currentStock: number;
+    isLowStock: boolean;
     reorderThreshold: number | null;
     requiresBatchTracking: boolean;
+    expiryDate: string | null;
+    expiryReminderSent?: boolean;
     isActive: boolean;
     images: InventoryImage[];
+    stockByLocation?: StockByLocation[];
     createdAt: string;
     updatedAt: string;
 }
@@ -45,11 +55,13 @@ export interface CreateInventoryItemPayload {
     category: InventoryCategory;
     unit: string;
     sku: string;
-    currentStock: number;
+    locationId: string;
+    initialStock: number;
     costPrice?: number;
     sellingPrice: number;
     reorderThreshold?: number;
     requiresBatchTracking?: boolean;
+    expiryDate?: string;
 }
 
 export async function createInventoryItem(
@@ -71,17 +83,54 @@ export async function createInventoryItem(
     }
 }
 
+// ─── Add an existing catalog item to another location ──────────────────
+
+export interface AddItemToLocationPayload {
+    locationId: string;
+    initialStock: number;
+}
+
+export async function addItemToLocation(
+    itemId: string,
+    payload: AddItemToLocationPayload
+): Promise<{ clinicId: string; itemId: string; locationId: string; currentStock: number }> {
+    try {
+        const response = await api.post(`/inventory/${itemId}/locations`, payload);
+        return response.data.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            console.error(
+                "Error adding item to location:",
+                error.response?.data || error.message
+            );
+        } else {
+            console.error("Error adding item to location:", error);
+        }
+        throw error;
+    }
+}
+
 // ─── List ───────────────────────────────────────────────────────────────
 
 export interface ListInventoryItemsParams {
     category?: InventoryCategory;
     lowStockOnly?: boolean;
     search?: string;
+    locationId?: string;
+    page?: number;
+    limit?: number;
+}
+
+export interface ListInventoryItemsResult {
+    items: InventoryItemRecord[];
+    total: number;
+    page: number;
+    totalPages: number;
 }
 
 export async function listInventoryItems(
     params: ListInventoryItemsParams = {}
-): Promise<InventoryItemRecord[]> {
+): Promise<ListInventoryItemsResult> {
     try {
         const response = await api.get("/inventory", {
             params: {
@@ -89,7 +138,12 @@ export async function listInventoryItems(
                 lowStockOnly: params.lowStockOnly ? "true" : undefined,
             },
         });
-        return response.data.data;
+        return {
+            items: response.data.data,
+            total: response.data.total,
+            page: response.data.page,
+            totalPages: response.data.totalPages,
+        };
     } catch (error) {
         if (error instanceof AxiosError) {
             console.error(
@@ -106,10 +160,13 @@ export async function listInventoryItems(
 // ─── Get single item ────────────────────────────────────────────────────
 
 export async function getInventoryItem(
-    itemId: string
+    itemId: string,
+    locationId?: string
 ): Promise<InventoryItemRecord> {
     try {
-        const response = await api.get(`/inventory/${itemId}`);
+        const response = await api.get(`/inventory/${itemId}`, {
+            params: locationId ? { locationId } : undefined,
+        });
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {
@@ -125,10 +182,6 @@ export async function getInventoryItem(
 }
 
 // ─── Update (fields + optional image upload/removal) ───────────────────
-// Sent as multipart/form-data whenever images are attached or removed,
-// since the backend's updateInventoryItem reads new files off req.files
-// (multer) and removeImagePublicIds off req.body — a plain JSON PATCH
-// still works for field-only updates with no image changes.
 
 export interface UpdateInventoryItemPayload {
     name?: string;
@@ -139,11 +192,8 @@ export interface UpdateInventoryItemPayload {
     reorderThreshold?: number;
     requiresBatchTracking?: boolean;
     isActive?: boolean;
-    // New image files to upload — server caps at MAX_IMAGES (2) total
-    // (existing kept + new), enforced in the controller against req.files.length.
+    expiryDate?: string | null;
     newImages?: File[];
-    // publicIds of existing images to delete. Controller JSON.parses this
-    // off req.body, so it must travel as a JSON string when sent via FormData.
     removeImagePublicIds?: string[];
 }
 
@@ -184,12 +234,10 @@ export async function updateInventoryItem(
                 }
             }
 
-            // Controller does JSON.parse(req.body.removeImagePublicIds) — must be a JSON string.
             if (hasRemovals) {
                 formData.append('removeImagePublicIds', JSON.stringify(removeImagePublicIds));
             }
 
-            // Field name must be "images" — matches upload.array('images', 2) in inventoryRoute.js
             if (hasFiles) {
                 newImages.forEach((file) => formData.append('images', file));
             }
@@ -198,7 +246,7 @@ export async function updateInventoryItem(
         } else {
             const jsonPayload: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(fields)) {
-                if (value === undefined || value === null) continue;
+                if (value === undefined) continue;
                 if ((NUMERIC_FIELDS as readonly string[]).includes(key) && typeof value === 'string') {
                     const numValue = Number(value);
                     if (Number.isNaN(numValue)) {
@@ -232,7 +280,7 @@ export async function updateInventoryItem(
     }
 }
 
-// ─── Manual stock adjustment ────────────────────────────────────────────
+// ─── Manual stock adjustment — now per-location ─────────────────────────
 
 export type StockAdjustmentType =
     | "purchase"
@@ -241,12 +289,10 @@ export type StockAdjustmentType =
     | "expiry";
 
 export interface AdjustStockPayload {
-    quantity: number; // signed — positive for purchase/restock, negative for wastage/expiry
+    locationId: string;
+    quantity: number;
     type: StockAdjustmentType;
     note?: string;
-    // Required when type is "purchase" — the actual unit cost paid for this
-    // restock. Snapshotted on the movement so expense reports stay accurate
-    // even if the item's costPrice changes later.
     unitCost?: number;
 }
 
@@ -254,6 +300,9 @@ export async function adjustStock(
     itemId: string,
     payload: AdjustStockPayload
 ): Promise<{ message: string }> {
+    if (!payload.locationId) {
+        throw new Error("locationId is required");
+    }
     if (payload.type === "purchase" && (payload.unitCost === undefined || payload.unitCost < 0)) {
         throw new Error("unitCost is required for purchase adjustments");
     }
@@ -282,9 +331,11 @@ export interface InventoryStats {
     monthlyGrowthPercent: number;
 }
 
-export async function getInventoryStats(): Promise<InventoryStats> {
+export async function getInventoryStats(locationId?: string): Promise<InventoryStats> {
     try {
-        const response = await api.get("/inventory/stats");
+        const response = await api.get("/inventory/stats", {
+            params: locationId ? { locationId } : undefined,
+        });
         return response.data.data;
     } catch (error) {
         if (error instanceof AxiosError) {

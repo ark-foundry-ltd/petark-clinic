@@ -11,14 +11,19 @@ export interface SaleLineItem {
     name: string;
     quantity: number;
     unitPrice: number;
+    unitCost: number | null;
     subtotal: number;
+    lineCost: number;
 }
 
 export interface SaleRecord {
     _id: string;
     clinicId: string;
+    locationId: string;
     items: SaleLineItem[];
     totalAmount: number;
+    totalCost: number;
+    grossProfit: number;
     paymentMethod: PaymentMethod;
     soldBy: string;
     userId: string | null;
@@ -39,12 +44,14 @@ export interface CheckoutCartItem {
 export interface CheckoutSalePayload {
     items: CheckoutCartItem[];
     paymentMethod: PaymentMethod;
-    // Optional — links the sale to a customer and triggers a receipt email
-    // server-side (see checkoutSale in saleController.js).
+    locationId: string;
     userId?: string;
 }
 
 export async function checkoutSale(payload: CheckoutSalePayload): Promise<SaleRecord> {
+    if (!payload.locationId) {
+        throw new Error("locationId is required — which branch is this sale at?");
+    }
     try {
         const response = await api.post("/sales/checkout", payload);
         if (!response.data?.data) {
@@ -65,10 +72,11 @@ export async function checkoutSale(payload: CheckoutSalePayload): Promise<SaleRe
 // ─── List ───────────────────────────────────────────────────────────────
 
 export interface ListSalesParams {
-    startDate?: string; // ISO date string
+    startDate?: string;
     endDate?: string;
     paymentMethod?: PaymentMethod;
     status?: SaleStatus;
+    locationId?: string;
 }
 
 export async function listSales(params: ListSalesParams = {}): Promise<SaleRecord[]> {
