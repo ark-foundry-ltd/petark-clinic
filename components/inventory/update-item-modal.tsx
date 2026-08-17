@@ -13,11 +13,10 @@ const MAX_IMAGES = 2;
 
 interface UpdateItemModalProps {
     item: InventoryItemRecord | null;
+    locationId: string;
     open: boolean;
     onClose: () => void;
     onUpdated: (item: InventoryItemRecord) => void;
-    // Fired after a stock adjustment — updates the row in the parent list
-    // without closing the modal (unlike onUpdated, which closes on field save).
     onStockAdjusted: (item: InventoryItemRecord) => void;
 }
 
@@ -58,6 +57,7 @@ function toFormState(item: InventoryItemRecord): FormState {
 
 export default function UpdateItemModal({
     item,
+    locationId,
     open,
     onClose,
     onUpdated,
@@ -70,8 +70,6 @@ export default function UpdateItemModal({
             isActive: true, newImages: [], removeImagePublicIds: [],
         }
     );
-    // Local mirror of currentStock so the UI reflects an adjustment
-    // immediately — the adjust endpoint only returns a status message.
     const [stockDisplay, setStockDisplay] = useState(item?.currentStock ?? 0);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -289,6 +287,7 @@ export default function UpdateItemModal({
                             <div className="sm:col-span-2">
                                 <AdjustStock
                                     itemId={selectedItem._id}
+                                    locationId={locationId}
                                     currentStock={stockDisplay}
                                     unit={form.unit || selectedItem.unit}
                                     disabled={submitting}

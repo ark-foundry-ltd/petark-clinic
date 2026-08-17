@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PawPrint, ClipboardList, Package, ArrowLeftRight, Lock } from "lucide-react";
+import { PawPrint, ClipboardList, Package, ArrowLeftRight, Lock, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useStore";
 import ActivityFeed from "@/components/clinic/activity-feed";
@@ -70,15 +70,15 @@ export default function ClinicalOverview() {
 
                 {isStandardOrAbove ? (
                     <Link
-                        href="/dashboard/clinical/inventory"
+                        href="/dashboard/clinical/locations"
                         className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
                     >
                         <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
-                            <Package className="w-5 h-5 text-acc-clr" />
+                            <MapPin className="w-5 h-5 text-acc-clr" />
                         </div>
-                        <h3 className="font-semibold text-sec-clr mb-1">Inventory</h3>
+                        <h3 className="font-semibold text-sec-clr mb-1">Location</h3>
                         <p className="text-sm text-gray-500 mb-3">
-                            Track drugs, supplies, and stock levels
+                            Track inventory and stock levels across multiple locations
                         </p>
                         <p className="text-xs text-gray-400 flex items-center gap-1">
                             Manage Inventory and Stock Alerts

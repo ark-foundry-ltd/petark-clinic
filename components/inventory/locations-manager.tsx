@@ -56,6 +56,7 @@ export default function LocationsManager() {
 
     useEffect(() => {
         if (!hasLocationAccess) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLoading(false);
             return;
         }
@@ -132,7 +133,8 @@ export default function LocationsManager() {
                     ...prev,
                     {
                         _id: created.locationId,
-                        clinicId: profile?._id ?? "",
+                        // was ._id initially, changed to id
+                        clinicId: profile?.id ?? "",
                         name: created.name,
                         address: created.address,
                         phoneNumber: form.phoneNumber.trim() || null,

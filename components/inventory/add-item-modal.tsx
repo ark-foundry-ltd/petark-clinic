@@ -14,6 +14,7 @@ import HelpTooltip from "@/components/inventory/help-tooltip";
 
 interface AddItemModalProps {
     open: boolean;
+    locationId: string;
     onClose: () => void;
     onCreated: () => void;
 }
@@ -27,7 +28,7 @@ interface FormState {
     category: InventoryCategory | "";
     unit: string;
     sku: string;
-    currentStock: string;
+    initialStock: string;
     costPrice: string;
     sellingPrice: string;
     reorderThreshold: string;
@@ -39,7 +40,7 @@ const EMPTY_FORM: FormState = {
     category: "",
     unit: "",
     sku: "",
-    currentStock: "",
+    initialStock: "",
     costPrice: "",
     sellingPrice: "",
     reorderThreshold: "",
@@ -48,6 +49,7 @@ const EMPTY_FORM: FormState = {
 
 export default function AddItemModal({
     open,
+    locationId,
     onClose,
     onCreated,
 }: Readonly<AddItemModalProps>) {
@@ -82,8 +84,8 @@ export default function AddItemModal({
             return;
         }
 
-        const currentStock = Number(form.currentStock);
-        if (form.currentStock === "" || Number.isNaN(currentStock) || currentStock < 0) {
+        const initialStock = Number(form.initialStock);
+        if (form.initialStock === "" || Number.isNaN(initialStock) || initialStock < 0) {
             setError("Current stock is required and can't be negative.");
             return;
         }
@@ -99,7 +101,8 @@ export default function AddItemModal({
             category: form.category,
             unit: form.unit.trim(),
             sku: form.sku.trim(),
-            currentStock,
+            locationId,
+            initialStock,
             sellingPrice,
             requiresBatchTracking: form.requiresBatchTracking,
         };
@@ -125,9 +128,6 @@ export default function AddItemModal({
     }
 
     return (
-        // items-end + pb-20 anchors the sheet to the bottom on mobile with room
-        // left below it for a bottom nav bar; sm:items-center + sm:pb-4 restores
-        // the normal centered dialog on wider screens.
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 pb-20 sm:items-center sm:p-4 sm:pb-4">
             <div className="flex max-h-[80vh] w-full flex-col rounded-t-2xl bg-pry-clr shadow-lg sm:max-h-[85vh] sm:max-w-lg sm:rounded-xl">
                 <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -193,7 +193,7 @@ export default function AddItemModal({
                                     </label>
                                     <HelpTooltip
                                         label="What is current stock?"
-                                        text="How many you have right now, counted in the unit you set below — e.g. 40, with unit set to 'tablets' means 40 tablets."
+                                        text="How many you have right now at this location, counted in the unit you set below — e.g. 40, with unit set to 'tablets' means 40 tablets."
                                     />
                                 </div>
                                 <input
@@ -201,8 +201,8 @@ export default function AddItemModal({
                                     type="number"
                                     min="0"
                                     step="1"
-                                    value={form.currentStock}
-                                    onChange={(e) => update("currentStock", e.target.value)}
+                                    value={form.initialStock}
+                                    onChange={(e) => update("initialStock", e.target.value)}
                                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr"
                                     placeholder="e.g. 40"
                                 />
@@ -304,31 +304,31 @@ export default function AddItemModal({
 
                             <div className="flex items-center gap-1.5 pt-6">
                                 <label className="flex items-center justify-between rounded-lg border border-slate-200 p-3 gap-2">
-    <div>
-        <p className="text-xs font-medium text-slate-700">
-            Track by batch / expiry
-        </p>
-    </div>
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-700">
+                                            Track by batch / expiry
+                                        </p>
+                                    </div>
 
-    <button
-        type="button"
-        onClick={() =>
-            update("requiresBatchTracking", !form.requiresBatchTracking)
-        }
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            form.requiresBatchTracking ? "bg-acc-clr" : "bg-slate-300"
-        }`}
-        aria-pressed={form.requiresBatchTracking}
-    >
-        <span
-            className={`inline-block h-5 w-5 transform rounded-full bg-pry-clr shadow transition-transform ${
-                form.requiresBatchTracking
-                    ? "translate-x-5"
-                    : "translate-x-1"
-            }`}
-        />
-    </button>
-</label>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            update("requiresBatchTracking", !form.requiresBatchTracking)
+                                        }
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                            form.requiresBatchTracking ? "bg-acc-clr" : "bg-slate-300"
+                                        }`}
+                                        aria-pressed={form.requiresBatchTracking}
+                                    >
+                                        <span
+                                            className={`inline-block h-5 w-5 transform rounded-full bg-pry-clr shadow transition-transform ${
+                                                form.requiresBatchTracking
+                                                    ? "translate-x-5"
+                                                    : "translate-x-1"
+                                            }`}
+                                        />
+                                    </button>
+                                </label>
                                 <HelpTooltip
                                     label="What is track by batch / expiry?"
                                     text="Turn this on for items with expiry dates, like meds and vaccines. Stock is tracked in separate batches, and the earliest-expiring batch is used first. Leave it off for a simple running count (bandages, gloves, etc.)."

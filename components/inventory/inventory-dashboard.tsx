@@ -2,23 +2,37 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
     listInventoryItems,
+    getInventoryStats,
     type InventoryItemRecord,
     type InventoryCategory,
-    getInventoryStats,
 } from "@/lib/inventory";
+import { useClinicLocations } from "@/hooks/useClinicLocations";
+import LocationBar from "@/components/inventory/location-bar";
 import FilterBar from "@/components/inventory/filter-bar";
 import StatCard from "@/components/inventory/stat-card";
 import InventoryTable from "@/components/inventory/inventory-table";
 import AddItemModal from "@/components/inventory/add-item-modal";
 import UpdateItemModal from "@/components/inventory/update-item-modal";
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 8;
 
 export default function InventoryDashboard() {
+    const {
+        activeLocations,
+        activeLocationId,
+        setActiveLocationId,
+        loading: locationsLoading,
+        hasAnyLocation,
+    } = useClinicLocations();
+
     const [items, setItems] = useState<InventoryItemRecord[]>([]);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+
     const [category, setCategory] = useState<InventoryCategory | "all">("all");
     const [lowStockOnly, setLowStockOnly] = useState(false);
     const [search, setSearch] = useState("");
@@ -26,7 +40,13 @@ export default function InventoryDashboard() {
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [editItem, setEditItem] = useState<InventoryItemRecord | null>(null);
     const [reloadToken, setReloadToken] = useState(0);
-    const [growthPercent, setGrowthPercent] = useState<number | null>(null);
+
+    const [stats, setStats] = useState({
+        totalSkus: 0,
+        lowStock: 0,
+        inventoryValue: 0,
+        monthlyGrowthPercent: 0 as number | null,
+    });
     const [statsToken, setStatsToken] = useState(0);
 
     // Debounce search so we're not firing a request on every keystroke
@@ -36,84 +56,100 @@ export default function InventoryDashboard() {
         return () => clearTimeout(t);
     }, [search]);
 
-    const filterKey = `${category}|${lowStockOnly}|${debouncedSearch}|${reloadToken}`;
+    // Everything that should reset pagination back to page 1 when it changes —
+    // page itself is intentionally excluded so paging doesn't self-reset.
+    const filterKey = `${category}|${lowStockOnly}|${debouncedSearch}|${activeLocationId}|${reloadToken}`;
 
-    // Reset to page 1 whenever the filters change — done during render by
-    // comparing against the previous filter key (useState, not useRef, since
-    // ref.current can't be read during render). React's documented
-    // "adjusting state when a prop changes" pattern:
-    // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
     const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
     if (prevFilterKey !== filterKey) {
         setPrevFilterKey(filterKey);
         if (page !== 1) setPage(1);
     }
 
-    // `loading` is derived, not imperatively toggled — it's true whenever
-    // the most recently *completed* fetch doesn't match the current filters.
-    // This avoids ever calling setState synchronously in the effect body:
-    // the only setState calls below happen inside the .then/.catch callback,
-    // which is exactly the pattern the "cascading renders" warning endorses
-    // ("calling setState in a callback function when external state changes").
     const [lastLoadedKey, setLastLoadedKey] = useState<string | null>(null);
-    const loading = lastLoadedKey !== filterKey;
+    const currentRequestKey = `${filterKey}|${page}`;
+    const loading = lastLoadedKey !== currentRequestKey;
 
     useEffect(() => {
+        // Don't fetch until we know what location we're scoped to — avoids a
+        // flash of "no items" before the locations hook resolves.
+        if (locationsLoading) return;
+
         let cancelled = false;
 
         listInventoryItems({
             category: category === "all" ? undefined : category,
             lowStockOnly,
             search: debouncedSearch || undefined,
+            locationId: activeLocationId ?? undefined,
+            page,
+            limit: PAGE_SIZE,
         })
             .then((data) => {
                 if (cancelled) return;
-                setItems(data);
-                setLastLoadedKey(filterKey);
+                setItems(data.items);
+                setTotal(data.total);
+                setTotalPages(data.totalPages);
+                setLastLoadedKey(currentRequestKey);
             })
             .catch(() => {
                 if (cancelled) return;
                 setItems([]);
-                setLastLoadedKey(filterKey);
+                setTotal(0);
+                setTotalPages(1);
+                setLastLoadedKey(currentRequestKey);
             });
 
         return () => {
             cancelled = true;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterKey]);
+    }, [currentRequestKey, locationsLoading]);
 
     useEffect(() => {
+        if (locationsLoading) return;
         let cancelled = false;
-        getInventoryStats()
+        getInventoryStats(activeLocationId ?? undefined)
             .then((data) => {
-                if (!cancelled) setGrowthPercent(data.monthlyGrowthPercent);
+                if (!cancelled) {
+                    setStats({
+                        totalSkus: data.totalSkus,
+                        lowStock: data.lowStock,
+                        inventoryValue: data.inventoryValue,
+                        monthlyGrowthPercent: data.monthlyGrowthPercent,
+                    });
+                }
             })
             .catch(() => {
-                if (!cancelled) setGrowthPercent(null);
+                if (!cancelled) {
+                    setStats((s) => ({ ...s, monthlyGrowthPercent: null }));
+                }
             });
         return () => {
             cancelled = true;
         };
-    }, [statsToken]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [statsToken, activeLocationId, locationsLoading]);
 
-    const stats = useMemo(() => {
-        const totalSkus = items.length;
-        const lowStock = items.filter(
-            (i) => i.reorderThreshold != null && i.currentStock <= i.reorderThreshold
-        ).length;
-        const inventoryValue = items.reduce(
-            (sum, i) => sum + i.sellingPrice * i.currentStock,
-            0
-        );
-        return { totalSkus, lowStock, inventoryValue };
-    }, [items]);
-
-    const pageItems = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    function handleAddItemClick() {
+        if (!hasAnyLocation) {
+            toast.error("Add a location before adding inventory items.");
+            return;
+        }
+        setAddModalOpen(true);
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 p-6 pry-ff">
             <h1 className="mb-4 text-2xl font-semibold text-slate-800">Inventory</h1>
+
+            <LocationBar
+                locations={activeLocations}
+                activeLocationId={activeLocationId}
+                onChange={setActiveLocationId}
+                loading={locationsLoading}
+                hasAnyLocation={hasAnyLocation}
+            />
 
             <FilterBar
                 category={category}
@@ -122,44 +158,48 @@ export default function InventoryDashboard() {
                 onLowStockToggle={() => setLowStockOnly((v) => !v)}
                 search={search}
                 onSearchChange={setSearch}
-                onAddItem={() => {
-                    setAddModalOpen(true);
-                }}
+                onAddItem={handleAddItemClick}
             />
 
-            <AddItemModal
-                open={addModalOpen}
-                onClose={() => setAddModalOpen(false)}
-                onCreated={() => {
-                    setReloadToken((t) => t + 1);
-                    setStatsToken((t) => t + 1);
-                }}
-            />
+            {activeLocationId && (
+                <AddItemModal
+                    open={addModalOpen}
+                    locationId={activeLocationId}
+                    onClose={() => setAddModalOpen(false)}
+                    onCreated={() => {
+                        setReloadToken((t) => t + 1);
+                        setStatsToken((t) => t + 1);
+                    }}
+                />
+            )}
 
             {/* key forces a full remount whenever the item being edited changes
                (or the modal closes and reopens on a different row), so the
                form always re-seeds from `item` instead of reusing whatever
                state was left over from the previous edit session. */}
-            <UpdateItemModal
-                key={editItem?._id ?? "closed"}
-                item={editItem}
-                open={editItem !== null}
-                onClose={() => setEditItem(null)}
-                onUpdated={(updatedItem) => {
-                    setItems((current) =>
-                    current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
-                );
-                setEditItem(null);
-                setStatsToken((t) => t + 1);
-            }}
-            onStockAdjusted={(updatedItem) => {
-                setItems((current) =>
-                current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
-            );
-            setStatsToken((t) => t + 1);
-        // deliberately no setEditItem(null) — modal stays open after a stock adjustment
-    }}
-/>
+            {activeLocationId && (
+                <UpdateItemModal
+                    key={editItem?._id ?? "closed"}
+                    item={editItem}
+                    locationId={activeLocationId}
+                    open={editItem !== null}
+                    onClose={() => setEditItem(null)}
+                    onUpdated={(updatedItem) => {
+                        setItems((current) =>
+                            current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+                        );
+                        setEditItem(null);
+                        setStatsToken((t) => t + 1);
+                    }}
+                    onStockAdjusted={(updatedItem) => {
+                        setItems((current) =>
+                            current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
+                        );
+                        setStatsToken((t) => t + 1);
+                        // deliberately no setEditItem(null) — modal stays open after a stock adjustment
+                    }}
+                />
+            )}
 
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard label="Total SKUs" value={stats.totalSkus.toLocaleString()} />
@@ -176,23 +216,27 @@ export default function InventoryDashboard() {
                 />
                 <StatCard
                     label="Monthly Growth"
-                    value={growthPercent === null ? "—" : `${growthPercent >= 0 ? "+" : ""}${growthPercent}%`}
+                    value={
+                        stats.monthlyGrowthPercent === null
+                            ? "—"
+                            : `${stats.monthlyGrowthPercent >= 0 ? "+" : ""}${stats.monthlyGrowthPercent}%`
+                    }
                     valueClassName={
-                        growthPercent === null
-                        ? "text-slate-400"
-                        : growthPercent >= 0
-                        ? "text-acc-clr"
-                        :"text-red-600"
+                        stats.monthlyGrowthPercent === null
+                            ? "text-slate-400"
+                            : stats.monthlyGrowthPercent >= 0
+                              ? "text-acc-clr"
+                              : "text-red-600"
                     }
                 />
             </div>
 
             <InventoryTable
-                items={pageItems}
+                items={items}
                 loading={loading}
                 page={page}
                 pageSize={PAGE_SIZE}
-                totalCount={items.length}
+                totalCount={total}
                 onPageChange={setPage}
                 onEditItem={(item) => setEditItem(item)}
             />

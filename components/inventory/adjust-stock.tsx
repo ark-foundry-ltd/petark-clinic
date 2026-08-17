@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 interface AdjustStockProps {
     itemId: string;
+    locationId: string;
     currentStock: number;
     unit: string;
     disabled?: boolean;
@@ -26,6 +27,7 @@ const TYPE_OPTIONS = Object.entries(TYPE_LABELS) as [StockAdjustmentType, string
 
 export default function AdjustStock({
     itemId,
+    locationId,
     currentStock,
     unit,
     disabled,
@@ -44,8 +46,6 @@ export default function AdjustStock({
     function handleTypeChange(next: StockAdjustmentType) {
         setType(next);
         setError(null);
-        // "purchase" only makes sense as an addition — steer direction along with it
-        // so the amount field doesn't end up removing stock under a "restock" label.
         if (next === "purchase") setDirection("add");
         if (next !== "purchase") setUnitCost("");
     }
@@ -79,6 +79,7 @@ export default function AdjustStock({
         setSubmitting(true);
         try {
             await adjustStock(itemId, {
+                locationId,
                 quantity: signedQuantity,
                 type,
                 note: note.trim() || undefined,
