@@ -20,14 +20,26 @@ import UpdateItemModal from "@/components/inventory/update-item-modal";
 
 const PAGE_SIZE = 8;
 
-export default function InventoryDashboard() {
+interface InventoryDashboardProps {
+    // When provided (e.g. rendered inside a specific location's own page),
+    // the dashboard is locked to this location — no switcher, no fetch of
+    // the full location list. Omit to get the standalone dropdown behavior.
+    locationId?: string;
+}
+
+export default function InventoryDashboard({ locationId: lockedLocationId }: Readonly<InventoryDashboardProps> = {}) {
+    const scoped = !!lockedLocationId;
+
     const {
         activeLocations,
-        activeLocationId,
+        activeLocationId: hookActiveLocationId,
         setActiveLocationId,
         loading: locationsLoading,
-        hasAnyLocation,
-    } = useClinicLocations();
+        hasAnyLocation: hookHasAnyLocation,
+    } = useClinicLocations(scoped); // skip the fetch entirely when already scoped
+
+    const activeLocationId = scoped ? lockedLocationId! : hookActiveLocationId;
+    const hasAnyLocation = scoped ? true : hookHasAnyLocation;
 
     const [items, setItems] = useState<InventoryItemRecord[]>([]);
     const [total, setTotal] = useState(0);
@@ -141,15 +153,17 @@ export default function InventoryDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-50 p-6 pry-ff">
-            <h1 className="mb-4 text-2xl font-semibold text-slate-800">Inventory</h1>
+            {!scoped && <h1 className="mb-4 text-2xl font-semibold text-slate-800">Inventory</h1>}
 
-            <LocationBar
-                locations={activeLocations}
-                activeLocationId={activeLocationId}
-                onChange={setActiveLocationId}
-                loading={locationsLoading}
-                hasAnyLocation={hasAnyLocation}
-            />
+            {!scoped && (
+                <LocationBar
+                    locations={activeLocations}
+                    activeLocationId={activeLocationId}
+                    onChange={setActiveLocationId}
+                    loading={locationsLoading}
+                    hasAnyLocation={hasAnyLocation}
+                />
+            )}
 
             <FilterBar
                 category={category}

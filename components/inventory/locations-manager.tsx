@@ -1,4 +1,4 @@
-// components/clinic/locations-manager.tsx
+// components/inventory/locations-manager.tsx
 
 "use client";
 
@@ -33,14 +33,35 @@ interface LocationFormState {
 
 const EMPTY_FORM: LocationFormState = { name: "", address: "", phoneNumber: "" };
 
+// A handful of old/manually-inserted location records were stored with
+// `address` as an object (the same shape as a clinic's own User.address —
+// {street, city, state, country, zipCode}) instead of the plain string the
+// current form always produces. Normalize both shapes here so a stale
+// record can't crash rendering or corrupt the edit form.
+interface LocationAddressObject {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zipCode?: string | null;
+}
+
+function formatAddress(
+    address: string | LocationAddressObject | null | undefined
+): string {
+    if (!address) return "";
+    if (typeof address === "string") return address;
+    return [address.street, address.city, address.state, address.country, address.zipCode]
+        .filter(Boolean)
+        .join(", ");
+}
+
 export default function LocationsManager() {
     const router = useRouter();
     const { profile } = useAuthStore();
 
     const plan = profile?.subscription?.plan;
     const status = profile?.subscription?.status;
-    // Locations are entirely unavailable on free — matches the backend's
-    // requirePlanForAny('standard') gate on the whole /locations route.
     const hasLocationAccess = plan !== "free" && plan != null && status === "active";
 
     const [locations, setLocations] = useState<Location[]>([]);
@@ -90,7 +111,7 @@ export default function LocationsManager() {
         setEditingLocation(location);
         setForm({
             name: location.name,
-            address: location.address,
+            address: formatAddress(location.address),
             phoneNumber: location.phoneNumber || "",
         });
         setIsModalOpen(true);
@@ -133,7 +154,6 @@ export default function LocationsManager() {
                     ...prev,
                     {
                         _id: created.locationId,
-                        // was ._id initially, changed to id
                         clinicId: profile?.id ?? "",
                         name: created.name,
                         address: created.address,
@@ -148,9 +168,6 @@ export default function LocationsManager() {
             }
             setIsModalOpen(false);
         } catch (err) {
-            // Backend already returns a precise, plan-specific message here
-            // (e.g. "Your standard plan allows up to 2 active location(s)...")
-            // — surface it directly rather than guessing at limits client-side.
             toast.error(extractErrorMessage(err, "Failed to save location"));
         } finally {
             setSaving(false);
@@ -180,8 +197,6 @@ export default function LocationsManager() {
         }
     }
 
-    // ── Free plan: locked state, matches the pattern used elsewhere for
-    // plan-gated features ─────────────────────────────────────────────
     if (!hasLocationAccess) {
         return (
             <div className="bg-gray-50 border border-gray-100 rounded-2xl p-8 text-center">
@@ -262,7 +277,7 @@ export default function LocationsManager() {
                                     )}
                                 </div>
                                 <p className="text-sm text-gray-500 truncate mt-0.5">
-                                    {location.address}
+                                    {formatAddress(location.address)}
                                 </p>
                                 {location.phoneNumber && (
                                     <p className="text-xs text-gray-400 mt-0.5">

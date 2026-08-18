@@ -15,7 +15,7 @@ interface UseClinicLocationsResult {
     refetch: () => void;
 }
 
-export function useClinicLocations(): UseClinicLocationsResult {
+export function useClinicLocations(scoped: boolean): UseClinicLocationsResult {
     const [locations, setLocations] = useState<Location[]>([]);
     const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
