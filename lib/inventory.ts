@@ -44,6 +44,7 @@ export interface InventoryItemRecord {
     isActive: boolean;
     images: InventoryImage[];
     stockByLocation?: StockByLocation[];
+    hasStockAtLocation?: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -311,13 +312,11 @@ export async function adjustStock(
         return response.data;
     } catch (error) {
         if (error instanceof AxiosError) {
-            console.error(
-                "Error adjusting stock:",
-                error.response?.data || error.message
-            );
-        } else {
-            console.error("Error adjusting stock:", error);
+            const message = error.response?.data?.message || error.message;
+            console.error("Error adjusting stock:", error.response?.data || error.message);
+            throw new Error(message);
         }
+        console.error("Error adjusting stock:", error);
         throw error;
     }
 }

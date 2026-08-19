@@ -2,11 +2,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Minus, Plus, Search, ShoppingCart, X, Check, Box } from "lucide-react";
+import { Loader2, Minus, Plus, Search, ShoppingCart, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { listInventoryItems, type InventoryItemRecord } from "@/lib/inventory";
 import { checkoutSale, type CheckoutSalePayload, type PaymentMethod, type SaleRecord } from "@/lib/sales";
-import { useRouter } from "next/navigation";
 
 interface CartLine {
     itemId: string;
@@ -23,7 +22,11 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
     pos_card: "POS / Card",
 };
 
-export default function PosCheckout() {
+interface PosCheckoutProps {
+    locationId: string;
+}
+
+export default function PosCheckout({ locationId }: Readonly<PosCheckoutProps>) {
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [results, setResults] = useState<InventoryItemRecord[]>([]);
@@ -34,11 +37,6 @@ export default function PosCheckout() {
 
     const [submitting, setSubmitting] = useState(false);
     const [receipt, setReceipt] = useState<SaleRecord | null>(null);
-    const router = useRouter();
-
-    const navigateToInventory = () => {
-        router.push("/dashboard/clinical/inventory");
-    };
 
     useEffect(() => {
         const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -47,11 +45,6 @@ export default function PosCheckout() {
 
     const trimmedSearch = debouncedSearch.trim();
 
-    // `searching` is derived, not imperatively toggled — true whenever the
-    // most recently *completed* fetch doesn't match the current query.
-    // No setState call happens synchronously in the effect body; every
-    // setState below runs inside a .then/.catch callback, which is the
-    // pattern React's "cascading renders" warning explicitly endorses.
     const [lastLoadedSearch, setLastLoadedSearch] = useState<string | null>(null);
     const searching = trimmedSearch !== "" && lastLoadedSearch !== trimmedSearch;
 
@@ -62,10 +55,12 @@ export default function PosCheckout() {
 
         let cancelled = false;
 
-        listInventoryItems({ search: trimmedSearch })
+        // Scoped to this location — a search shouldn't surface stock sitting
+        // at a different branch that this till can't actually sell from.
+        listInventoryItems({ search: trimmedSearch, locationId })
             .then((data) => {
                 if (cancelled) return;
-                setResults(data.filter((i) => i.isActive && i.currentStock > 0));
+                setResults(data.items.filter((i) => i.isActive && i.currentStock > 0));
                 setLastLoadedSearch(trimmedSearch);
             })
             .catch(() => {
@@ -77,7 +72,7 @@ export default function PosCheckout() {
         return () => {
             cancelled = true;
         };
-    }, [trimmedSearch]);
+    }, [trimmedSearch, locationId]);
 
     const displayResults = trimmedSearch ? results : [];
 
@@ -148,6 +143,7 @@ export default function PosCheckout() {
         const payload: CheckoutSalePayload = {
             items: cartLines.map((line) => ({ itemId: line.itemId, quantity: line.quantity })),
             paymentMethod,
+            locationId,
         };
         if (customerUserId.trim()) {
             payload.userId = customerUserId.trim();
@@ -159,8 +155,6 @@ export default function PosCheckout() {
             setReceipt(sale);
             setCart({});
         } catch (err) {
-            // Surfaces "Insufficient stock for X" and any other checkout
-            // failure (e.g. item deleted mid-sale) as a Sonner toast.
             toast.error(err instanceof Error ? err.message : "Checkout failed. Please try again.");
         } finally {
             setSubmitting(false);
@@ -212,31 +206,19 @@ export default function PosCheckout() {
     }
 
     return (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-5 pry-ff p-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-5 pry-ff">
             {/* Search & results */}
             <div className="lg:col-span-3">
-                <section className="mb-4 flex items-center justify-between gap-4">
-                    <div className="relative mb-3 max-w-2xl flex-1 lg:mb-0">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search items to add to cart..."
-                            className="w-full rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                        />
-                    </div>
-
-                    <div>
-                        <button
-                            type="button"
-                            onClick={navigateToInventory}
-                            className="rounded-lg bg-pry-clr px-3 py-2.5 text-sm font-medium text-acc-clr pry-ff hover:opacity-90 cursor-pointer shadow flex gap-2 hover:bg-acc-clr hover:text-pry-clr transition">
-                            <Box className="h-4 w-4" />
-                            View inventory
-                        </button>
-                    </div>
-                </section>
+                <div className="relative mb-4 max-w-2xl">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search items to add to cart..."
+                        className="w-full rounded-lg border border-slate-200 py-2.5 pl-9 pr-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr"
+                    />
+                </div>
 
                 <div className="rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
                     {searching && (
@@ -247,7 +229,7 @@ export default function PosCheckout() {
 
                     {!searching && trimmedSearch && displayResults.length === 0 && (
                         <p className="px-4 py-8 text-center text-sm text-slate-400">
-                            No in-stock items match &ldquo;{trimmedSearch}&rdquo;.
+                            No in-stock items match &ldquo;{trimmedSearch}&rdquo; at this location.
                         </p>
                     )}
 

@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Loader2, Plus, Minus } from "lucide-react";
-import { adjustStock, type StockAdjustmentType } from "@/lib/inventory";
+import { adjustStock, addItemToLocation, type StockAdjustmentType } from "@/lib/inventory";
 import HelpTooltip from "@/components/inventory/help-tooltip";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ interface AdjustStockProps {
     locationId: string;
     currentStock: number;
     unit: string;
+    hasStockAtLocation?: boolean;
     disabled?: boolean;
     onAdjusted: (newCurrentStock: number) => void;
 }
@@ -30,6 +31,7 @@ export default function AdjustStock({
     locationId,
     currentStock,
     unit,
+    hasStockAtLocation = true,
     disabled,
     onAdjusted,
 }: Readonly<AdjustStockProps>) {
@@ -41,6 +43,9 @@ export default function AdjustStock({
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // First-time-at-this-location: an initial stock count, not an adjustment
+    const [startingStock, setStartingStock] = useState("");
+
     const isPurchase = type === "purchase";
 
     function handleTypeChange(next: StockAdjustmentType) {
@@ -48,6 +53,26 @@ export default function AdjustStock({
         setError(null);
         if (next === "purchase") setDirection("add");
         if (next !== "purchase") setUnitCost("");
+    }
+
+    async function handleAddToLocation() {
+        setError(null);
+        const parsed = Number(startingStock);
+        if (startingStock === "" || Number.isNaN(parsed) || parsed < 0) {
+            setError("Enter a starting stock count of 0 or more.");
+            return;
+        }
+        setSubmitting(true);
+        try {
+            await addItemToLocation(itemId, { locationId, initialStock: parsed });
+            onAdjusted(parsed);
+            setStartingStock("");
+            toast.success("Item is now stocked at this location.");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Couldn't add this item here. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     async function handleAdjust() {
@@ -95,6 +120,54 @@ export default function AdjustStock({
         } finally {
             setSubmitting(false);
         }
+    }
+
+    if (!hasStockAtLocation) {
+        return (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+                <div className="mb-2 flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-amber-700">
+                        Not yet stocked at this location
+                    </span>
+                    <HelpTooltip
+                        label="Why can't I adjust stock here?"
+                        text="This item exists in your catalog, but has never been tracked at this branch. Set a starting count to begin tracking it here — after that, use the usual Add/Remove adjustments."
+                    />
+                </div>
+
+                {error && (
+                    <div className="mb-3 rounded-md border border-red-100 bg-red-50 px-2.5 py-1.5 text-xs text-red-600">
+                        {error}
+                    </div>
+                )}
+
+                <div className="flex flex-wrap items-end gap-2">
+                    <div className="w-28">
+                        <label htmlFor="starting-stock" className="sr-only">Starting stock</label>
+                        <input
+                            id="starting-stock"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={startingStock}
+                            onChange={(e) => setStartingStock(e.target.value)}
+                            disabled={disabled || submitting}
+                            placeholder={`0 ${unit}`}
+                            className="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleAddToLocation}
+                        disabled={disabled || submitting}
+                        className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                        Start Stocking Here
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (

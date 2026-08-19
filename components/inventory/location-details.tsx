@@ -1,25 +1,29 @@
-// app/dashboard/clinical/locations/[locationId]/layout.tsx
+// components/inventory/location-details.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { listLocations, type Location } from "@/lib/location";
+import InventoryDashboard from "@/components/inventory/inventory-dashboard";
+import PosCheckout from "../sales/pos-checkout";
 
-const TABS = [
-    { href: "inventory", label: "Inventory" },
-    { href: "sales", label: "Sales" },
-    { href: "reports", label: "Reports" },
+type Tab = "inventory" | "sales" | "reports";
+
+const TABS: { key: Tab; label: string }[] = [
+    { key: "inventory", label: "Inventory" },
+    { key: "sales", label: "Sales" },
+    { key: "reports", label: "Reports" },
 ];
 
-export default function LocationDetailLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-    const pathname = usePathname();
-    const params = useParams<{ locationId: string }>();
-    const locationId = params.locationId;
+interface LocationDetailsProps {
+    locationId: string;
+}
 
+export default function LocationDetails({ locationId }: Readonly<LocationDetailsProps>) {
     const [location, setLocation] = useState<Location | null>(null);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<Tab>("inventory");
 
     useEffect(() => {
         let cancelled = false;
@@ -35,8 +39,6 @@ export default function LocationDetailLayout({ children }: Readonly<{ children: 
             cancelled = true;
         };
     }, [locationId]);
-
-    const activeTab = TABS.find((t) => pathname.includes(`/${t.href}`))?.href ?? "inventory";
 
     return (
         <div className="min-h-screen bg-slate-50 p-6 pry-ff">
@@ -57,14 +59,15 @@ export default function LocationDetailLayout({ children }: Readonly<{ children: 
                 )}
             </h1>
 
-            {/* Tabs */}
+            {/* Tabs — local state, not separate routes */}
             <div className="mb-6 flex items-center gap-6 border-b border-slate-200">
                 {TABS.map((tab) => {
-                    const isActive = activeTab === tab.href;
+                    const isActive = activeTab === tab.key;
                     return (
-                        <Link
-                            key={tab.href}
-                            href={`/dashboard/clinical/locations/${locationId}/${tab.href}`}
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setActiveTab(tab.key)}
                             className={`-mb-px border-b-2 pb-2.5 text-sm font-medium transition ${
                                 isActive
                                     ? "border-acc-clr text-acc-clr"
@@ -72,12 +75,30 @@ export default function LocationDetailLayout({ children }: Readonly<{ children: 
                             }`}
                         >
                             {tab.label}
-                        </Link>
+                        </button>
                     );
                 })}
             </div>
 
-            {children}
+            {activeTab === "inventory" && !loading && (
+                <InventoryDashboard locationId={locationId} />
+            )}
+
+            {/* {activeTab === "sales" && (
+                <p className="py-12 text-center text-sm text-slate-400">
+                    Sales for this location — coming soon.
+                </p>
+            )} */}
+
+            {activeTab === "sales" && !loading && (
+                <PosCheckout locationId={locationId} />
+            )}
+
+            {activeTab === "reports" && (
+                <p className="py-12 text-center text-sm text-slate-400">
+                    Reports for this location — coming soon.
+                </p>
+            )}
         </div>
     );
 }

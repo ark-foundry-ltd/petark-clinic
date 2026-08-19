@@ -251,8 +251,9 @@ export default function LocationsManager() {
                 <div className="space-y-3">
                     {locations.map((location) => (
                         <div
+                            onClick={() => router.push(`/dashboard/clinical/locations/${location._id}`)}
                             key={location._id}
-                            className={`bg-pry-clr border border-gray-100 rounded-xl p-4 flex items-start gap-3 ${
+                            className={`bg-pry-clr border border-gray-100 rounded-xl p-4 flex items-start gap-3 cursor-pointer ${
                                 !location.isActive ? "opacity-60" : ""
                             }`}
                         >

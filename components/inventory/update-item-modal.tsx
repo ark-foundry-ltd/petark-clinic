@@ -290,6 +290,7 @@ export default function UpdateItemModal({
                                     locationId={locationId}
                                     currentStock={stockDisplay}
                                     unit={form.unit || selectedItem.unit}
+                                    hasStockAtLocation={selectedItem.hasStockAtLocation}
                                     disabled={submitting}
                                     onAdjusted={handleStockAdjusted}
                                 />
