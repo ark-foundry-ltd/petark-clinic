@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { listLocations, type Location } from "@/lib/location";
 import InventoryDashboard from "@/components/inventory/inventory-dashboard";
 import PosCheckout from "../sales/pos-checkout";
+import SalesHistory from "../sales/sales-history";
 
 type Tab = "inventory" | "sales" | "reports";
 
@@ -18,6 +19,41 @@ const TABS: { key: Tab; label: string }[] = [
 
 interface LocationDetailsProps {
     locationId: string;
+}
+
+function SalesSubView({ locationId }: { locationId: string }) {
+    const [subTab, setSubTab] = useState<"checkout" | "history">("checkout");
+
+    return (
+        <div>
+            <div className="mb-4 flex gap-2">
+                <button
+                    type="button"
+                    onClick={() => setSubTab("checkout")}
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                        subTab === "checkout" ? "bg-acc-clr text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                >
+                    New Sale
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setSubTab("history")}
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                        subTab === "history" ? "bg-acc-clr text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                >
+                    History
+                </button>
+            </div>
+
+            {subTab === "checkout" ? (
+                <PosCheckout locationId={locationId} />
+            ) : (
+                <SalesHistory locationId={locationId} />
+            )}
+        </div>
+    );
 }
 
 export default function LocationDetails({ locationId }: Readonly<LocationDetailsProps>) {
@@ -91,7 +127,7 @@ export default function LocationDetails({ locationId }: Readonly<LocationDetails
             )} */}
 
             {activeTab === "sales" && !loading && (
-                <PosCheckout locationId={locationId} />
+                <SalesSubView locationId={locationId} />
             )}
 
             {activeTab === "reports" && (

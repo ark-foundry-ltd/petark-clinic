@@ -234,9 +234,10 @@ export default function PosCheckout({ locationId }: Readonly<PosCheckoutProps>) 
                     )}
 
                     {!searching && !trimmedSearch && (
-                        <p className="px-4 py-8 text-center text-sm text-slate-400">
+                        <div className="px-4 py-8 text-center text-sm text-slate-400">
+                            <Search className="mx-auto mb-2 h-14 w-14" />
                             Start typing to search inventory.
-                        </p>
+                        </div>
                     )}
 
                     {!searching && displayResults.length > 0 && (
