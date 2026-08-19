@@ -8,6 +8,7 @@ import { listLocations, type Location } from "@/lib/location";
 import InventoryDashboard from "@/components/inventory/inventory-dashboard";
 import PosCheckout from "../sales/pos-checkout";
 import SalesHistory from "../sales/sales-history";
+import LocationReports from "../reports/location-reports";
 
 type Tab = "inventory" | "sales" | "reports";
 
@@ -130,10 +131,8 @@ export default function LocationDetails({ locationId }: Readonly<LocationDetails
                 <SalesSubView locationId={locationId} />
             )}
 
-            {activeTab === "reports" && (
-                <p className="py-12 text-center text-sm text-slate-400">
-                    Reports for this location — coming soon.
-                </p>
+            {activeTab === "reports" && !loading && (
+                <LocationReports locationId={locationId} />
             )}
         </div>
     );

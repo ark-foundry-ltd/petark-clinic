@@ -186,6 +186,25 @@ export default function ProfileCard() {
                             Services & Animals
                         </h3>
                         <div className="space-y-4">
+                            {/* Services Offered */}
+                            <div>
+                                <p className="text-sm text-gray-500 mb-2">Services Offered</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {profile.servicesProvided && profile.servicesProvided.length > 0 ? (
+                                        profile.servicesProvided.map((service) => (
+                                            <span
+                                                key={service._id}
+                                                className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md"
+                                            >
+                                                {service.name}
+                                                <span className="font-semibold">₦{service.price.toLocaleString()}</span>
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span className="text-sm text-gray-400">-</span>
+                                    )}
+                                </div>
+                            </div>
                             {/* Animals Handled */}
                             <div>
                                 <p className="text-sm text-gray-500 mb-2">Animals Handled</p>
