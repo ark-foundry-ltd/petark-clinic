@@ -98,6 +98,7 @@ export default function StaffsClient() {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               onInvite={() => setShowModal(true)}
+              onUpdate={refetchStaff}
             />
           )}
         </div>

@@ -1,3 +1,5 @@
+// dashboard/profile/staffs/page.tsx
+
 import { Metadata } from "next";
 import StaffsClient from "@/components/clinic/staffs-client";
 

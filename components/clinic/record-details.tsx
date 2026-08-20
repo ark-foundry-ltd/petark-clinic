@@ -9,6 +9,7 @@ import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import ReferralBtn from "@/components/clinic/referral-btn";
 import PetTrendsChart from "@/components/clinic/pet-trends-chart";
 import TreatmentTimeline from "@/components/clinic/treatment-timeline";
+import MarkVisitPaidBtn from "@/components/clinic/mark-visit-paid-btn";
 import {
     AlertCircle,
     Stethoscope,
@@ -417,6 +418,7 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                 </div>
 
                 {/* Payment Information */}
+                {/* Payment Information */}
                 {visit.billing && (
                     <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 shadow-sm">
                         <div className="flex items-center gap-2 mb-4">
@@ -424,24 +426,6 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                             <h3 className="font-semibold text-sec-clr">Payment Details</h3>
                         </div>
                         <div className="space-y-3">
-                            <div className="flex justify-between py-2 border-b border-gray-50">
-                                <span className="text-sm text-gray-500">Professional Fee</span>
-                                <span className="text-sm text-sec-clr">
-                                    {new Intl.NumberFormat("en-NG", {
-                                        style: "currency",
-                                        currency: "NGN",
-                                    }).format(visit.billing.professionalFee)}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-2 border-b border-gray-50">
-                                <span className="text-sm text-gray-500">VAT (16%)</span>
-                                <span className="text-sm text-sec-clr">
-                                    {new Intl.NumberFormat("en-NG", {
-                                        style: "currency",
-                                        currency: "NGN",
-                                    }).format(visit.billing.vat)}
-                                </span>
-                            </div>
                             <div className="flex justify-between py-2 pt-2">
                                 <span className="text-sm font-semibold text-sec-clr">Total</span>
                                 <span className="text-lg font-bold text-sec-clr">
@@ -456,9 +440,7 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                                     className={`flex items-center justify-between px-3 py-2 rounded-lg ${
                                         visit.paymentStatus === "paid"
                                             ? "bg-green-50"
-                                            : visit.paymentStatus === "unpaid"
-                                            ? "bg-red-50"
-                                            : "bg-gray-50"
+                                            : "bg-red-50"
                                     }`}
                                 >
                                     <span className="text-sm font-medium text-sec-clr">
@@ -468,9 +450,7 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                                         className={`flex items-center gap-1.5 text-sm font-medium capitalize ${
                                             visit.paymentStatus === "paid"
                                                 ? "text-green-700"
-                                                : visit.paymentStatus === "unpaid"
-                                                ? "text-red-600"
-                                                : "text-gray-500"
+                                                : "text-red-600"
                                         }`}
                                     >
                                         {visit.paymentStatus === "paid" ? (
@@ -481,7 +461,19 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                                         {visit.paymentStatus}
                                     </span>
                                 </div>
+                                {visit.paymentStatus === "paid" && visit.paymentMethod && (
+                                    <p className="text-xs text-gray-400 mt-2 text-center">
+                                        Paid via {visit.paymentMethod.replace("_", " ")}
+                                        {visit.paidAt &&
+                                            ` on ${new Date(visit.paidAt).toLocaleDateString("en-GB")}`}
+                                    </p>
+                                )}
                             </div>
+                            {visit.paymentStatus === "unpaid" && (
+                                <div className="pt-3 border-t border-gray-50">
+                                    <MarkVisitPaidBtn visit={visit} onPaid={handleSaved} />
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

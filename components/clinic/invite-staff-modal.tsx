@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { inviteStaff, StaffRole } from "@/lib/staff";
+import { inviteStaff, type StaffRole } from "@/lib/staff";
 
 const ROLES: { value: StaffRole; label: string }[] = [
     { value: "vet", label: "vet" },
     { value: "receptionist", label: "receptionist" },
-    { value: "clinic", label: "clinic" },
 ];
 
 interface InviteStaffModalProps {
@@ -94,7 +93,6 @@ export default function InviteStaffModal({
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr/30 focus:border-acc-clr transition-colors sec-ff"
             />
           </div>
-
           <div>
             <label className="block text-xs font-medium text-gray-600 sec-ff mb-1">
               Role
@@ -121,12 +119,19 @@ export default function InviteStaffModal({
           >
             Cancel
           </button>
-          <button
+                    <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed pry-ff"
+            className="flex-1 px-4 py-2.5 text-sm font-medium bg-acc-clr text-pry-clr rounded-lg cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed pry-ff flex items-center justify-center gap-2"
           >
-            {loading ? "Sending..." : "Send Invite"}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              "Send Invite"
+            )}
           </button>
         </div>
       </div>

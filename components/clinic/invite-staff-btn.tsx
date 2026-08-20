@@ -26,7 +26,7 @@ export default function InviteStaffBtn({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+      className="flex items-center gap-2 px-5 py-2.5 bg-acc-clr text-pry-clr rounded-lg text-sm font-medium cursor-pointer transition-colors pry-ff"
     >
       <UserPlus className="w-4 h-4" />
       Invite Staff

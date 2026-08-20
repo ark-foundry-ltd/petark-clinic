@@ -14,10 +14,10 @@ interface Vitals {
 }
 
 interface Billing {
-    professionalFee: number;
-    vat: number;
     total: number;
 }
+
+export type PaymentMethod = "cash" | "transfer" | "pos_card";
 
 interface FollowUp {
     serviceId: string | null;
@@ -53,7 +53,7 @@ interface SOAP {
 
 export interface CompleteVisitPayload {
     soap: {
-        subjective?: string; // optional — falls back to createVisit value
+        subjective?: string;
         objective: string;
         assessment: string;
         plan: string;
@@ -78,7 +78,9 @@ interface ApiVisitResponse {
     selectedServices?: ClinicService[];
     followUps: FollowUp[];
     billing: Billing;
-    paymentStatus: "unpaid" | "paid" | "failed" | "refunded";
+    paymentStatus: "unpaid" | "paid";
+    paymentMethod?: PaymentMethod;
+    paidBy?: string;
     createdAt: string;
     completedAt: string | null;
     paidAt: string | null;
@@ -125,6 +127,10 @@ interface UpdateVisitVitalsResponse {
     data: {
         visit: ApiVisitResponse;
     };
+}
+
+export interface MarkVisitPaidPayload {
+    paymentMethod: PaymentMethod;
 }
 
 export interface VitalsTrendPoint {
@@ -253,6 +259,24 @@ export async function completeVisitWithAI(
             throw new Error(error.response?.data?.message || "Failed to complete visit with AI");
         }
         throw new Error("An unexpected error occurred");
+    }
+}
+
+export async function markVisitPaid(
+    visitId: string,
+    payload: MarkVisitPaidPayload
+): Promise<ApiVisitResponse> {
+    try {
+        const response = await api.patch<{ status: string; data: ApiVisitResponse }>(
+            `/visit/${visitId}/mark-paid`,
+            payload
+        );
+        return response.data.data;
+    } catch (error) {
+        if (axiosError.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || "Failed to mark visit as paid");
+        }
+        throw new Error("An unexpected error occurred while marking visit as paid");
     }
 }
 
