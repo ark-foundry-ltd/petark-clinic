@@ -5,20 +5,30 @@ import { AxiosError } from "axios";
 // ─── Shared Types ──────────────────────────────────────────────────────────
 
 export type ActivityType =
-    | "patient_new"
-    | "appointment_booked"
-    | "appointment_scheduled"
-    | "visit_new"
-    | "visit_completed"
-    | "sale_made"
-    | "sale_voided"
-    | "stock_low"
-    | "referral_sent"
-    | "referral_received"
-    | "referral_accepted"
-    | "referral_declined"
-    | "staff_invited"
-    | "payment_received";
+    | 'patient_new'
+    | 'appointment_booked'
+    | 'appointment_rescheduled'
+    | 'appointment_updated'
+    | 'visit_new'
+    | 'visit_completed'
+    | 'sale_made'
+    | 'sale_voided'
+    | 'stock_low'
+    | 'referral_sent'
+    | 'referral_received'
+    | 'referral_accepted'
+    | 'referral_declined'
+    | 'staff_invited'
+    | 'staff_joined'
+    | 'staff_invite_revoked'
+    | 'staff_removed'
+    | 'staff_restored'
+    | 'staff_role_changed'
+    | 'treatment_added'
+    | 'treatment_updated'
+    | 'treatment_deleted'
+    | 'payment_received'
+    | 'missed_appointment'
 
 export interface ActivityLogRecord {
     _id: string;
