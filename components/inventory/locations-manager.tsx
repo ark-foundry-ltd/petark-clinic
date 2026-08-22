@@ -24,6 +24,7 @@ import {
     Star,
     X,
 } from "lucide-react";
+import { getPlanInfo } from "@/lib/plan";
 
 interface LocationFormState {
     name: string;
@@ -59,9 +60,8 @@ function formatAddress(
 export default function LocationsManager() {
     const router = useRouter();
     const { profile } = useAuthStore();
-
-    const plan = profile?.subscription?.plan;
-    const status = profile?.subscription?.status;
+    
+    const { plan, status } = getPlanInfo(profile);
     const hasLocationAccess = plan !== "free" && plan != null && status === "active";
 
     const [locations, setLocations] = useState<Location[]>([]);

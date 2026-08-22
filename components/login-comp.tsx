@@ -1,7 +1,7 @@
 "use client";
 
 import { loginClinic } from "@/lib/auth";
-import { getUser } from "@/lib/user";
+import { getMe, isClinicResponse } from "@/lib/user";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Eye, EyeOff } from "lucide-react";
@@ -44,11 +44,15 @@ export default function LoginComp() {
                 setClinicToken(loginResponse.token);
             }
 
-            const profile = await getUser();
-            setProfile(profile);
+            const me = await getMe();
+            setProfile(
+                isClinicResponse(me) ? me.clinic : me.profile,
+                me.role,
+                me.permissions
+            );
 
             toast.success("Login successful!");
-            router.push("/dashboard");
+            router.push("/role-gate");
         } catch (error) {
             console.error("Login error:", error);
 

@@ -11,14 +11,19 @@ interface Address {
     zipCode?: string;
 }
 
-interface Vet {
+export type StaffRole = "vet" | "receptionist" | "sales" | "custom";
+
+export interface StaffMember {
     _id: string;
     fullname: string;
     email: string;
-    role: string;
+    role: StaffRole;
+    customRoleId?: string | null;
+    customRoleName?: string | null;
     clinicId: string;
-    status: string;
+    status: "invited" | "active" | "revoked";
     isEmailVerified: boolean;
+    createdAt: string;
 }
 
 export interface ClinicService {
@@ -49,7 +54,7 @@ export interface User {
     startingTime: string;
     closingTime: string;
     daysOpen: string[];
-    vets: Vet[];
+    staff: StaffMember[];
     subscription: Subscription;
     registration?: {
         enabled: boolean;
@@ -57,6 +62,35 @@ export interface User {
     };
 }
 
+export interface StaffProfile {
+    id: string;
+    fullname: string;
+    email: string;
+    role: StaffRole;
+    customRoleId: string | null;
+    customRoleName: string | null;
+    clinicId: string;
+    status: "invited" | "active" | "revoked";
+    isEmailVerified: boolean;
+    createdAt: string;
+    clinicName: string;
+    clinicPlan: 'free' | 'pro' | 'standard' | 'enterprise';
+    clinicPlanStatus: 'active' | 'inactive' | 'cancelled';
+}
+
+export type MeResponse =
+    | { role: "clinic"; permissions: string[]; clinic: User }
+    | { role: Exclude<StaffRole, never>; permissions: string[]; profile: StaffProfile };
+
+export function isClinicResponse(
+    data: MeResponse
+): data is { role: "clinic"; permissions: string[]; clinic: User } {
+    return data.role === "clinic";
+}
+
+// Kept for existing clinic-only call sites — still hits the same /clinic/profile
+// endpoint, which now branches server-side but only ever returns the clinic
+// shape when called by a clinic-role user.
 export async function getUser(): Promise<User> {
     try {
         const response = await api.get("/clinic/profile");
@@ -66,6 +100,22 @@ export async function getUser(): Promise<User> {
             console.error("Error fetching user profile:", error.response?.data || error.message);
         } else {
             console.error("Error fetching user profile:", error);
+        }
+        throw error;
+    }
+}
+
+// New: role-aware fetch, for use right after login when you don't yet know
+// whether the logged-in user is a clinic owner or staff member.
+export async function getMe(): Promise<MeResponse> {
+    try {
+        const response = await api.get("/clinic/profile");
+        return response.data.data as MeResponse;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            console.error("Error fetching profile:", error.response?.data || error.message);
+        } else {
+            console.error("Error fetching profile:", error);
         }
         throw error;
     }
@@ -112,14 +162,12 @@ export interface UpdateServicesPayload {
     registration?: RegistrationSettings;
 }
 
-// Changed the return type from Promise<User> to Promise<Partial<User>>
 export async function updateServices(payload: UpdateServicesPayload): Promise<Partial<User>> {
     try {
         const response = await api.patch("/clinic/services", payload);
-        
-        // We merge the payload sent with the exact response data from the backend
+
         return {
-            ...payload, 
+            ...payload,
             ...response.data.data
         } as Partial<User>;
     } catch (error) {

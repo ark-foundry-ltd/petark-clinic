@@ -10,6 +10,7 @@ import {
     Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { TrendingUp, Sparkles, Lock, Loader2, Weight } from "lucide-react";
+import { getPlanInfo } from "@/lib/plan";
 
 interface PetTrendsChartProps {
     petId: string;
@@ -23,7 +24,8 @@ const VITAL_LINES = [
 
 export default function PetTrendsChart({ petId }: Readonly<PetTrendsChartProps>) {
     const { profile } = useAuthStore();
-    const isPro = profile?.subscription?.plan === "pro";
+    const { plan } = getPlanInfo(profile);
+    const isPro = plan === "pro";
 
     const [vitalsTrend, setVitalsTrend] = useState<VitalsTrendPoint[]>([]);
     const [weightTrend, setWeightTrend] = useState<WeightTrendPoint[]>([]);

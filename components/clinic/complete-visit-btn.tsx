@@ -26,7 +26,12 @@ type Mode = "manual" | "ai";
 
 export default function CompleteVisitBtn({ visit, onComplete }: Readonly<CompleteVisitBtnProps>) {
     const { profile } = useAuthStore();
-    const isPro = profile?.subscription?.plan === "pro";
+    const plan = profile
+        ? "subscription" in profile
+            ? profile.subscription?.plan
+            : profile.clinicPlan
+        : undefined;
+    const isPro = plan === "pro";
 
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);

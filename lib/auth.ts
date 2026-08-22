@@ -32,6 +32,7 @@ interface LoginData {
 
 interface LoginResponse {
     token: string;
+    role?: "clinic" | "vet" | "receptionist" | "sales" | "custom";
     message?: string;
 }
 

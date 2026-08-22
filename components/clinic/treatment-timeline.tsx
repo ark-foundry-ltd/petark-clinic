@@ -18,6 +18,7 @@ import {
     Loader2, AlertTriangle, Clock,
     ChevronLeft, ChevronRight,
 } from "lucide-react";
+import { getPlanInfo } from "@/lib/plan";
 
 interface TreatmentTimelineProps {
     petId: string;
@@ -28,8 +29,8 @@ interface TreatmentTimelineProps {
 
 export default function TreatmentTimeline({ petId, visitId, petWeightKg, petSpecies }: Readonly<TreatmentTimelineProps>) {
     const { profile } = useAuthStore();
-    const plan = profile?.subscription?.plan;
-    const status = profile?.subscription?.status;
+    
+    const { plan, status } = getPlanInfo(profile);
     const hasAccess = !!plan && plan !== "free" && status === "active"; // standard, pro, enterprise
 
     const [timeline, setTimeline] = useState<Treatment[]>([]);

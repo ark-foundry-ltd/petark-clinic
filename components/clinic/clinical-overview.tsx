@@ -8,13 +8,16 @@ import { PawPrint, ClipboardList, Package, ArrowLeftRight, Lock, MapPin } from "
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useStore";
 import ActivityFeed from "@/components/clinic/activity-feed";
+import { User } from "@/lib/user";
 
 export default function ClinicalOverview() {
     const router = useRouter();
     const { profile } = useAuthStore();
 
-    const plan = profile?.subscription?.plan;
-    const status = profile?.subscription?.status;
+    const clinicProfile = profile as User | null;
+
+    const plan = clinicProfile?.subscription?.plan;
+    const status = clinicProfile?.subscription?.status;
     const isActive = status === "active";
     const isProOrAbove = (plan === "pro" || plan === "enterprise") && isActive;
     const isStandardOrAbove = (plan === "standard" || plan === "pro" || plan === "enterprise") && isActive;

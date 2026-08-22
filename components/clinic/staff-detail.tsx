@@ -93,7 +93,7 @@ export default function StaffDetailClient({ id }: { id: string }) {
             </p>
           </div>
           <span
-            className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize flex-shrink-0 ${
+            className={`text-xs font-medium px-2.5 py-1 rounded-full capitalize shrink-0 sec-ff ${
               STATUS_STYLES[status] ?? "bg-gray-100 text-gray-500"
             }`}
           >

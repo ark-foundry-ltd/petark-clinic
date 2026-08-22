@@ -20,6 +20,7 @@ import {
 import { useSidebar } from "@/context/sidebar-context";
 import { useAuthStore } from "@/store/useStore";
 import { logoutClinic } from "@/lib/auth";
+import { getPlanInfo } from "@/lib/plan";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -48,7 +49,6 @@ function isRouteActive(pathname: string, href: string, exact: boolean = false) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-// ─── Plan Badge ───────────────────────────────────────────────────────────────
 // ─── Plan Badge ───────────────────────────────────────────────────────────────
 function PlanBadge({ plan, status }: { plan?: string; status?: string }) {
   const isActive = status === "active";
@@ -92,6 +92,7 @@ function PlanBadge({ plan, status }: { plan?: string; status?: string }) {
 // ─── Mobile Top Bar ───────────────────────────────────────────────────────────
 export function MobileTopBar() {
   const { profile } = useAuthStore();
+  const { plan, status } = getPlanInfo(profile);
   const handleLogout = useLogout();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -142,7 +143,7 @@ export function MobileTopBar() {
                     <p className="text-sm font-semibold text-gray-900 truncate pry-ff">
                       {profile?.clinicName || "Pet Owner"}
                     </p>
-                    <PlanBadge plan={profile?.subscription?.plan} status={profile?.subscription?.status} />
+                    <PlanBadge plan={plan} status={status} />
                   </div>
                   <p className="text-xs text-gray-500 truncate mt-0.5">
                     {profile?.email || "petark@example.com"}
@@ -211,6 +212,7 @@ export function Sidebar() {
   const handleLogout = useLogout();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const { profile } = useAuthStore();
+  const { plan, status } = getPlanInfo(profile);
 
   return (
     <aside
@@ -318,7 +320,7 @@ export function Sidebar() {
                   <p className="text-sm font-medium text-gray-700 truncate">
                     {profile?.clinicName || "Clinic"}
                   </p>
-                  <PlanBadge plan={profile?.subscription?.plan} status={profile?.subscription?.status} />
+                  <PlanBadge plan={plan} status={status} />
                 </div>
                 <p className="text-xs text-gray-500 truncate">
                   {profile?.email || "petark@example.com"}

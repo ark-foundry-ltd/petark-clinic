@@ -1,7 +1,7 @@
 import api from "@/lib/api";
 import axiosError from "axios";
 
-export type StaffRole = "vet" | "receptionist";
+export type StaffRole = "vet" | "receptionist" | "sales";
 export type StaffStatus = "invited" | "active" | "revoked";
 
 export interface Staff {

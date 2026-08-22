@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { inviteStaff, type StaffRole } from "@/lib/staff";
 
 const ROLES: { value: StaffRole; label: string }[] = [
-    { value: "vet", label: "vet" },
-    { value: "receptionist", label: "receptionist" },
+  { value: "vet", label: "Vet Assistant" },
+  { value: "receptionist", label: "Receptionist" },
+  { value: "sales", label: "Sales" }
 ];
 
 interface InviteStaffModalProps {

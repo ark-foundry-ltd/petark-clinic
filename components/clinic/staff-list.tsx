@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, MoreVertical, ShieldOff, ShieldCheck, UserCog } from "lucide-react";
 import {
@@ -39,6 +40,7 @@ export default function StaffList({
   onInvite,
   onUpdate,
 }: Readonly<StaffListProps>) {
+  const router = useRouter();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -47,6 +49,18 @@ export default function StaffList({
       s.fullname.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  function handleViewStaff(staff: Staff) {
+    const query = new URLSearchParams({
+      fullname: staff.fullname,
+      email: staff.email,
+      role: staff.role,
+      status: staff.status,
+      isEmailVerified: String(staff.isEmailVerified ?? false),
+      createdAt: staff.createdAt ?? "",
+    }).toString();
+    router.push(`/dashboard/profile/staffs/${staff._id}?${query}`);
+  }
 
   async function handleRoleChange(staffId: string, role: StaffRole) {
     setBusyId(staffId);
@@ -121,7 +135,8 @@ export default function StaffList({
         {filtered.map((staff) => (
           <div
             key={staff._id}
-            className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl p-4 hover:bg-gray-50/50 transition-colors"
+            onClick={() => handleViewStaff(staff)}
+            className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl p-4 hover:bg-gray-50/50 transition-colors cursor-pointer"
           >
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -129,7 +144,7 @@ export default function StaffList({
                   {staff.fullname}
                 </p>
                 <span
-                  className={`px-2 py-0.5 rounded-full text-[11px] font-medium capitalize shrink-0 ${STATUS_STYLES[staff.status]}`}
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-medium capitalize shrink-0 sec-ff ${STATUS_STYLES[staff.status]}`}
                 >
                   {staff.status}
                 </span>
@@ -138,19 +153,19 @@ export default function StaffList({
               <p className="text-xs text-gray-400 sec-ff capitalize mt-0.5">{staff.role}</p>
             </div>
 
-            <div className="relative shrink-0">
+            <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() =>
                   setOpenMenuId(openMenuId === staff._id ? null : staff._id)
                 }
                 disabled={busyId === staff._id}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 pry-ff"
               >
                 <MoreVertical className="w-4 h-4 text-gray-500" />
               </button>
 
               {openMenuId === staff._id && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-10">
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-10 pry-ff">
                   {staff.status !== "revoked" && (
                     <>
                       <p className="px-3 pt-1.5 pb-1 text-[11px] font-medium text-gray-400 uppercase tracking-wide">
@@ -160,7 +175,7 @@ export default function StaffList({
                         <button
                           key={r.value}
                           onClick={() => handleRoleChange(staff._id, r.value)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors pry-ff"
                         >
                           <UserCog className="w-3.5 h-3.5 text-gray-400" />
                           Set as {r.label}
@@ -169,7 +184,7 @@ export default function StaffList({
                       <div className="my-1 border-t border-gray-100" />
                       <button
                         onClick={() => handleRevoke(staff._id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors pry-ff"
                       >
                         <ShieldOff className="w-3.5 h-3.5" />
                         {staff.status === "invited" ? "Revoke invite" : "Revoke access"}
@@ -180,7 +195,7 @@ export default function StaffList({
                   {staff.status === "revoked" && (
                     <button
                       onClick={() => handleRestore(staff._id)}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-acc-clr hover:bg-green-50 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-acc-clr hover:bg-green-50 transition-colors pry-ff"
                     >
                       <ShieldCheck className="w-3.5 h-3.5" />
                       Restore access
