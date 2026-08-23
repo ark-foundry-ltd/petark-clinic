@@ -1,8 +1,8 @@
 // app/dashboard/client-layout.tsx
-
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useStore";
 import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
 import { MobileTopBar, MobileBottomNav, Sidebar } from "@/components/clinic/sidebar";
@@ -43,13 +43,39 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
 export default function DashboardClientLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const { clinic_token, profile, fetchProfile, isLoading } = useAuthStore();
+  const router = useRouter();
+  const { clinic_token, profile, role, fetchProfile, isLoading, hasHydrated } = useAuthStore();
 
   useEffect(() => {
+    if (!hasHydrated) return; // wait for localStorage to restore before deciding anything
+
+    if (!clinic_token) {
+      router.replace("/login");
+      return;
+    }
     if (clinic_token && !profile && !isLoading) {
       fetchProfile().catch(console.error);
     }
-  }, [clinic_token, profile, isLoading, fetchProfile]);
+  }, [hasHydrated, clinic_token, profile, isLoading, fetchProfile, router]);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (role && role !== "clinic") {
+      router.replace("/staff-dashboard");
+    }
+  }, [hasHydrated, role, router]);
+
+  if (!hasHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin h-12 w-12 text-acc-clr" />
+      </div>
+    );
+  }
+
+  if (!clinic_token) {
+    return null;
+  }
 
   if (clinic_token && !profile && isLoading) {
     return (
@@ -60,6 +86,10 @@ export default function DashboardClientLayout({
         </div>
       </div>
     );
+  }
+
+  if (role && role !== "clinic") {
+    return null;
   }
 
   return (

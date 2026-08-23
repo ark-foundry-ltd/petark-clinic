@@ -15,6 +15,7 @@ interface AuthState {
     permissions: string[];
     isLoading: boolean;
     error: string | null;
+    hasHydrated: boolean; // ← new
 }
 
 interface AuthActions {
@@ -23,6 +24,7 @@ interface AuthActions {
     fetchProfile: () => Promise<void>;
     logout: () => void;
     clearAuth: () => void;
+    setHasHydrated: (value: boolean) => void; // ← new
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -36,6 +38,7 @@ export const useAuthStore = create<AuthStore>()(
             permissions: [],
             isLoading: false,
             error: null,
+            hasHydrated: false,
 
             setClinicToken: (clinic_token) => set({ clinic_token }),
 
@@ -85,6 +88,8 @@ export const useAuthStore = create<AuthStore>()(
                     error: null
                 });
             },
+
+            setHasHydrated: (value) => set({ hasHydrated: value }),
         }),
         {
             name: "auth-storage",
@@ -94,6 +99,9 @@ export const useAuthStore = create<AuthStore>()(
                 role: state.role,
                 permissions: state.permissions,
             }),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

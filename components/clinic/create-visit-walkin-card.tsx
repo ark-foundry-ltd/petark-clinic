@@ -5,10 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, ArrowLeft, Stethoscope, Plus, X } from "lucide-react";
 import { toast } from "sonner";
-import { getUser, type User, type ClinicService } from "@/lib/user";
+import { type ClinicService } from "@/lib/user";
 import { getClinicPatientById } from "@/lib/clinic-patient";
 import type { ClinicPatientRecord } from "@/lib/clinic-patient";
 import { createVisit, type CreateVisitPayload } from "@/lib/visit";
+import { useAuthStore } from "@/store/useStore";
 
 interface Vitals {
     weight: number | null;
@@ -39,13 +40,28 @@ const EMPTY_VITALS: Vitals = {
     weight: null, temp: null, pulse: null, respiration: null, appetite: null, activity: null,
 };
 
-export default function CreateVisitWalkInCard() {
+interface CreateVisitWalkInCardProps {
+    /** Where to redirect after a successful visit creation, e.g. "/dashboard/clinical/records" or "/staff-dashboard/clinical/records" */
+    redirectBasePath?: string;
+}
+
+export default function CreateVisitWalkInCard({
+    redirectBasePath = "/dashboard/clinical/records",
+}: Readonly<CreateVisitWalkInCardProps>) {
     const searchParams = useSearchParams();
     const patientId = searchParams.get("patientId");
     const router = useRouter();
+    const { profile } = useAuthStore();
+
+    // Clinic owner: services live on profile.servicesProvided.
+    // Staff: services live on profile.clinicServicesProvided.
+    const clinicServices: ClinicService[] = profile
+        ? "servicesProvided" in profile
+            ? profile.servicesProvided ?? []
+            : profile.clinicServicesProvided ?? []
+        : [];
 
     const [patient, setPatient] = useState<ClinicPatientRecord | null>(null);
-    const [clinic, setClinic] = useState<User | null>(null);
     const [loadingPatient, setLoadingPatient] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -65,12 +81,8 @@ export default function CreateVisitWalkInCard() {
                 return;
             }
             try {
-                const [patientData, clinicData] = await Promise.all([
-                    getClinicPatientById(patientId),
-                    getUser(),
-                ]);
+                const patientData = await getClinicPatientById(patientId);
                 setPatient(patientData);
-                setClinic(clinicData);
             } catch {
                 setLoadError("Failed to load patient.");
                 toast.error("Failed to load patient.");
@@ -119,7 +131,7 @@ export default function CreateVisitWalkInCard() {
         setFollowUps((prev) => prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)));
     }
 
-    const selectedServices = (clinic?.servicesProvided ?? []).filter((s) => servicesProvided.includes(s._id));
+    const selectedServices = clinicServices.filter((s) => servicesProvided.includes(s._id));
 
     async function handleSubmit() {
         if (!patient) return;
@@ -147,7 +159,7 @@ export default function CreateVisitWalkInCard() {
         try {
             const created = await createVisit(payload);
             toast.success("Visit created successfully.");
-            router.push(`/dashboard/clinical/records/${created._id}`);
+            router.push(`${redirectBasePath}/${created._id}`);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to create visit.");
         } finally {
@@ -172,7 +184,6 @@ export default function CreateVisitWalkInCard() {
     }
 
     const pet = patient.pet;
-    const clinicServices: ClinicService[] = clinic?.servicesProvided ?? [];
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 pry-ff bg-pry-clr rounded-lg shadow">

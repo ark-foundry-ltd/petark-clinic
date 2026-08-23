@@ -1,4 +1,4 @@
-// app/dashboard/clinical/records/create-visit/page.tsx
+// app/staff-dashboard/clinical/records/create-visit/page.tsx
 import { Metadata } from "next";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
@@ -17,11 +17,11 @@ function CreateVisitFallback() {
     );
 }
 
-export default function CreateVisitWalkInPage() {
+export default function StaffCreateVisitWalkInPage() {
     return (
         <main className="py-6">
             <Suspense fallback={<CreateVisitFallback />}>
-                <CreateVisitWalkInCard />
+                <CreateVisitWalkInCard redirectBasePath="/staff-dashboard/clinical/records" />
             </Suspense>
         </main>
     );

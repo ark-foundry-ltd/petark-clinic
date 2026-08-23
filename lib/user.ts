@@ -76,6 +76,9 @@ export interface StaffProfile {
     clinicName: string;
     clinicPlan: 'free' | 'pro' | 'standard' | 'enterprise';
     clinicPlanStatus: 'active' | 'inactive' | 'cancelled';
+    clinicRegistrationFee: number;     
+    clinicRegistrationEnabled: boolean;
+    clinicServicesProvided: ClinicService[]; 
 }
 
 export type MeResponse =
