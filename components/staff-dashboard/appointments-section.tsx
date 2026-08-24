@@ -1,9 +1,21 @@
-// components/staff-dashboard/appointments-section.tsx
+"use client";
+
+import { AppointmentsProvider } from "@/context/appointments-context";
+import AppointmentStats from "@/components/clinic/appointment-stats";
+import GetAppointments from "@/components/clinic/get-appointments";
+
 export default function AppointmentsSection() {
-  return (
-    <div className="border border-gray-100 rounded-xl p-5">
-      <h2 className="text-sm font-semibold text-gray-900 pry-ff mb-1">Appointments</h2>
-      <p className="text-xs text-gray-500 sec-ff">Coming soon.</p>
-    </div>
-  );
+    return (
+        <AppointmentsProvider>
+            <div className="space-y-6">
+                <div>
+                    <h1 className="text-lg font-bold text-sec-clr pry-ff">Appointments</h1>
+                    <p className="text-sm text-gray-400">Your clinic's appointment schedule</p>
+                </div>
+
+                <AppointmentStats />
+                <GetAppointments basePath="/staff-dashboard/appointments" />
+            </div>
+        </AppointmentsProvider>
+    );
 }

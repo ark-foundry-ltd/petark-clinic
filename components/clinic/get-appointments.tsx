@@ -10,6 +10,10 @@ import { useAppointmentsContext } from "@/context/appointments-context";
 import VisitBtn from "@/components/clinic/visit-btn";
 import { CalendarDays, Clock, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, CheckCheck, CalendarX, AlarmClockOff } from "lucide-react";
 
+interface GetAppointmentsProps {
+    basePath?: string;
+}
+
 const STATUS_STYLES = {
   pending:   { className: "bg-yellow-50 text-yellow-700 border border-yellow-200", icon: Clock },
   confirmed: { className: "bg-green-50 text-green-700 border border-green-200", icon: CheckCircle2 },
@@ -53,7 +57,7 @@ function SkeletonRow() {
 
 const EMPTY_PAGE: AppointmentsPage = { appointments: [], total: 0, page: 1, totalPages: 1, count: 0 };
 
-export default function GetAppointments() {
+export default function GetAppointments({ basePath = "/dashboard/appointments" }: Readonly<GetAppointmentsProps>) {
     const router = useRouter();
     const [data, setData] = useState<AppointmentsPage>(EMPTY_PAGE);
     const [loading, setLoading] = useState(true);
@@ -104,8 +108,9 @@ export default function GetAppointments() {
         setRange(next);
     }
 
+    // changed it, to accommodate vets to view the appointment details page instead of the visit page, since vets can view the appointment details without having to start a visit
     function handleRowClick(appointmentId: string) {
-        router.push(`/dashboard/appointments/${appointmentId}`);
+        router.push(`${basePath}/${appointmentId}`);
     }
 
     const { appointments, total, totalPages } = data;

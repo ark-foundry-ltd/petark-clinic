@@ -75,7 +75,13 @@ function generateRefId(id: string) {
     return `APT-${shortId}`;
 }
 
-export default function AppointmentDetails() {
+interface AppointmentDetailsProps {
+    basePath?: string;
+}
+
+export default function AppointmentDetails({
+    basePath = "/dashboard/appointments",
+}: Readonly<AppointmentDetailsProps>) {
     const params = useParams();
     const appointmentId = params?.id as string;
 
@@ -139,7 +145,7 @@ export default function AppointmentDetails() {
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Appointment</h3>
                     <p className="text-gray-500 mb-6">{error || "Appointment not found"}</p>
                     <Link
-                        href="/dashboard/appointments"
+                        href={basePath}
                         className="inline-flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
                     >
                         <ArrowLeft size={18} />
@@ -165,7 +171,7 @@ export default function AppointmentDetails() {
                 {/* Header */}
                 <div className="mb-6">
                     <Link
-                        href="/dashboard/appointments"
+                        href={basePath}
                         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
                     >
                         <ArrowLeft size={16} />
@@ -286,7 +292,7 @@ export default function AppointmentDetails() {
                         {isConfirmed && !visit && (
                             <div className="bg-pry-clr rounded-2xl border border-gray-100 shadow-sm p-6">
                                 <button
-                                    onClick={() => router.push(`/dashboard/appointments/${appointmentId}/create-visit`)}
+                                    onClick={() => router.push(`${basePath}/${appointmentId}/create-visit`)}
                                     className="w-full bg-acc-clr text-pry-clr py-3 px-4 rounded-xl font-medium hover:bg-acc-clr/90 transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                                 >
                                     Start Clinical
@@ -395,28 +401,28 @@ export default function AppointmentDetails() {
                         </div>
 
                         {/* Action Buttons */}
-<div className="space-y-3">
-    {(appointment.status === "expired" || appointment.status === "missed") && (
-        <RescheduleAppointmentModal
-            appointmentId={appointment._id}
-            clinicId={appointment.clinicId}
-            currentDate={appointment.date || appointment.appointmentDate}
-            pet={{
-                name: appointment.pet?.name ?? "Pet",
-                breed: appointment.pet?.breed,
-                species: appointment.pet?.species,
-                photo: appointment.pet?.photo,
-            }}
-            ownerName={appointment.user?.fullname}
-            onRescheduled={({ date, status }) => {
-                setAppointment((prev) =>
-                    prev ? { ...prev, date, status: status as Appointment["status"] } : prev
-                );
-                setVisit(null);
-            }}
-        />
-    )}
-</div>
+                        <div className="space-y-3">
+                            {(appointment.status === "expired" || appointment.status === "missed") && (
+                                <RescheduleAppointmentModal
+                                    appointmentId={appointment._id}
+                                    clinicId={appointment.clinicId}
+                                    currentDate={appointment.date || appointment.appointmentDate}
+                                    pet={{
+                                        name: appointment.pet?.name ?? "Pet",
+                                        breed: appointment.pet?.breed,
+                                        species: appointment.pet?.species,
+                                        photo: appointment.pet?.photo,
+                                    }}
+                                    ownerName={appointment.user?.fullname}
+                                    onRescheduled={({ date, status }) => {
+                                        setAppointment((prev) =>
+                                            prev ? { ...prev, date, status: status as Appointment["status"] } : prev
+                                        );
+                                        setVisit(null);
+                                    }}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
