@@ -1,12 +1,14 @@
+// components/clinic/create-visit-card.tsx
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, ArrowLeft, Stethoscope, Plus, X } from "lucide-react";
 import { toast } from "sonner";
-import { getUser, type User, type ClinicService } from "@/lib/user";
+import { type ClinicService } from "@/lib/user";
 import { getAppointmentById, type Appointment } from "@/lib/appointment";
 import { createVisit, type CreateVisitPayload } from "@/lib/visit";
+import { useAuthStore } from "@/store/useStore";
 
 interface Vitals {
     weight: number | null;
@@ -42,17 +44,31 @@ const EMPTY_VITALS: Vitals = {
     activity: null,
 };
 
-export default function CreateVisitCard() {
+interface CreateVisitCardProps {
+    /** Where "Create Visit" and Back redirect to, e.g. "/dashboard/appointments" or "/staff-dashboard/appointments" */
+    basePath?: string;
+}
+
+export default function CreateVisitCard({
+    basePath = "/dashboard/appointments",
+}: Readonly<CreateVisitCardProps>) {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
+    const { profile, role } = useAuthStore();
+
+    // Clinic owner: services live on profile.servicesProvided.
+    // Staff: services live on profile.clinicServicesProvided.
+    const clinicServices: ClinicService[] = profile
+        ? "servicesProvided" in profile
+            ? profile.servicesProvided ?? []
+            : profile.clinicServicesProvided ?? []
+        : [];
 
     const [appointment, setAppointment] = useState<Appointment | null>(null);
-    const [clinic, setClinic] = useState<User | null>(null);
     const [loadingAppt, setLoadingAppt] = useState(true);
 
     const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
     const [chiefComplaint, setChiefComplaint] = useState("");
-    const [vetId, setVetId] = useState("");
     const [servicesProvided, setServicesProvided] = useState<string[]>([]);
     const [followUps, setFollowUps] = useState<FollowUpEntry[]>([]);
     const [submitting, setSubmitting] = useState(false);
@@ -61,12 +77,8 @@ export default function CreateVisitCard() {
     useEffect(() => {
         async function load() {
             try {
-                const [appt, clinicData] = await Promise.all([
-                    getAppointmentById(id),
-                    getUser(),
-                ]);
+                const appt = await getAppointmentById(id);
                 setAppointment(appt);
-                setClinic(clinicData);
             } catch {
                 toast.error("Failed to load appointment.");
             } finally {
@@ -106,8 +118,6 @@ export default function CreateVisitCard() {
         }
     }
 
-    // ─── Follow-up helpers ────────────────────────────────────────────────────
-
     function addFollowUp(service: ClinicService) {
         setFollowUps((prev) => [
             ...prev,
@@ -125,11 +135,7 @@ export default function CreateVisitCard() {
         );
     }
 
-    const selectedServices = (clinic?.servicesProvided ?? []).filter((s) =>
-        servicesProvided.includes(s._id)
-    );
-
-    // ─── Submit ───────────────────────────────────────────────────────────────
+    const selectedServices = clinicServices.filter((s) => servicesProvided.includes(s._id));
 
     async function handleSubmit() {
         if (!appointment) return;
@@ -148,7 +154,6 @@ export default function CreateVisitCard() {
 
         const payload: CreateVisitPayload = {
             appointmentId: appointment._id,
-            ...(vetId.trim() ? { vetId: vetId.trim() } : {}),
             ...(servicesProvided.length > 0 ? { servicesProvided } : {}),
             vitals,
             ...(chiefComplaint.trim() ? { chiefComplaint: chiefComplaint.trim() } : {}),
@@ -159,7 +164,7 @@ export default function CreateVisitCard() {
         try {
             await createVisit(payload);
             toast.success("Visit created successfully.");
-            router.push(`/dashboard/appointments/${id}`);
+            router.push(`${basePath}/${id}`);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to create visit.");
         } finally {
@@ -178,7 +183,6 @@ export default function CreateVisitCard() {
     if (!appointment) return null;
 
     const pet = appointment.pet;
-    const clinicServices: ClinicService[] = clinic?.servicesProvided ?? [];
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-8 space-y-8 pry-ff bg-pry-clr rounded-lg shadow">
@@ -202,6 +206,11 @@ export default function CreateVisitCard() {
                     {pet && (
                         <p className="text-sm text-gray-500 mt-0.5 capitalize">
                             {pet.name} &middot; {pet.species} &middot; {pet.breed}
+                        </p>
+                    )}
+                    {role === "vet" && profile && "fullname" in profile && (
+                        <p className="text-xs text-acc-clr mt-1">
+                            Assigned to you — {profile.fullname}
                         </p>
                     )}
                 </div>
@@ -259,7 +268,6 @@ export default function CreateVisitCard() {
                         </div>
                     </div>
 
-                    {/* Add follow-up buttons per selected service */}
                     <div className="flex flex-wrap gap-2">
                         {selectedServices.map((service) => {
                             const alreadyAdded = followUps.some((f) => f.serviceId === service._id);
@@ -278,7 +286,6 @@ export default function CreateVisitCard() {
                         })}
                     </div>
 
-                    {/* Follow-up entries */}
                     {followUps.length > 0 && (
                         <div className="space-y-3">
                             {followUps.map((f, i) => (
@@ -367,7 +374,6 @@ export default function CreateVisitCard() {
                     />
                 </div>
 
-                {/* Appetite */}
                 <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-gray-600">Appetite</label>
                     <div className="flex flex-wrap gap-2">
@@ -393,7 +399,6 @@ export default function CreateVisitCard() {
                     </div>
                 </div>
 
-                {/* Activity */}
                 <div className="space-y-1.5">
                     <label className="block text-xs font-medium text-gray-600">Activity</label>
                     <div className="flex flex-wrap gap-2">
@@ -432,19 +437,6 @@ export default function CreateVisitCard() {
                     onChange={(e) => setChiefComplaint(e.target.value)}
                     placeholder="Describe the pet's presenting complaint or reason for visit."
                     className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-acc-clr transition resize-none"
-                />
-            </section>
-
-            {/* Vet */}
-            <section className="space-y-2">
-                <h2 className="text-sm font-semibold text-sec-clr uppercase tracking-wide">
-                    Vet <span className="text-gray-400 normal-case font-normal">(optional)</span>
-                </h2>
-                <Field
-                    label="Vet ID"
-                    value={vetId}
-                    onChange={setVetId}
-                    placeholder="Leave blank if no vet assigned"
                 />
             </section>
 

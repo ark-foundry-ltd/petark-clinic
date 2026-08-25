@@ -13,6 +13,7 @@ interface VisitBtnProps {
     status: Appointment["status"];
     visitStatus?: "in-progress" | "completed";
     onConfirmed?: () => void;
+    basePath?: string;
 }
 
 export default function VisitBtn({
@@ -20,6 +21,7 @@ export default function VisitBtn({
     status,
     visitStatus,
     onConfirmed,
+    basePath = "/dashboard/appointments",
 }: Readonly<VisitBtnProps>) {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -35,7 +37,7 @@ export default function VisitBtn({
     }
 
     function handleCreateVisit() {
-        router.push(`/dashboard/appointments/${appointmentId}/create-visit`);
+        router.push(`${basePath}/${appointmentId}/create-visit`);
     }
 
     // pending → "Confirm" button
