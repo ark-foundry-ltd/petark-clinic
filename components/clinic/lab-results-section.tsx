@@ -1,3 +1,4 @@
+// components/clinic/lab-results-section.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ import {
     addLabResult, updateLabResult, getVisitLabResults,
     type LabResult, type LabTestType, type LabFinding,
 } from "@/lib/lab-results";
+import DeleteLabResultBtn from "@/components/clinic/delete-lab-result-btn";
 
 interface LabResultsSectionProps {
     visitId: string;
@@ -85,6 +87,7 @@ export default function LabResultsSection({ visitId, petId }: Readonly<LabResult
                                 setFillingInId(null);
                                 refresh();
                             }}
+                            onDeleted={refresh}
                         />
                     ))}
                 </div>
@@ -113,9 +116,10 @@ interface LabResultCardProps {
     onStartFillIn: () => void;
     onCancelFillIn: () => void;
     onSaved: () => void;
+    onDeleted: () => void;
 }
 
-function LabResultCard({ lab, isFillingIn, onStartFillIn, onCancelFillIn, onSaved }: Readonly<LabResultCardProps>) {
+function LabResultCard({ lab, isFillingIn, onStartFillIn, onCancelFillIn, onSaved, onDeleted }: Readonly<LabResultCardProps>) {
     if (isFillingIn) {
         return <FillInResultForm lab={lab} onCancel={onCancelFillIn} onSaved={onSaved} />;
     }
@@ -132,6 +136,10 @@ function LabResultCard({ lab, isFillingIn, onStartFillIn, onCancelFillIn, onSave
                     {lab.status}
                 </span>
             </div>
+
+            {lab.notes && (
+                <p className="text-xs text-gray-500 mt-2 italic">{lab.notes}</p>
+            )}
 
             {lab.status === "completed" && lab.results.summary && (
                 <p className="text-xs text-gray-600 mt-2">{lab.results.summary}</p>
@@ -168,14 +176,24 @@ function LabResultCard({ lab, isFillingIn, onStartFillIn, onCancelFillIn, onSave
                 </div>
             )}
 
-            {lab.status === "pending" && (
-                <button
-                    onClick={onStartFillIn}
-                    className="mt-3 text-xs font-medium text-acc-clr hover:opacity-80"
-                >
-                    Enter result
-                </button>
-            )}
+            <div className="flex items-center justify-between mt-3">
+                {lab.status === "pending" ? (
+                    <button
+                        type="button"
+                        onClick={onStartFillIn}
+                        className="text-xs font-medium text-acc-clr cursor-pointer hover:opacity-80"
+                    >
+                        Enter result
+                    </button>
+                ) : (
+                    <span />
+                )}
+                <DeleteLabResultBtn
+                    labResultId={lab._id}
+                    testName={lab.testName}
+                    onDeleted={onDeleted}
+                />
+            </div>
         </div>
     );
 }
@@ -193,6 +211,7 @@ function OrderLabForm({ visitId, petId, onCancel, onOrdered }: Readonly<OrderLab
     const [testName, setTestName] = useState("");
     const [testType, setTestType] = useState<LabTestType>("hematology");
     const [notes, setNotes] = useState("");
+    const [files, setFiles] = useState<File[]>([]);
     const [submitting, setSubmitting] = useState(false);
 
     async function handleSubmit() {
@@ -208,6 +227,7 @@ function OrderLabForm({ visitId, petId, onCancel, onOrdered }: Readonly<OrderLab
                 testName: testName.trim(),
                 testType,
                 notes: notes.trim() || undefined,
+                files: files.length > 0 ? files : undefined,
             });
             toast.success("Lab test ordered");
             onOrdered();
@@ -241,14 +261,25 @@ function OrderLabForm({ visitId, petId, onCancel, onOrdered }: Readonly<OrderLab
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
             </select>
-            <input
+            <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes (optional)"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr/30"
+                placeholder="Notes (optional) — e.g. reason for ordering, clinical context"
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr/30 resize-none"
             />
+            <div>
+                <label className="text-xs text-gray-500 block mb-1">Attachments (optional)</label>
+                <input
+                    type="file"
+                    multiple
+                    onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                    className="text-xs text-gray-500"
+                />
+            </div>
             <div className="flex justify-end gap-2">
                 <button
+                    type="button"
                     onClick={onCancel}
                     disabled={submitting}
                     className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 rounded-lg"
@@ -256,6 +287,7 @@ function OrderLabForm({ visitId, petId, onCancel, onOrdered }: Readonly<OrderLab
                     Cancel
                 </button>
                 <button
+                    type="button"
                     onClick={handleSubmit}
                     disabled={submitting}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-acc-clr rounded-lg disabled:opacity-50"
@@ -277,6 +309,7 @@ interface FillInResultFormProps {
 
 function FillInResultForm({ lab, onCancel, onSaved }: Readonly<FillInResultFormProps>) {
     const [summary, setSummary] = useState("");
+    const [notes, setNotes] = useState(lab.notes ?? "");
     const [findings, setFindings] = useState<LabFinding[]>([]);
     const [files, setFiles] = useState<File[]>([]);
     const [submitting, setSubmitting] = useState(false);
@@ -303,6 +336,7 @@ function FillInResultForm({ lab, onCancel, onSaved }: Readonly<FillInResultFormP
             await updateLabResult(lab._id, {
                 summary: summary.trim(),
                 findings: findings.filter((f) => f.parameter.trim() && f.value.trim()),
+                notes: notes.trim() || undefined,
                 files: files.length > 0 ? files : undefined,
             });
             toast.success("Lab result saved");
@@ -327,7 +361,7 @@ function FillInResultForm({ lab, onCancel, onSaved }: Readonly<FillInResultFormP
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
                 placeholder="Result summary / interpretation"
-                rows={2}
+                rows={3}
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr/30 resize-none"
             />
 
@@ -354,6 +388,14 @@ function FillInResultForm({ lab, onCancel, onSaved }: Readonly<FillInResultFormP
                     + Add parameter
                 </button>
             </div>
+
+            <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Additional notes (optional)"
+                rows={2}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr/30 resize-none"
+            />
 
             <input
                 type="file"

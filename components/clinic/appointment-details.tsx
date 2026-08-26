@@ -24,6 +24,7 @@ import {
 import { getAppointmentById, type Appointment } from "@/lib/appointment";
 import { getVisit, type Visit } from "@/lib/visit";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
+import LabResultsSection from "@/components/clinic/lab-results-section";
 import Link from "next/link";
 import RescheduleAppointmentModal from "@/components/clinic/reschedule-appt-modal";
 
@@ -303,19 +304,25 @@ export default function AppointmentDetails({
 
                         {/* Visit in progress */}
                         {hasActiveVisit && visit && (
-                            <div className="bg-green-50/30 rounded-2xl border border-green-200 shadow-sm p-6">
-                                <div className="flex items-center gap-3 text-green-700 mb-2">
-                                    <CheckCircle size={20} />
-                                    <span className="font-medium">Visit is currently in progress</span>
+                            <>
+                                <div className="bg-green-50/30 rounded-2xl border border-green-200 shadow-sm p-6">
+                                    <div className="flex items-center gap-3 text-green-700 mb-2">
+                                        <CheckCircle size={20} />
+                                        <span className="font-medium">Visit is currently in progress</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        A clinical visit has already been started for this appointment.
+                                    </p>
+                                    <CompleteVisitBtn
+                                        visit={visit}
+                                        onComplete={(updated) => setVisit(updated)}
+                                    />
                                 </div>
-                                <p className="text-sm text-gray-600 mb-4">
-                                    A clinical visit has already been started for this appointment.
-                                </p>
-                                <CompleteVisitBtn
-                                    visit={visit}
-                                    onComplete={(updated) => setVisit(updated)}
-                                />
-                            </div>
+
+                                {visit.petId && (
+                                    <LabResultsSection visitId={visit._id} petId={visit.petId} />
+                                )}
+                            </>
                         )}
 
                         {/* Visit completed */}
