@@ -7,6 +7,7 @@ import { getUser, type ClinicService } from "@/lib/user";
 import UpdateVitals from "@/components/clinic/update-vitals";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import ReferralBtn from "@/components/clinic/referral-btn";
+import LabResultsSection from "@/components/clinic/lab-results-section";
 import PetTrendsChart from "@/components/clinic/pet-trends-chart";
 import TreatmentTimeline from "@/components/clinic/treatment-timeline";
 import MarkVisitPaidBtn from "@/components/clinic/mark-visit-paid-btn";
@@ -25,10 +26,8 @@ import {
     CheckCircle,
     XCircle,
     Pencil,
-    // TrendingUp,
     Plus,
 } from "lucide-react";
-// import { useRouter } from "next/navigation";
 
 interface RecordDetailsProps {
     visitId: string;
@@ -87,7 +86,6 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
-    // const router = useRouter();
 
     useEffect(() => {
         async function fetchData() {
@@ -124,27 +122,6 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
         setVisit(updated);
         setIsEditing(false);
     }
-
-    // const handleTimeline = () => {
-    //     if (!visit) return;
-        
-    //     const petId = visit.petId;
-    //     const userId = visit.userId;
-        
-    //     if (!petId) {
-    //         console.error('petId is missing from visit:', visit);
-    //         alert('Pet ID is missing. Cannot view timeline.');
-    //         return;
-    //     }
-        
-    //     if (!userId) {
-    //         console.error('userId is missing from visit:', visit);
-    //         alert('User ID is missing. Cannot view timeline.');
-    //         return;
-    //     }
-        
-    //     router.push(`/dashboard/records/pet/${petId}/timeline?userId=${userId}`);
-    // };
 
     const getServiceDetails = (serviceId: string): ClinicService | undefined => {
         return clinicServices.find((s) => s._id === serviceId);
@@ -271,6 +248,11 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Lab Results — order/view/enter, only meaningful once a visit exists */}
+            {visit.petId && (
+                <LabResultsSection visitId={visit._id} petId={visit.petId} />
             )}
 
             {/* Services Provided */}
@@ -418,7 +400,6 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                 </div>
 
                 {/* Payment Information */}
-                {/* Payment Information */}
                 {visit.billing && (
                     <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 shadow-sm">
                         <div className="flex items-center gap-2 mb-4">
@@ -555,14 +536,6 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
             {visit.petId && (
                 <TreatmentTimeline petId={visit.petId} visitId={visit._id} />
             )}
-
-            {/* <button
-                onClick={handleTimeline}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-acc-clr text-acc-clr text-sm font-semibold py-3 hover:bg-acc-clr hover:text-pry-clr cursor-pointer transition-colors"
-            >
-                <TrendingUp size={15} />
-                View Health Timeline
-            </button> */}
         </div>
     );
 }

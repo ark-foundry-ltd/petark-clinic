@@ -25,6 +25,7 @@ import { getAppointmentById, type Appointment } from "@/lib/appointment";
 import { getVisit, type Visit } from "@/lib/visit";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import LabResultsSection from "@/components/clinic/lab-results-section";
+import MarkVisitPaidBtn from "@/components/clinic/mark-visit-paid-btn";
 import Link from "next/link";
 import RescheduleAppointmentModal from "@/components/clinic/reschedule-appt-modal";
 
@@ -326,16 +327,27 @@ export default function AppointmentDetails({
                         )}
 
                         {/* Visit completed */}
-                        {hasCompletedVisit && (
-                            <div className="bg-blue-50/30 rounded-2xl border border-blue-200 shadow-sm p-6">
-                                <div className="flex items-center gap-3 text-blue-700">
-                                    <CheckCircle size={20} />
-                                    <span className="font-medium">Visit completed</span>
+                        {hasCompletedVisit && visit && (
+                            <div className="bg-blue-50/30 rounded-2xl border border-blue-200 shadow-sm p-6 space-y-4">
+                                <div>
+                                    <div className="flex items-center gap-3 text-blue-700">
+                                        <CheckCircle size={20} />
+                                        <span className="font-medium">Visit completed</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-2">
+                                        This visit was completed on{" "}
+                                        {visit.completedAt ? formatShortDate(visit.completedAt) : "—"}.
+                                    </p>
                                 </div>
-                                <p className="text-sm text-gray-600 mt-2">
-                                    This visit was completed on{" "}
-                                    {visit.completedAt ? formatShortDate(visit.completedAt) : "—"}.
-                                </p>
+
+                                {visit.paymentStatus === "unpaid" && (
+                                    <div className="pt-3 border-t border-blue-100">
+                                        <MarkVisitPaidBtn
+                                            visit={visit}
+                                            onPaid={(updated) => setVisit(updated)}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
