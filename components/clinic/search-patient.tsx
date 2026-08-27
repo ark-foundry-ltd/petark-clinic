@@ -212,7 +212,7 @@ export default function SearchPatient({
                                                 }}
                                                 className="px-3 py-1.5 rounded-lg bg-acc-clr text-pry-clr text-xs font-medium hover:opacity-90 transition ml-auto"
                                             >
-                                                Proceed to Visit
+                                                Start Visit
                                             </button>
                                         </td>
                                     </tr>

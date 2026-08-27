@@ -1,7 +1,7 @@
 // components/clinic/create-visit-walkin-card.tsx
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, ArrowLeft, Stethoscope, Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -41,20 +41,19 @@ const EMPTY_VITALS: Vitals = {
 };
 
 interface CreateVisitWalkInCardProps {
+    /** The patient to create a visit for */
+    patientId: string;
     /** Where to redirect after a successful visit creation, e.g. "/dashboard/clinical/records" or "/staff-dashboard/clinical/records" */
     redirectBasePath?: string;
 }
 
 export default function CreateVisitWalkInCard({
+    patientId,
     redirectBasePath = "/dashboard/clinical/records",
 }: Readonly<CreateVisitWalkInCardProps>) {
-    const searchParams = useSearchParams();
-    const patientId = searchParams.get("patientId");
     const router = useRouter();
-    const { profile } = useAuthStore();
+    const { profile, role } = useAuthStore();
 
-    // Clinic owner: services live on profile.servicesProvided.
-    // Staff: services live on profile.clinicServicesProvided.
     const clinicServices: ClinicService[] = profile
         ? "servicesProvided" in profile
             ? profile.servicesProvided ?? []
@@ -67,7 +66,6 @@ export default function CreateVisitWalkInCard({
 
     const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
     const [chiefComplaint, setChiefComplaint] = useState("");
-    const [vetId, setVetId] = useState("");
     const [servicesProvided, setServicesProvided] = useState<string[]>([]);
     const [followUps, setFollowUps] = useState<FollowUpEntry[]>([]);
     const [submitting, setSubmitting] = useState(false);
@@ -148,7 +146,6 @@ export default function CreateVisitWalkInCard({
 
         const payload: CreateVisitPayload = {
             clinicPatientId: patient._id,
-            ...(vetId.trim() ? { vetId: vetId.trim() } : {}),
             ...(servicesProvided.length > 0 ? { servicesProvided } : {}),
             vitals,
             ...(chiefComplaint.trim() ? { chiefComplaint: chiefComplaint.trim() } : {}),
@@ -203,6 +200,11 @@ export default function CreateVisitWalkInCard({
                     <p className="text-sm text-gray-500 mt-0.5 capitalize">
                         {pet.name} &middot; {pet.species} &middot; {pet.breed}
                     </p>
+                    {role === "vet" && profile && "fullname" in profile && (
+                        <p className="text-xs text-acc-clr mt-1">
+                            Assigned to you — {profile.fullname}
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -324,13 +326,6 @@ export default function CreateVisitWalkInCard({
                     placeholder="Describe the pet's presenting complaint or reason for visit."
                     className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-acc-clr transition resize-none"
                 />
-            </section>
-
-            <section className="space-y-2">
-                <h2 className="text-sm font-semibold text-sec-clr uppercase tracking-wide">
-                    Vet <span className="text-gray-400 normal-case font-normal">(optional)</span>
-                </h2>
-                <Field label="Vet ID" value={vetId} onChange={setVetId} placeholder="Leave blank if no vet assigned" />
             </section>
 
             <div className="flex items-center justify-end gap-3 pt-2">
