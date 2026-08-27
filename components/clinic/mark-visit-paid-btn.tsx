@@ -70,7 +70,7 @@ export default function MarkVisitPaidBtn({ visit, onPaid }: Readonly<MarkVisitPa
                 type="button"
                 disabled={!selected || submitting}
                 onClick={handleConfirm}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-acc-clr text-pry-clr text-sm font-semibold py-2.5 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-acc-clr text-pry-clr text-sm font-semibold py-2.5 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity sec-ff cursor-pointer"
             >
                 {submitting ? <Loader2 size={16} className="animate-spin" /> : "Confirm Payment"}
             </button>
