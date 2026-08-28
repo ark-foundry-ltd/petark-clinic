@@ -84,7 +84,13 @@ const EMPTY_PAGE: VisitRecordsPage = {
     results: 0,
 };
 
-export default function GetVisitRecords() {
+interface GetVisitRecordsProps {
+    basePath?: string;
+}
+
+export default function GetVisitRecords({
+    basePath = "/dashboard/clinical/records",
+}: Readonly<GetVisitRecordsProps>) {
     const [data, setData] = useState<VisitRecordsPage>(EMPTY_PAGE);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -128,7 +134,6 @@ export default function GetVisitRecords() {
     const hasNext = page < totalPages;
     const showEmptyState = !loading && visits.length === 0;
 
-    // page window: show up to 5 page buttons
     const pageWindow = () => {
         const delta = 2;
         const range: number[] = [];
@@ -154,7 +159,6 @@ export default function GetVisitRecords() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Status filter */}
                     <div className="relative">
                         <SlidersHorizontal
                             size={13}
@@ -179,7 +183,6 @@ export default function GetVisitRecords() {
                         />
                     </div>
 
-                    {/* Refresh */}
                     <button
                         onClick={() => setRefreshKey((k) => k + 1)}
                         disabled={loading}
@@ -190,7 +193,6 @@ export default function GetVisitRecords() {
                 </div>
             </div>
 
-            {/* Error */}
             {error && (
                 <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     <AlertCircle size={16} className="mt-0.5 shrink-0" />
@@ -198,7 +200,6 @@ export default function GetVisitRecords() {
                 </div>
             )}
 
-            {/* Table with horizontal scroll */}
             <div className="rounded-xl border border-gray-200 overflow-x-auto shadow-sm">
                 <div className="min-w-[900px]">
                     <table className="w-full text-sm">
@@ -264,7 +265,6 @@ export default function GetVisitRecords() {
                                             key={visit._id}
                                             className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors"
                                         >
-                                            {/* Pet */}
                                             <td className="px-4 py-3">
                                                 {petDisplay ? (
                                                     <div className="flex items-center gap-2">
@@ -297,12 +297,10 @@ export default function GetVisitRecords() {
                                                 )}
                                             </td>
 
-                                            {/* Breed / Species */}
                                             <td className="px-4 py-3 text-gray-600 text-xs capitalize">
                                                 {petDisplay ? petDisplay.breedSpecies : "—"}
                                             </td>
 
-                                            {/* Vet */}
                                             <td className="px-4 py-3 text-gray-600 text-xs">
                                                 <div className="flex items-center gap-1.5">
                                                     <User size={12} className="text-gray-400" />
@@ -310,7 +308,6 @@ export default function GetVisitRecords() {
                                                 </div>
                                             </td>
 
-                                            {/* Date */}
                                             <td className="px-4 py-3 text-gray-600 whitespace-nowrap text-xs">
                                                 <div className="flex items-center gap-1.5">
                                                     <Calendar size={12} className="text-gray-400" />
@@ -318,7 +315,6 @@ export default function GetVisitRecords() {
                                                 </div>
                                             </td>
 
-                                            {/* Status */}
                                             <td className="px-4 py-3">
                                                 <span
                                                     className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[visit.status]}`}
@@ -327,7 +323,6 @@ export default function GetVisitRecords() {
                                                 </span>
                                             </td>
 
-                                            {/* Payment Status */}
                                             <td className="px-4 py-3">
                                                 <span
                                                     className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${PAYMENT_STYLES[visit.paymentStatus]}`}
@@ -336,17 +331,15 @@ export default function GetVisitRecords() {
                                                 </span>
                                             </td>
 
-                                            {/* Amount */}
                                             <td className="px-4 py-3 text-gray-700 text-xs font-medium">
                                                 {visit.billing?.total != null
                                                     ? formatCurrency(visit.billing.total)
                                                     : "—"}
                                             </td>
 
-                                            {/* Actions */}
                                             <td className="px-4 py-3 text-center">
                                                 <Link
-                                                    href={`/dashboard/clinical/records/${visit._id}`}
+                                                    href={`${basePath}/${visit._id}`}
                                                     className="inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-800 transition-colors whitespace-nowrap"
                                                 >
                                                     View Details
@@ -362,7 +355,6 @@ export default function GetVisitRecords() {
                 </div>
             </div>
 
-            {/* Footer: count + pagination */}
             {!loading && total > 0 && (
                 <div className="flex items-center justify-between text-xs text-gray-400 flex-wrap gap-2">
                     <span>
@@ -373,6 +365,7 @@ export default function GetVisitRecords() {
                     {totalPages > 1 && (
                         <div className="flex items-center gap-1">
                             <button
+                                type="button"
                                 onClick={() => setPage((p) => p - 1)}
                                 disabled={!hasPrev}
                                 className="p-1.5 rounded-lg border border-gray-200 hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -383,6 +376,7 @@ export default function GetVisitRecords() {
 
                             {pageWindow().map((p) => (
                                 <button
+                                    type="button"
                                     key={p}
                                     onClick={() => setPage(p)}
                                     className={`w-7 h-7 rounded-lg text-xs font-medium border transition-colors ${
@@ -401,6 +395,7 @@ export default function GetVisitRecords() {
                                 <>
                                     <span className="px-1 text-gray-300">...</span>
                                     <button
+                                        type="button"
                                         onClick={() => setPage(totalPages)}
                                         className="w-7 h-7 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:border-gray-400 transition-colors"
                                         aria-label={`Go to last page ${totalPages}`}
@@ -411,6 +406,7 @@ export default function GetVisitRecords() {
                             )}
 
                             <button
+                                type="button"
                                 onClick={() => setPage((p) => p + 1)}
                                 disabled={!hasNext}
                                 className="p-1.5 rounded-lg border border-gray-200 hover:border-gray-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -423,7 +419,6 @@ export default function GetVisitRecords() {
                 </div>
             )}
 
-            {/* Show total count even when no results */}
             {!loading && total === 0 && (
                 <div className="text-center text-xs text-gray-400">
                     Total: 0 entries
