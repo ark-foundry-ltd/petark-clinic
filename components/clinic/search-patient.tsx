@@ -144,6 +144,7 @@ export default function SearchPatient({
                             : "Once you register a patient, they'll show up here."}
                     </p>
                     <button
+                        type="button"
                         onClick={handleRegisterAsNewClick}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-sec-clr text-sm font-medium hover:bg-gray-200 transition"
                     >
@@ -206,11 +207,12 @@ export default function SearchPatient({
                                         <td className="py-2 pr-4 text-gray-600">{r.owner?.email || "-"}</td>
                                         <td className="py-2 pr-4 text-right">
                                             <button
+                                                type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleProceedToVisit(r);
                                                 }}
-                                                className="px-3 py-1.5 rounded-lg bg-acc-clr text-pry-clr text-xs font-medium hover:opacity-90 transition ml-auto"
+                                                className="px-3 py-1.5 rounded-lg bg-acc-clr text-pry-clr text-xs font-medium hover:opacity-90 transition ml-auto whitespace-nowrap"
                                             >
                                                 Start Visit
                                             </button>

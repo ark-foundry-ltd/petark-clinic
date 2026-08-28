@@ -20,7 +20,13 @@ const STATUS_STYLES: Record<ReferralStatus, string> = {
 
 const PAGE_SIZE = 10;
 
-export default function ListReferrals() {
+interface ListReferralsProps {
+  createVisitBasePath?: string;
+}
+
+export default function ListReferrals({
+  createVisitBasePath = "/dashboard/clinical/records/create-visit",
+}: Readonly<ListReferralsProps>) {
   const router = useRouter();
   const [direction, setDirection] = useState<Direction>("inbound");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -94,7 +100,7 @@ export default function ListReferrals() {
   };
 
   const proceedToVisit = (patientId: string) => {
-    router.push(`/dashboard/clinical/records/create-visit?patientId=${patientId}`);
+    router.push(`${createVisitBasePath}?patientId=${patientId}`);
   };
 
   const toggleExpanded = (referralId: string) => {
@@ -441,6 +447,7 @@ export default function ListReferrals() {
               </span>
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                   className="p-1.5 rounded-md border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
@@ -451,6 +458,7 @@ export default function ListReferrals() {
                   Page {page} of {totalPages}
                 </span>
                 <button
+                  type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                   className="p-1.5 rounded-md border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
