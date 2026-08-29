@@ -12,7 +12,7 @@ import {
     type PurchasablePlan,
     type BillingCycle,
 } from "@/lib/subscription";
-import { Check, Loader2, Zap, Rocket, Sparkles, Building2 } from "lucide-react";
+import { Check, Loader2, Zap, Layers, Rocket, Sparkles, Building2 } from "lucide-react";
 
 interface PlanDefinition {
     id: SubscriptionPlan;
@@ -29,74 +29,110 @@ const PLANS: PlanDefinition[] = [
     id: "free",
     name: "Free",
     icon: Zap,
-    tagline: "Get started with core clinic management",
+    tagline: "Explore PetArk with core clinic management",
     features: [
       "1 staff account",
-      "Appointments & scheduling",
+      "Primary clinic location",
+      "Appointments management only",
       "Basic manual SOAP notes",
       "Pet profiles & visit history",
       "Unlimited patients",
-      "Unlimited treatments",
+      "10 treatments / month",
+      "10 reminders / month",
+      "No inventory & POS",
+      "No lab results",
+      "No drug dosage calculator",
+      "No advanced analytics",
+      "No cross-clinic referrals",
     ],
     purchasable: false,
   },
   {
-    id: "standard",
-    name: "Standard",
-    icon: Rocket,
-    tagline: "For growing clinics that need inventory & POS",
+    id: "starter",
+    name: "Starter",
+    icon: Layers,
+    tagline: "For small clinics ready to go digital",
     features: [
-      "Up to 5 staff accounts",
-      "Up to 5 custom roles",
-      "1 additional branch",
+      "Up to 3 staff accounts",
+      "Up to 3 custom roles",
+      "Primary clinic location",
       "Unlimited patients",
-      "Unlimited inventory & POS",
-      "Unlimited reminders",
-      "Unlimited treatments",
+      "25 inventory SKUs",
+      "80 treatments / month",
+      "80 reminders / month",
+      "Inventory & POS",
+      "Basic clinic reports",
+      "Treatment & visit summaries",
+      "Basic sales/inventory reports",
       "Everything in Free",
     ],
     purchasable: true,
   },
   {
-    id: "pro",
-    name: "Pro",
-    icon: Sparkles,
-    tagline: "For clinics that need advanced tools and analytics",
+    id: "standard",
+    name: "Standard",
+    icon: Rocket,
+    tagline: "For growing clinics that need more capacity",
     features: [
-      "Up to 12 staff accounts",
-      "Up to 12 custom roles",
-      "Up to 3 additional branches",
+      "Up to 8 staff accounts",
+      "Up to 8 custom roles",
+      "1 additional branch",
       "Unlimited patients",
-      "Unlimited inventory & POS",
-      "Unlimited reminders",
-      "Unlimited treatments",
-      "AI SOAP formatting & discharge summaries",
-      "Vitals trends & drug dosage calculator",
-      "Revenue & appointment analytics",
-      "Cross-clinic referrals",
+      "100 inventory SKUs",
+      "160 treatments / month",
+      "160 reminders / month",
+      "Inventory & POS",
+      "Lab results",
+      "Drug dosage calculator",
+      "Everything in Starter",
     ],
     purchasable: true,
     highlighted: true,
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    icon: Building2,
-    tagline: "For multi-location and franchise clinics",
+    id: "pro",
+    name: "Pro",
+    icon: Sparkles,
+    tagline: "For clinics that need advanced tools and unlimited capacity",
     features: [
-      "Unlimited staff accounts",
-      "Unlimited custom roles",
-      "Unlimited branches",
+      "Up to 15 staff accounts",
+      "Up to 15 custom roles",
+      "Up to 2 additional branches",
       "Unlimited patients",
       "Unlimited inventory & POS",
-      "Unlimited reminders",
       "Unlimited treatments",
-      "Custom pricing",
-      "Dedicated support",
-      "Custom enterprise solutions",
+      "Unlimited reminders",
+      "Lab results",
+      "Drug dosage calculator",
+      "AI SOAP formatting & discharge summaries",
+      "Vitals trends",
+      "Revenue & appointment analytics",
+      "Cross-clinic referrals",
+      "Everything in Standard",
     ],
-    purchasable: false,
+    purchasable: true,
   },
+//   {
+//     id: "enterprise",
+//     name: "Enterprise",
+//     icon: Building2,
+//     tagline: "For multi-location and franchise clinics",
+//     features: [
+//       "Unlimited staff accounts",
+//       "Unlimited custom roles",
+//       "Unlimited branches",
+//       "Unlimited patients",
+//       "Unlimited inventory & POS",
+//       "Unlimited treatments",
+//       "Unlimited reminders",
+//       "Lab results",
+//       "Drug dosage calculator",
+//       "Custom pricing",
+//       "Dedicated support",
+//       "Custom enterprise solutions",
+//     ],
+//     purchasable: false,
+//   },
 ];
 
 function formatNaira(amount: number): string {
@@ -106,7 +142,6 @@ function formatNaira(amount: number): string {
 export default function SubscriptionPlans() {
     const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
     const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
-    const [cycleInitialized, setCycleInitialized] = useState(false);
     const [upgradingPlan, setUpgradingPlan] = useState<PurchasablePlan | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const loading = subscription === null && !errorMessage;
@@ -118,13 +153,6 @@ export default function SubscriptionPlans() {
             .then((data) => {
                 if (cancelled) return;
                 setSubscription(data);
-                // Default to annual only the first time we learn the clinic is
-                // discount-eligible — don't fight the user if they've already
-                // toggled it themselves.
-                if (!cycleInitialized) {
-                    setBillingCycle(data.annualDiscountEligible ? "annual" : "monthly");
-                    setCycleInitialized(true);
-                }
             })
             .catch(() => {
                 if (cancelled) return;
@@ -134,7 +162,6 @@ export default function SubscriptionPlans() {
         return () => {
             cancelled = true;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     async function handleUpgrade(targetPlan: PurchasablePlan) {
@@ -153,10 +180,7 @@ export default function SubscriptionPlans() {
         }
     }
 
-    const discountEligible = subscription?.annualDiscountEligible ?? false;
-    const discountRate = subscription?.annualDiscountRate ?? 0.15;
-
-    function priceFor(planId: SubscriptionPlan): { price: string; period?: string; strikethrough?: string } {
+    function priceFor(planId: SubscriptionPlan): { price: string; period?: string } {
         if (planId === "free") return { price: "₦0" };
         if (planId === "enterprise") return { price: "Custom" };
 
@@ -164,15 +188,7 @@ export default function SubscriptionPlans() {
         if (billingCycle === "monthly") {
             return { price: formatNaira(pricing.monthly), period: "/mo" };
         }
-        // annual
-        if (discountEligible) {
-            return {
-                price: formatNaira(pricing.annual.discounted),
-                period: "/yr",
-                strikethrough: formatNaira(pricing.annual.standard),
-            };
-        }
-        return { price: formatNaira(pricing.annual.standard), period: "/yr" };
+        return { price: formatNaira(pricing.annual), period: "/yr" };
     }
 
     return (
@@ -216,9 +232,9 @@ export default function SubscriptionPlans() {
                         Annual
                     </button>
                 </div>
-                {billingCycle === "annual" && discountEligible && (
+                {billingCycle === "annual" && (
                     <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 border border-green-100">
-                        {Math.round(discountRate * 100)}% off — limited-time trial offer
+                        Get 2 months free
                     </span>
                 )}
             </div>
@@ -229,12 +245,12 @@ export default function SubscriptionPlans() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {PLANS.map((plan) => {
                     const isCurrent = subscription?.plan === plan.id;
                     const isUpgrading = upgradingPlan === plan.id;
                     const Icon = plan.icon;
-                    const { price, period, strikethrough } = priceFor(plan.id);
+                    const { price, period } = priceFor(plan.id);
 
                     return (
                         <div
@@ -268,20 +284,13 @@ export default function SubscriptionPlans() {
                                 {plan.tagline}
                             </p>
 
-                            <div className="mt-5 flex flex-col justify-center h-9">
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-bold tracking-tight text-slate-900">
-                                        {price}
-                                    </span>
-                                    <span className="text-sm font-medium text-slate-400">
-                                        {period ?? ""}
-                                    </span>
-                                </div>
-                                {strikethrough && (
-                                    <span className="text-xs text-slate-400 line-through">
-                                        {strikethrough}/yr
-                                    </span>
-                                )}
+                            <div className="mt-5 flex items-baseline gap-1 h-9">
+                                <span className="text-3xl font-bold tracking-tight text-slate-900">
+                                    {price}
+                                </span>
+                                <span className="text-sm font-medium text-slate-400">
+                                    {period ?? ""}
+                                </span>
                             </div>
 
                             <div className="my-5 h-px bg-slate-100" />
@@ -333,7 +342,11 @@ export default function SubscriptionPlans() {
                                         {isUpgrading && (
                                             <Loader2 className="h-4 w-4 animate-spin" />
                                         )}
-                                        {isUpgrading ? "Redirecting..." : `Choose ${plan.name}`}
+                                        {isUpgrading
+                                            ? "Redirecting..."
+                                            : plan.id === "free"
+                                              ? "Get Started"
+                                              : `Choose ${plan.name}`}
                                     </button>
                                 ) : (
                                     <button

@@ -4,13 +4,13 @@ import { AxiosError } from "axios";
 
 // ─── Shared Types ──────────────────────────────────────────────────────────
 
-export type SubscriptionPlan = "free" | "standard" | "pro" | "enterprise";
+export type SubscriptionPlan = "free" | "starter" | "standard" | "pro" | "enterprise";
 export type SubscriptionStatus = "active" | "inactive" | "cancelled";
 export type BillingCycle = "monthly" | "annual";
 
 // Plans actually purchasable through initiateSubscriptionUpgrade —
 // enterprise is "coming soon" and isn't in PLAN_PRICING on the backend yet.
-export type PurchasablePlan = "standard" | "pro";
+export type PurchasablePlan = "starter" | "standard" | "pro";
 
 export interface TrialInfo {
     startedAt: string | null;
@@ -28,36 +28,46 @@ export interface SubscriptionRecord {
     paystackNextPaymentDate: string | null;
     pendingReference?: string | null;
     trial: TrialInfo | null;
-    annualDiscountEligible: boolean;
-    annualDiscountRate: number;
 }
 
 // ─── Pricing (display only — mirrors backend PLAN_PRICING; the real charge
 // is always resolved server-side in initiateSubscriptionUpgrade) ───────────
+// Flat monthly/annual — annual is simply "2 months free" (10 months' price
+// for 12), no separate discount tier or eligibility check.
 
 interface PlanPricingEntry {
     monthly: number;
-    annual: {
-        standard: number;
-        discounted: number;
-    };
+    annual: number;
 }
 
 export const PLAN_PRICING: Record<PurchasablePlan, PlanPricingEntry> = {
+    starter: {
+        monthly: 15000,
+        annual: 150000,
+    },
     standard: {
-        monthly: 28000,
-        annual: {
-            standard: 280000,
-            discounted: 238000,
-        },
+        monthly: 30000,
+        annual: 300000,
     },
     pro: {
-        monthly: 38000,
-        annual: {
-            standard: 380000,
-            discounted: 323000,
-        },
+        monthly: 40000,
+        annual: 400000,
     },
+};
+
+// ─── Usage add-ons (treatments/reminders only — see planLimitMiddleware.js
+// on the backend for the actual enforcement) ───────────────────────────────
+
+export type AddonResource = "treatments" | "remindersPerMonth";
+
+interface AddonPricingEntry {
+    unitsPerPurchase: number;
+    price: number;
+}
+
+export const ADDON_PRICING: Record<AddonResource, AddonPricingEntry> = {
+    treatments: { unitsPerPurchase: 20, price: 5000 },
+    remindersPerMonth: { unitsPerPurchase: 20, price: 5000 },
 };
 
 // ─── Initiate upgrade ───────────────────────────────────────────────────
