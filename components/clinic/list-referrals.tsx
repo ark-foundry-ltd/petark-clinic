@@ -1,7 +1,7 @@
 // components/clinic/list-referrals.tsx
 "use client";
 
-import { useEffect, useState, useCallback, useTransition } from "react";
+import { Fragment, useEffect, useState, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { listReferrals, AcceptReferralResult, ReferralRecord, ReferralStatus } from "@/lib/referral";
 import AcceptReferralButton from "./accept-referral";
@@ -298,7 +298,7 @@ export default function ListReferrals({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pageItems.map((r) => (
-                  <>
+                  <Fragment key={r._id}>
                     <tr key={r._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -347,7 +347,7 @@ export default function ListReferrals({
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
