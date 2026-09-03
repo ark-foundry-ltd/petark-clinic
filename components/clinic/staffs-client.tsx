@@ -59,7 +59,7 @@ export default function StaffsClient() {
         />
       )}
 
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-pry-clr">
         <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
           {/* Page header */}
           <div className="flex items-start justify-between">

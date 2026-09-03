@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { getAppointments, type Appointment, type DateRange, type AppointmentsPage } from "@/lib/appointment";
 import { getVisit } from "@/lib/visit";
 import { useAppointmentsContext } from "@/context/appointments-context";
+import { useAuthStore } from "@/store/useStore";
 import VisitBtn from "@/components/clinic/visit-btn";
 import { CalendarDays, Clock, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, CheckCheck, CalendarX, AlarmClockOff } from "lucide-react";
 
@@ -70,6 +71,9 @@ export default function GetAppointments({
 
     const { setAppointments: setCtxAppointments } = useAppointmentsContext();
 
+    const permissions = useAuthStore((s) => s.permissions);
+    const canViewVisitStatus = permissions.includes("all_permissions") || permissions.includes("view_pet_history");
+
     useEffect(() => {
         let cancelled = false;
 
@@ -79,7 +83,7 @@ export default function GetAppointments({
             try {
                 const [result, visits] = await Promise.all([
                     getAppointments({ page, range }),
-                    getVisit(),
+                    canViewVisitStatus ? getVisit() : Promise.resolve([]),
                 ]);
 
                 if (!cancelled) {
@@ -103,7 +107,7 @@ export default function GetAppointments({
 
         load();
         return () => { cancelled = true; };
-    }, [page, range, setCtxAppointments]);
+    }, [page, range, setCtxAppointments, canViewVisitStatus]);
 
     function handleRangeChange(next: DateRange) {
         setPage(1);
@@ -254,18 +258,19 @@ export default function GetAppointments({
                                             {
                                                 (appt.status === "expired") 
                                                     ? <button className="bg-acc-clr text-pry-clr pry-ff px-4 py-2 rounded-lg"> Reschedule </button>
-                                                    : <VisitBtn
-                                                appointmentId={appt._id}
-                                                status={appt.status}
-                                                visitStatus={visitStatusMap.get(appt._id)}
-                                                basePath={basePath}
-                                                onConfirmed={() => setData((prev) => ({
-                                                    ...prev,
-                                                    appointments: prev.appointments.map((a) =>
-                                                        a._id === appt._id ? { ...a, status: "confirmed" } : a
-                                                    ),
-                                                }))}
-                                            />
+                                                    :<VisitBtn
+    appointmentId={appt._id}
+    status={appt.status}
+    visitStatus={visitStatusMap.get(appt._id)}
+    canManageVisit={canViewVisitStatus}
+    basePath={basePath}
+    onConfirmed={() => setData((prev) => ({
+        ...prev,
+        appointments: prev.appointments.map((a) =>
+            a._id === appt._id ? { ...a, status: "confirmed" } : a
+        ),
+    }))}
+/>
                                             }
                                         </div>
                                     </td>

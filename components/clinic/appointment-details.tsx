@@ -139,7 +139,7 @@ export default function AppointmentDetails({
 
     if (error || !appointment) {
         return (
-            <section className="min-h-screen bg-linear-to-br from-gray-50 to-white flex items-center justify-center">
+            <section className="min-h-screen bg-linear-to-br from-gray-50 to-white flex items-center justify-center sec-ff">
                 <div className="text-center max-w-md mx-auto px-4">
                     <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <AlertCircle size={40} className="text-red-500" />
@@ -283,6 +283,7 @@ export default function AppointmentDetails({
                                             <div>
                                                 <p className="text-xs text-gray-400 uppercase tracking-wide">Reason for Visit</p>
                                                 <p className="text-gray-700 mt-1 leading-relaxed">{appointment.notes}</p>
+                                                
                                             </div>
                                         </div>
                                     </div>
@@ -306,6 +307,13 @@ export default function AppointmentDetails({
                         {/* Visit in progress */}
                         {hasActiveVisit && visit && (
                             <>
+                                <div className="bg-green-50/30 rounded-2xl border border-green-200 shadow-sm p-6 flex items-start gap-3">
+    <Stethoscope size={18} className="text-gray-400 mt-0.5 shrink-0" />
+    <div>
+        <span className="text-xs text-gray-400 uppercase tracking-wide">Clinical Review</span>
+        <p className="text-gray-700 mt-1 leading-relaxed">{visit?.soap.subjective}</p>
+    </div>
+</div>
                                 <div className="bg-green-50/30 rounded-2xl border border-green-200 shadow-sm p-6">
                                     <div className="flex items-center gap-3 text-green-700 mb-2">
                                         <CheckCircle size={20} />

@@ -12,6 +12,7 @@ interface VisitBtnProps {
     appointmentId: string;
     status: Appointment["status"];
     visitStatus?: "in-progress" | "completed";
+    canManageVisit?: boolean;
     onConfirmed?: () => void;
     basePath?: string;
 }
@@ -20,6 +21,7 @@ export default function VisitBtn({
     appointmentId,
     status,
     visitStatus,
+    canManageVisit = true,
     onConfirmed,
     basePath = "/dashboard/appointments",
 }: Readonly<VisitBtnProps>) {
@@ -40,7 +42,8 @@ export default function VisitBtn({
         router.push(`${basePath}/${appointmentId}/create-visit`);
     }
 
-    // pending → "Confirm" button
+    // pending → "Confirm" button (unchanged — appointment confirmation is
+    // separate from visit access, receptionist keeps this regardless)
     if (status === "pending") {
         return (
             <button
@@ -53,7 +56,7 @@ export default function VisitBtn({
         );
     }
 
-    // completed / cancelled / missed → static label
+    // completed / cancelled / missed → static label (unchanged)
     if (status !== "confirmed") {
         const labels: Partial<Record<Appointment["status"], { label: string; className: string }>> = {
             completed: { label: "Visit closed", className: "text-blue-500"  },
@@ -64,6 +67,14 @@ export default function VisitBtn({
         return fallback
             ? <span className={`text-xs italic ${fallback.className}`}>{fallback.label}</span>
             : null;
+    }
+
+    // status === "confirmed" from here on
+
+    // No visit-read access → just show the appointment's own status,
+    // no visit-derived button since we can't know if a visit exists
+    if (!canManageVisit) {
+        return <span className="text-xs italic text-green-600">Confirmed</span>;
     }
 
     // confirmed + visit in progress
