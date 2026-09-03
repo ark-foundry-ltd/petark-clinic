@@ -1,8 +1,6 @@
 // components/inventory/filter-bar.tsx
 import { Search, Plus } from "lucide-react";
 import type { InventoryCategory } from "@/lib/inventory";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 export const CATEGORY_LABELS: Record<InventoryCategory | "all", string> = {
     all: "All Categories",
@@ -22,6 +20,7 @@ interface FilterBarProps {
     search: string;
     onSearchChange: (value: string) => void;
     onAddItem: () => void;
+    canManage?: boolean;
 }
 
 export default function FilterBar({
@@ -32,12 +31,12 @@ export default function FilterBar({
     search,
     onSearchChange,
     onAddItem,
+    canManage = true,
 }: Readonly<FilterBarProps>) {
-    const router = useRouter();
 
-    const navigateToSales = () => {
-        router.push("/dashboard/clinical/sales");
-    };
+    // const navigateToSales = () => {
+    //     router.push("/dashboard/clinical/sales");
+    // };
     return (
         <div className="mb-4 flex flex-wrap items-center gap-4">
             <select
@@ -71,7 +70,7 @@ export default function FilterBar({
     <span className="leading-none">Low Stock Only</span>
 </label>
 
-            <div className="relative flex-1 min-w-55 max-w-sm">
+            <div className="relative flex-1 min-w-55 max-w-md">
                 <Search
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
                     aria-hidden="true"
@@ -86,21 +85,23 @@ export default function FilterBar({
                 />
             </div>
 
-            <button
-                type="button"
-                onClick={onAddItem}
-                className="ml-auto flex items-center gap-2 rounded-lg bg-acc-clr px-4 py-2 text-sm font-medium text-pry-clr shadow-sm hover:bg-acc-clr"
-            >
-                <Plus className="h-4 w-4" />
-                Add Item
-            </button>
+            {canManage && (
+                <button
+                    type="button"
+                    onClick={onAddItem}
+                    className="ml-auto flex items-center gap-2 rounded-lg bg-acc-clr px-4 py-2 text-sm font-medium text-pry-clr shadow-sm hover:bg-acc-clr"
+                >
+                    <Plus className="h-4 w-4" />
+                    Add Item
+                </button>
+            )}
 
-            <button
+            {/* <button
                 type="button"
                 onClick={navigateToSales}
                 className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-pry-clr pry-ff hover:opacity-90 cursor-pointer">
                 Go to Sales
-            </button>
+            </button> */}
 
         </div>
     );
