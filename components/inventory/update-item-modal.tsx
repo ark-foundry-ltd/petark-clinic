@@ -18,6 +18,7 @@ interface UpdateItemModalProps {
     onClose: () => void;
     onUpdated: (item: InventoryItemRecord) => void;
     onStockAdjusted: (item: InventoryItemRecord) => void;
+    canViewCost?: boolean;
 }
 
 interface FormState {
@@ -62,6 +63,7 @@ export default function UpdateItemModal({
     onClose,
     onUpdated,
     onStockAdjusted,
+    canViewCost = true,
 }: Readonly<UpdateItemModalProps>) {
     const [form, setForm] = useState<FormState>(() =>
         item ? toFormState(item) : {
@@ -165,7 +167,7 @@ export default function UpdateItemModal({
         if (form.category !== selectedItem.category) payload.category = form.category;
         if (form.unit.trim() !== selectedItem.unit) payload.unit = form.unit.trim();
         if (sellingPrice !== selectedItem.sellingPrice) payload.sellingPrice = sellingPrice;
-        if (costPrice !== selectedItem.costPrice) payload.costPrice = costPrice;
+        if (canViewCost && costPrice !== selectedItem.costPrice) payload.costPrice = costPrice;
         if (reorderThreshold !== (selectedItem.reorderThreshold ?? undefined)) {
             payload.reorderThreshold = reorderThreshold;
         }
@@ -313,22 +315,24 @@ export default function UpdateItemModal({
                                 />
                             </div>
 
-                            <div>
-                                <label htmlFor="item-cost-price" className="mb-1 block text-xs font-medium text-slate-500">
-                                    Cost price <span className="text-slate-300">(optional)</span>
-                                </label>
-                                <input
-                                    id="item-cost-price"
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={form.costPrice}
-                                    onChange={(e) => update("costPrice", e.target.value)}
-                                    disabled={submitting}
-                                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
-                                    placeholder="0.00"
-                                />
-                            </div>
+                            {canViewCost && (
+                                <div>
+                                    <label htmlFor="item-cost-price" className="mb-1 block text-xs font-medium text-slate-500">
+                                        Cost price <span className="text-slate-300">(optional)</span>
+                                    </label>
+                                    <input
+                                        id="item-cost-price"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={form.costPrice}
+                                        onChange={(e) => update("costPrice", e.target.value)}
+                                        disabled={submitting}
+                                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            )}
 
                             <div>
                                 <div className="mb-1 flex items-center gap-1.5">

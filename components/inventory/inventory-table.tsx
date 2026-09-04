@@ -12,6 +12,7 @@ interface InventoryTableProps {
     totalCount: number;
     onPageChange: (page: number) => void;
     onEditItem: (item: InventoryItemRecord) => void;
+    canManage?: boolean;
 }
 
 export default function InventoryTable({
@@ -22,8 +23,10 @@ export default function InventoryTable({
     totalCount,
     onPageChange,
     onEditItem,
+    canManage = true,
 }: Readonly<InventoryTableProps>) {
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const colCount = canManage ? 7 : 6;
 
     return (
         <div className="overflow-hidden rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
@@ -36,13 +39,13 @@ export default function InventoryTable({
                         <th className="px-4 py-3 font-medium">Unit</th>
                         <th className="px-4 py-3 font-medium">Current Stock</th>
                         <th className="px-4 py-3 font-medium">Selling Price</th>
-                        <th className="px-4 py-3 font-medium">Actions</th>
+                        {canManage && <th className="px-4 py-3 font-medium">Actions</th>}
                     </tr>
                 </thead>
                 <tbody>
                     {loading && (
                         <tr>
-                            <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                            <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
                                 <Loader2 className="mx-auto h-6 w-6 animate-spin text-acc-clr" />
                             </td>
                         </tr>
@@ -50,7 +53,7 @@ export default function InventoryTable({
 
                     {!loading && items.length === 0 && (
                         <tr>
-                            <td colSpan={7} className="px-4 py-8 text-center text-slate-400">
+                            <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
                                 No items match your search.
                             </td>
                         </tr>
@@ -119,16 +122,18 @@ export default function InventoryTable({
                                     <td className="px-4 py-3 font-medium text-slate-700">
                                         ₦{item.sellingPrice.toFixed(2)}
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <button
-                                            type="button"
-                                            aria-label={`Edit ${item.name}`}
-                                            onClick={() => onEditItem(item)}
-                                            className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                                        >
-                                            <Pencil className="h-4 w-4" />
-                                        </button>
-                                    </td>
+                                    {canManage && (
+                                        <td className="px-4 py-3">
+                                            <button
+                                                type="button"
+                                                aria-label={`Edit ${item.name}`}
+                                                onClick={() => onEditItem(item)}
+                                                className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         })}

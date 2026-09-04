@@ -25,9 +25,22 @@ interface InventoryDashboardProps {
     // the dashboard is locked to this location — no switcher, no fetch of
     // the full location list. Omit to get the standalone dropdown behavior.
     locationId?: string;
+    // Controls Add Item + edit pencils + the UpdateItemModal rendering at all.
+    // Defaults true so existing clinic-side call sites (which never passed
+    // this) keep working unchanged.
+    canManage?: boolean;
+    // Controls the Cost Price field inside UpdateItemModal. Defaults true —
+    // the two stats cards (Inventory Value, Monthly Growth) are sellingPrice-
+    // derived on the backend, confirmed safe for anyone with VIEW_INVENTORY,
+    // so they are NOT gated by this.
+    canViewCost?: boolean;
 }
 
-export default function InventoryDashboard({ locationId: lockedLocationId }: Readonly<InventoryDashboardProps> = {}) {
+export default function InventoryDashboard({
+    locationId: lockedLocationId,
+    canManage = true,
+    canViewCost = true,
+}: Readonly<InventoryDashboardProps> = {}) {
     const scoped = !!lockedLocationId;
 
     const {
@@ -173,9 +186,10 @@ export default function InventoryDashboard({ locationId: lockedLocationId }: Rea
                 search={search}
                 onSearchChange={setSearch}
                 onAddItem={handleAddItemClick}
+                canManage={canManage}
             />
 
-            {activeLocationId && (
+            {canManage && activeLocationId && (
                 <AddItemModal
                     open={addModalOpen}
                     locationId={activeLocationId}
@@ -191,13 +205,14 @@ export default function InventoryDashboard({ locationId: lockedLocationId }: Rea
                (or the modal closes and reopens on a different row), so the
                form always re-seeds from `item` instead of reusing whatever
                state was left over from the previous edit session. */}
-            {activeLocationId && (
+            {canManage && activeLocationId && (
                 <UpdateItemModal
                     key={editItem?._id ?? "closed"}
                     item={editItem}
                     locationId={activeLocationId}
                     open={editItem !== null}
                     onClose={() => setEditItem(null)}
+                    canViewCost={canViewCost}
                     onUpdated={(updatedItem) => {
                         setItems((current) =>
                             current.map((item) => (item._id === updatedItem._id ? updatedItem : item))
@@ -253,6 +268,7 @@ export default function InventoryDashboard({ locationId: lockedLocationId }: Rea
                 totalCount={total}
                 onPageChange={setPage}
                 onEditItem={(item) => setEditItem(item)}
+                canManage={canManage}
             />
         </div>
     );
