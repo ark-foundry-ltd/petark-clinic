@@ -11,9 +11,9 @@ export interface SaleLineItem {
     name: string;
     quantity: number;
     unitPrice: number;
-    unitCost: number | null;
+    unitCost?: number | null; // omitted by the backend for roles without VIEW_INVENTORY_COST
     subtotal: number;
-    lineCost: number;
+    lineCost?: number; // omitted by the backend for roles without VIEW_INVENTORY_COST
 }
 
 export interface SaleRecord {
@@ -22,8 +22,8 @@ export interface SaleRecord {
     locationId: string;
     items: SaleLineItem[];
     totalAmount: number;
-    totalCost: number;
-    grossProfit: number;
+    totalCost?: number; // omitted by the backend for roles without VIEW_INVENTORY_COST
+    grossProfit?: number; // omitted by the backend for roles without VIEW_INVENTORY_COST
     paymentMethod: PaymentMethod;
     soldBy: string;
     userId: string | null;

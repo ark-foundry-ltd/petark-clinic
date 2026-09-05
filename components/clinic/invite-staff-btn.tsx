@@ -1,3 +1,5 @@
+// components/clinic/invite-staff-btn.tsx
+
 "use client";
 
 import { UserPlus } from "lucide-react";

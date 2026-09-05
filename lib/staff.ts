@@ -1,3 +1,4 @@
+// lib/staff.ts
 import api from "@/lib/api";
 import axiosError from "axios";
 
@@ -12,6 +13,7 @@ export interface Staff {
   clinicId: string;
   status: StaffStatus;
   isEmailVerified: boolean;
+  assignedLocationIds?: string[]; // absent/empty = unrestricted, sees every clinic location
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +40,7 @@ export interface InviteStaffPayload {
   fullname: string;
   email: string;
   role: StaffRole;
+  locationIds?: string[]; // required by the backend only when the role needs one — see getStaffRoleMeta
 }
 
 export interface InviteStaffResponse {
@@ -59,6 +62,62 @@ export async function inviteStaff(
       throw new Error(error.response?.data?.message || "Failed to invite staff");
     }
     throw new Error("An unexpected error occurred while inviting staff");
+  }
+}
+
+// ─── Role Metadata (which roles need a location assignment) ─────────────────
+// Computed live on the backend from each role's permission set — never
+// hardcode this list on the frontend, since custom roles change it.
+
+export interface RoleMeta {
+  role: string;
+  needsLocation: boolean;
+}
+
+export interface RoleMetaResponse {
+  status: string;
+  data: RoleMeta[];
+}
+
+export async function getStaffRoleMeta(): Promise<RoleMeta[]> {
+  try {
+    const res = await api.get<RoleMetaResponse>("/staff/roles-meta");
+    return res.data.data;
+  } catch (error) {
+    if (axiosError.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || "Failed to fetch role metadata");
+    }
+    throw new Error("An unexpected error occurred while fetching role metadata");
+  }
+}
+
+// ─── Update Staff Location Assignment ────────────────────────────────────────
+
+export interface UpdateStaffLocationsPayload {
+  locationIds: string[];
+}
+
+export interface UpdateStaffLocationsResponse {
+  status: string;
+  message: string;
+  data: { staffId: string; assignedLocationIds: string[] };
+}
+
+export async function updateStaffLocations(
+  staffId: string,
+  payload: UpdateStaffLocationsPayload
+): Promise<UpdateStaffLocationsResponse> {
+  try {
+    const res = await api.patch<UpdateStaffLocationsResponse>(
+      `/staff/${staffId}/locations`,
+      payload
+    );
+    return res.data;
+  } catch (error) {
+    if (axiosError.isAxiosError(error)) {
+      throw new Error(error.response?.data?.message || "Failed to update staff locations");
+    }
+    throw new Error("An unexpected error occurred while updating staff locations");
   }
 }
 

@@ -19,9 +19,10 @@ const STATUS_STYLES: Record<SaleStatus, string> = {
 
 interface SalesHistoryProps {
     locationId: string;
+    canVoid?: boolean;
 }
 
-export default function SalesHistory({ locationId }: Readonly<SalesHistoryProps>) {
+export default function SalesHistory({ locationId, canVoid = true }: Readonly<SalesHistoryProps>) {
     const [sales, setSales] = useState<SaleRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -76,6 +77,8 @@ export default function SalesHistory({ locationId }: Readonly<SalesHistoryProps>
         }
     }
 
+    const colCount = canVoid ? 6 : 5;
+
     return (
         <div>
             <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -110,13 +113,13 @@ export default function SalesHistory({ locationId }: Readonly<SalesHistoryProps>
                             <th className="px-4 py-3 font-medium">Total</th>
                             <th className="px-4 py-3 font-medium">Payment</th>
                             <th className="px-4 py-3 font-medium">Status</th>
-                            <th className="px-4 py-3 font-medium">Actions</th>
+                            {canVoid && <th className="px-4 py-3 font-medium">Actions</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {loading && (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                                <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
                                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-acc-clr" />
                                 </td>
                             </tr>
@@ -124,7 +127,7 @@ export default function SalesHistory({ locationId }: Readonly<SalesHistoryProps>
 
                         {!loading && loadError && (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-red-500">
+                                <td colSpan={colCount} className="px-4 py-8 text-center text-red-500">
                                     {loadError}
                                 </td>
                             </tr>
@@ -132,7 +135,7 @@ export default function SalesHistory({ locationId }: Readonly<SalesHistoryProps>
 
                         {!loading && !loadError && sales.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
+                                <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
                                     No sales yet at this location.
                                 </td>
                             </tr>
@@ -166,31 +169,33 @@ export default function SalesHistory({ locationId }: Readonly<SalesHistoryProps>
                                         <div className="mt-1 text-xs text-slate-400">{sale.voidReason}</div>
                                     )}
                                 </td>
-                                <td className="px-4 py-3">
-                                    {sale.status === "paid" && (
-                                        <div className="flex items-center gap-1.5">
-                                            <input
-                                                type="text"
-                                                placeholder="Void reason"
-                                                value={voidingId === sale._id ? voidReason : ""}
-                                                onChange={(e) => {
-                                                    setVoidingId(sale._id);
-                                                    setVoidReason(e.target.value);
-                                                }}
-                                                className="w-28 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => handleVoid(sale._id)}
-                                                disabled={voidingId === sale._id && voidReason === ""}
-                                                className="flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                <RotateCcw className="h-3 w-3" />
-                                                Void
-                                            </button>
-                                        </div>
-                                    )}
-                                </td>
+                                {canVoid && (
+                                    <td className="px-4 py-3">
+                                        {sale.status === "paid" && (
+                                            <div className="flex items-center gap-1.5">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Void reason"
+                                                    value={voidingId === sale._id ? voidReason : ""}
+                                                    onChange={(e) => {
+                                                        setVoidingId(sale._id);
+                                                        setVoidReason(e.target.value);
+                                                    }}
+                                                    className="w-28 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-acc-clr"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleVoid(sale._id)}
+                                                    disabled={voidingId === sale._id && voidReason === ""}
+                                                    className="flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    <RotateCcw className="h-3 w-3" />
+                                                    Void
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>

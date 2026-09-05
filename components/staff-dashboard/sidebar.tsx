@@ -13,6 +13,8 @@ import {
   Package,
   ArrowLeftRight,
   BarChart3,
+  ShoppingCart,
+  Receipt,
   LogOut,
   ChevronDown,
   ChevronLeft,
@@ -35,6 +37,8 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Appointments", href: "/staff-dashboard/appointments", icon: Calendar, need: "manage_appointments" },
   { name: "Patients", href: "/staff-dashboard/patients", icon: PawPrint, need: "view_patients" },
   { name: "Inventory", href: "/staff-dashboard/inventory", icon: Package, need: "view_inventory" },
+  { name: "POS", href: "/staff-dashboard/pos", icon: ShoppingCart, need: "access_pos" },
+  { name: "Sales History", href: "/staff-dashboard/sales-history", icon: Receipt, need: "view_sales_history" },
   { name: "Referrals", href: "/staff-dashboard/referrals", icon: ArrowLeftRight, need: "view_referrals" },
   { name: "Reports", href: "/staff-dashboard/reports", icon: BarChart3, need: "view_reports" },
 ];
