@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { listLocations, type Location } from "@/lib/location";
+import { useAuthStore } from "@/store/useStore";
 
 interface UseClinicLocationsResult {
     locations: Location[];
@@ -17,10 +18,13 @@ interface UseClinicLocationsResult {
 
 export function useClinicLocations(scoped: boolean): UseClinicLocationsResult {
     const [locations, setLocations] = useState<Location[]>([]);
-    const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
+    const [activeLocationId, setActiveLocationIdState] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [reloadToken, setReloadToken] = useState(0);
+
+    const storedActiveLocationId = useAuthStore((s) => s.activeLocationId);
+    const setStoredActiveLocationId = useAuthStore((s) => s.setActiveLocationId);
 
     useEffect(() => {
         let cancelled = false;
@@ -32,10 +36,23 @@ export function useClinicLocations(scoped: boolean): UseClinicLocationsResult {
                 if (cancelled) return;
                 setLocations(data);
                 const active = data.filter((l) => l.isActive);
-                setActiveLocationId((current) => {
+                setActiveLocationIdState((current) => {
+                    // Prefer whichever id is already resolved, so a mid-session
+                    // refetch (refetch()) doesn't jump the user to a different
+                    // location than the one they're actively viewing.
                     if (current && active.some((l) => l._id === current)) return current;
+
+                    // Otherwise, prefer the location picked at login/select-location
+                    // (persisted in the auth store) — this is what makes a staff
+                    // member's branch choice actually stick across pages.
+                    if (storedActiveLocationId && active.some((l) => l._id === storedActiveLocationId)) {
+                        return storedActiveLocationId;
+                    }
+
                     const primary = active.find((l) => l.isPrimary);
-                    return primary?._id ?? active[0]?._id ?? null;
+                    const resolved = primary?._id ?? active[0]?._id ?? null;
+                    if (resolved) setStoredActiveLocationId(resolved);
+                    return resolved;
                 });
             })
             .catch(() => {
@@ -48,7 +65,19 @@ export function useClinicLocations(scoped: boolean): UseClinicLocationsResult {
         return () => {
             cancelled = true;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reloadToken]);
+
+    // Switching branches via LocationBar updates both local state (immediate
+    // re-render) and the persisted store (so it's still the choice on the
+    // next page navigation or reload, not just this component instance).
+    const setActiveLocationId = useCallback(
+        (id: string) => {
+            setActiveLocationIdState(id);
+            setStoredActiveLocationId(id);
+        },
+        [setStoredActiveLocationId]
+    );
 
     const refetch = useCallback(() => setReloadToken((t) => t + 1), []);
 

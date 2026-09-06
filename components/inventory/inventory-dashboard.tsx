@@ -165,7 +165,7 @@ export default function InventoryDashboard({
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6 pry-ff">
+        <div className="min-h-screen p-6 pry-ff">
             {!scoped && <h1 className="mb-4 text-2xl font-semibold text-slate-800">Inventory</h1>}
 
             {!scoped && (

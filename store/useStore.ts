@@ -13,18 +13,20 @@ interface AuthState {
     profile: Profile | null;
     role: Role | null;
     permissions: string[];
+    activeLocationId: string | null; // staff's chosen branch for this session
     isLoading: boolean;
     error: string | null;
-    hasHydrated: boolean; // ← new
+    hasHydrated: boolean;
 }
 
 interface AuthActions {
     setClinicToken: (clinic_token: string | null) => void;
     setProfile: (profile: Profile | null, role?: Role, permissions?: string[]) => void;
+    setActiveLocationId: (locationId: string | null) => void;
     fetchProfile: () => Promise<void>;
     logout: () => void;
     clearAuth: () => void;
-    setHasHydrated: (value: boolean) => void; // ← new
+    setHasHydrated: (value: boolean) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -36,6 +38,7 @@ export const useAuthStore = create<AuthStore>()(
             profile: null,
             role: null,
             permissions: [],
+            activeLocationId: null,
             isLoading: false,
             error: null,
             hasHydrated: false,
@@ -48,6 +51,8 @@ export const useAuthStore = create<AuthStore>()(
                     ...(role ? { role } : {}),
                     ...(permissions ? { permissions } : {}),
                 }),
+
+            setActiveLocationId: (locationId) => set({ activeLocationId: locationId }),
 
             fetchProfile: async () => {
                 try {
@@ -74,6 +79,7 @@ export const useAuthStore = create<AuthStore>()(
                     profile: null,
                     role: null,
                     permissions: [],
+                    activeLocationId: null,
                     isLoading: false,
                     error: null
                 });
@@ -85,6 +91,7 @@ export const useAuthStore = create<AuthStore>()(
                     profile: null,
                     role: null,
                     permissions: [],
+                    activeLocationId: null,
                     error: null
                 });
             },
@@ -98,6 +105,7 @@ export const useAuthStore = create<AuthStore>()(
                 profile: state.profile,
                 role: state.role,
                 permissions: state.permissions,
+                activeLocationId: state.activeLocationId,
             }),
             onRehydrateStorage: () => (state) => {
                 state?.setHasHydrated(true);
