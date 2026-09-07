@@ -51,7 +51,7 @@ export default function SelectLocationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-center justify-center bg-pry-clr">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-6 h-6 animate-spin text-acc-clr" />
           <p className="text-sm text-gray-500 sec-ff">Loading your locations...</p>
@@ -61,9 +61,9 @@ export default function SelectLocationPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4 pry-ff">
-      <div className="w-full max-w-md space-y-5">
-        <div className="text-center">
+    <div className="min-h-screen flex] items-center justify-center bg-pry-clr px-4 pry-ff">
+      <div className="w-full max-w-3xl space-y-5">
+        <div className="text-left">
           <h1 className="text-xl font-semibold text-gray-900">Select a location</h1>
           <p className="text-sm text-gray-500 mt-1">
             You&apos;ve been assigned to more than one branch. Choose which one you&apos;re working at.
@@ -83,7 +83,7 @@ export default function SelectLocationPage() {
               type="button"
               onClick={() => handleSelect(loc._id)}
               disabled={selecting !== null}
-              className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3.5 text-left hover:border-acc-clr hover:bg-acc-clr/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3.5 text-left hover:border-acc-clr hover:bg-acc-clr/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-acc-clr/10 flex items-center justify-center shrink-0">

@@ -135,10 +135,10 @@ export default function PosCheckout({ locationId }: Readonly<PosCheckoutProps>) 
             return;
         }
 
-        if (customerUserId.trim() && !/^[0-9a-fA-F]{24}$/.test(customerUserId.trim())) {
-            toast.error("Customer ID must be a valid ID format, or left blank.");
-            return;
-        }
+        // if (customerUserId.trim() && !/^[0-9a-fA-F]{24}$/.test(customerUserId.trim())) {
+        //     toast.error("Customer ID must be a valid ID format, or left blank.");
+        //     return;
+        // }
 
         const payload: CheckoutSalePayload = {
             items: cartLines.map((line) => ({ itemId: line.itemId, quantity: line.quantity })),
@@ -347,7 +347,7 @@ export default function PosCheckout({ locationId }: Readonly<PosCheckoutProps>) 
                             </select>
                         </div>
 
-                        <div className="mb-4">
+                        {/* <div className="mb-4">
                             <label htmlFor="customer-id" className="mb-1 block text-xs font-medium text-slate-500">
                                 Customer ID <span className="text-slate-300">(optional — for receipt email)</span>
                             </label>
@@ -360,7 +360,7 @@ export default function PosCheckout({ locationId }: Readonly<PosCheckoutProps>) 
                                 placeholder="Leave blank for walk-in"
                                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60"
                             />
-                        </div>
+                        </div> */}
 
                         <div className="mb-4 flex items-center justify-between text-base font-semibold text-slate-800">
                             <span>Total</span>

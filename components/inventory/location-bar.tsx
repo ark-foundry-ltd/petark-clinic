@@ -51,7 +51,7 @@ export default function LocationBar({
     }
 
     return (
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex items-center gap-2 sec-ff">
             <MapPin className="h-4 w-4 text-slate-400" />
             <select
                 value={activeLocationId ?? ""}
@@ -64,12 +64,12 @@ export default function LocationBar({
                     </option>
                 ))}
             </select>
-            <Link
+            {/* <Link
                 href="/dashboard/clinical/inventory/locations"
-                className="text-xs font-medium text-acc-clr hover:underline"
+                className="text-xs font-medium text-acc-clr hover:underline sec-ff"
             >
                 Manage
-            </Link>
+            </Link> */}
         </div>
     );
 }

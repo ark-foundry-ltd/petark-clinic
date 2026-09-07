@@ -85,7 +85,7 @@ export default function SalesHistory({ locationId, canVoid = true }: Readonly<Sa
                 <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as SaleStatus | "all")}
-                    className="rounded-lg border border-slate-200 bg-pry-clr px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-acc-clr"
+                    className="rounded-lg border border-slate-200 bg-pry-clr px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-acc-clr sec-ff"
                 >
                     <option value="all">All statuses</option>
                     <option value="paid">Paid</option>
@@ -95,7 +95,7 @@ export default function SalesHistory({ locationId, canVoid = true }: Readonly<Sa
                 <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod | "all")}
-                    className="rounded-lg border border-slate-200 bg-pry-clr px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-acc-clr"
+                    className="rounded-lg border border-slate-200 bg-pry-clr px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-acc-clr sec-ff"
                 >
                     <option value="all">All payment methods</option>
                     {(Object.entries(PAYMENT_LABELS) as [PaymentMethod, string][]).map(([value, label]) => (
@@ -107,7 +107,7 @@ export default function SalesHistory({ locationId, canVoid = true }: Readonly<Sa
             <div className="overflow-hidden rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
                 <table className="w-full text-left text-sm">
                     <thead>
-                        <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+                        <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400 sec-ff">
                             <th className="px-4 py-3 font-medium">Date</th>
                             <th className="px-4 py-3 font-medium">Items</th>
                             <th className="px-4 py-3 font-medium">Total</th>
@@ -116,7 +116,7 @@ export default function SalesHistory({ locationId, canVoid = true }: Readonly<Sa
                             {canVoid && <th className="px-4 py-3 font-medium">Actions</th>}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="pry-ff">
                         {loading && (
                             <tr>
                                 <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
