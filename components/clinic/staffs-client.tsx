@@ -4,18 +4,33 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Staff, getStaff } from "@/lib/staff";
+import { type CustomRole, listCustomRoles } from "@/lib/custom-roles";
+import { useAuthStore } from "@/store/useStore";
+import type { User } from "@/lib/user";
 import StaffList from "@/components/clinic/staff-list";
 import InviteStaffModal from "@/components/clinic/invite-staff-modal";
+import CustomRolesList from "@/components/clinic/custom-roles-list";
+
+type Tab = "staff" | "roles";
 
 export default function StaffsClient() {
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("staff");
+
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(true);
+
+  const profile = useAuthStore((s) => s.profile) as User | null;
+  const plan = profile?.subscription?.plan;
+  const isProOrAbove = plan === "pro" || plan === "enterprise";
 
   useEffect(() => {
     let cancelled = false;
@@ -41,10 +56,47 @@ export default function StaffsClient() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isProOrAbove) {
+      setRolesLoading(false);
+      return;
+    }
+    let cancelled = false;
+
+    async function fetchRoles() {
+      try {
+        const data = await listCustomRoles();
+        if (!cancelled) setCustomRoles(data.data);
+      } catch (error) {
+        if (!cancelled)
+          toast.error(
+            error instanceof Error ? error.message : "Could not load custom roles."
+          );
+      } finally {
+        if (!cancelled) setRolesLoading(false);
+      }
+    }
+
+    fetchRoles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isProOrAbove]);
+
   async function refetchStaff() {
     try {
       const data = await getStaff();
       setStaffList(data.data);
+    } catch {
+      // silently fail on refetch
+    }
+  }
+
+  async function refetchRoles() {
+    try {
+      const data = await listCustomRoles();
+      setCustomRoles(data.data);
     } catch {
       // silently fail on refetch
     }
@@ -85,22 +137,73 @@ export default function StaffsClient() {
             </button>
           </div>
 
+          {/* Tabs */}
+          <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-lg w-fit">
+            <button
+              onClick={() => setTab("staff")}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors pry-ff ${
+                tab === "staff" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Staff
+            </button>
+            <button
+              onClick={() => setTab("roles")}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors pry-ff flex items-center gap-1.5 ${
+                tab === "roles" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Custom Roles
+              {!isProOrAbove && <Lock className="w-3 h-3 text-gray-400" />}
+            </button>
+          </div>
+
           {/* Body */}
-          {loading ? (
-            <div className="space-y-3 pt-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <StaffList
-              staffList={staffList}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              onInvite={() => setShowModal(true)}
-              onUpdate={refetchStaff}
-            />
-          )}
+          {tab === "staff" &&
+            (loading ? (
+              <div className="space-y-3 pt-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-14 rounded-xl bg-gray-100 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <StaffList
+                staffList={staffList}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onInvite={() => setShowModal(true)}
+                onUpdate={refetchStaff}
+              />
+            ))}
+
+          {tab === "roles" &&
+            (!isProOrAbove ? (
+              <div className="text-center py-16 border border-gray-100 rounded-2xl space-y-3">
+                <Lock className="w-6 h-6 text-gray-300 mx-auto" />
+                <div>
+                  <p className="text-sm font-medium text-gray-700 pry-ff">
+                    Custom Roles is a Pro feature
+                  </p>
+                  <p className="text-sm text-gray-400 sec-ff mt-1">
+                    Upgrade to Pro to build named roles with custom permission sets.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push("/dashboard/profile/subscription")}
+                  className="text-sm font-medium bg-acc-clr text-pry-clr px-4 py-2 rounded-lg pry-ff"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
+            ) : rolesLoading ? (
+              <div className="space-y-3 pt-4">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <CustomRolesList roles={customRoles} onUpdate={refetchRoles} />
+            ))}
         </div>
       </div>
     </>
