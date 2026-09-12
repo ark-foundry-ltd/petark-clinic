@@ -1,12 +1,12 @@
 // components/clinic/permission-picker.tsx
 "use client";
 
-interface PermissionGroup {
+export interface PermissionGroup {
   label: string;
   permissions: { value: string; label: string }[];
 }
 
-const PERMISSION_GROUPS: PermissionGroup[] = [
+export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
     label: "Clinic-level",
     permissions: [

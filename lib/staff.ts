@@ -2,7 +2,7 @@
 import api from "@/lib/api";
 import axiosError from "axios";
 
-export type StaffRole = "vet" | "receptionist" | "sales";
+export type StaffRole = "vet" | "receptionist" | "sales" | "custom";
 export type StaffStatus = "invited" | "active" | "revoked";
 
 export interface Staff {
@@ -10,6 +10,8 @@ export interface Staff {
   fullname: string;
   email: string;
   role: StaffRole;
+  customRoleId?: string | null;
+  customRoleName?: string | null;
   clinicId: string;
   status: StaffStatus;
   isEmailVerified: boolean;
@@ -40,6 +42,7 @@ export interface InviteStaffPayload {
   fullname: string;
   email: string;
   role: StaffRole;
+  customRoleId?: string; // required when role === "custom"
   locationIds?: string[]; // required by the backend only when the role needs one — see getStaffRoleMeta
 }
 
@@ -65,9 +68,11 @@ export async function inviteStaff(
   }
 }
 
-// ─── Role Metadata (which roles need a location assignment) ─────────────────
-// Computed live on the backend from each role's permission set — never
-// hardcode this list on the frontend, since custom roles change it.
+// ─── Role Metadata (which built-in roles need a location assignment) ────────
+// Computed live on the backend from each role's permission set. Custom roles
+// aren't included here — their needsLocation is computed client-side from
+// the role's own permissions array (see listCustomRoles), since a custom
+// role's permission set is already known once fetched, no extra round-trip.
 
 export interface RoleMeta {
   role: string;
@@ -203,12 +208,13 @@ export async function completeStaffSetup(
 
 export interface UpdateStaffRolePayload {
   role: StaffRole;
+  customRoleId?: string; // required when role === "custom"
 }
 
 export interface UpdateStaffRoleResponse {
   status: string;
   message: string;
-  data: { staffId: string; role: StaffRole };
+  data: { staffId: string; role: StaffRole; customRoleId?: string | null };
 }
 
 export async function updateStaffRole(

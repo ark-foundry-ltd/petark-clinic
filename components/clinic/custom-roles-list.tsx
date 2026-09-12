@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Users } from "lucide-react";
 import { type CustomRole, deleteCustomRole } from "@/lib/custom-roles";
 import CustomRoleModal from "@/components/clinic/custom-role-modal";
+import ViewCustomRoleModal from "@/components/clinic/view-custom-role-modal";
 
 interface CustomRolesListProps {
   roles: CustomRole[];
@@ -18,6 +19,7 @@ export default function CustomRolesList({
 }: Readonly<CustomRolesListProps>) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<CustomRole | null>(null);
+  const [viewingRole, setViewingRole] = useState<CustomRole | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function openCreate() {
@@ -26,8 +28,13 @@ export default function CustomRolesList({
   }
 
   function openEdit(role: CustomRole) {
+    setViewingRole(null);
     setEditingRole(role);
     setModalOpen(true);
+  }
+
+  function openView(role: CustomRole) {
+    setViewingRole(role);
   }
 
   async function handleDelete(role: CustomRole) {
@@ -61,6 +68,14 @@ export default function CustomRolesList({
         />
       )}
 
+      {viewingRole && (
+        <ViewCustomRoleModal
+          role={viewingRole}
+          onClose={() => setViewingRole(null)}
+          onEdit={() => openEdit(viewingRole)}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500 sec-ff">
           Build named roles from a custom mix of permissions.
@@ -84,7 +99,8 @@ export default function CustomRolesList({
         {roles.map((role) => (
           <div
             key={role._id}
-            className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl p-4"
+            onClick={() => openView(role)}
+            className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl p-4 hover:bg-gray-50/50 transition-colors cursor-pointer"
           >
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-900 pry-ff">{role.name}</p>
@@ -99,7 +115,7 @@ export default function CustomRolesList({
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => openEdit(role)}
                 className="p-2 rounded-lg hover:bg-gray-100 transition-colors"

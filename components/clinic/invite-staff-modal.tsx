@@ -7,12 +7,29 @@ import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { inviteStaff, getStaffRoleMeta, type StaffRole } from "@/lib/staff";
 import { listLocations, type Location } from "@/lib/location";
+import { listCustomRoles, type CustomRole } from "@/lib/custom-roles";
 
-const ROLES: { value: StaffRole; label: string }[] = [
+const BUILT_IN_ROLES: { value: StaffRole; label: string }[] = [
   { value: "vet", label: "Vet Assistant" },
   { value: "receptionist", label: "Receptionist" },
   { value: "sales", label: "Sales" }
 ];
+
+// Mirrors the backend's LOCATION_RELEVANT_PERMISSIONS in staffController.js —
+// used only to compute needsLocation for CUSTOM roles client-side, since
+// listCustomRoles() already gives us each role's full permissions array.
+// Built-in roles use getStaffRoleMeta() from the backend instead.
+const LOCATION_RELEVANT_PERMISSIONS = [
+  "access_pos",
+  "view_inventory",
+  "manage_inventory",
+  "view_inventory_cost",
+  "view_sales_history",
+];
+
+type RoleSelection =
+  | { kind: "builtin"; role: StaffRole }
+  | { kind: "custom"; customRoleId: string };
 
 interface InviteStaffModalProps {
   onClose: () => void;
@@ -25,16 +42,16 @@ export default function InviteStaffModal({
 }: Readonly<InviteStaffModalProps>) {
   const [fullname, setFullname] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<StaffRole>("vet");
+  const [selection, setSelection] = useState<RoleSelection>({ kind: "builtin", role: "vet" });
   const [loading, setLoading] = useState(false);
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(true);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
 
-  // role → needsLocation, fetched live from the backend so custom roles
-  // and future permission changes are reflected automatically — never
-  // hardcode which roles need this.
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+  const [customRolesLoading, setCustomRolesLoading] = useState(true);
+
   const [roleLocationMeta, setRoleLocationMeta] = useState<Record<string, boolean>>({});
   const [metaLoaded, setMetaLoaded] = useState(false);
 
@@ -48,9 +65,9 @@ export default function InviteStaffModal({
         setRoleLocationMeta(map);
       })
       .catch(() => {
-        // If this fails, fail safe: treat every role as needing a location
-        // rather than risk silently letting through an invite the backend
-        // will reject anyway.
+        // If this fails, fail safe: treat every built-in role as needing a
+        // location rather than risk silently letting through an invite the
+        // backend will reject anyway.
       })
       .finally(() => {
         if (!cancelled) setMetaLoaded(true);
@@ -60,7 +77,22 @@ export default function InviteStaffModal({
     };
   }, []);
 
-  const needsLocation = metaLoaded ? (roleLocationMeta[role] ?? true) : false;
+  useEffect(() => {
+    let cancelled = false;
+    listCustomRoles()
+      .then((res) => {
+        if (!cancelled) setCustomRoles(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setCustomRoles([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCustomRolesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +110,30 @@ export default function InviteStaffModal({
       cancelled = true;
     };
   }, []);
+
+  const selectedCustomRole =
+    selection.kind === "custom"
+      ? customRoles.find((r) => r._id === selection.customRoleId)
+      : null;
+
+  const needsLocation =
+    selection.kind === "builtin"
+      ? metaLoaded
+        ? (roleLocationMeta[selection.role] ?? true)
+        : false
+      : selectedCustomRole
+        ? LOCATION_RELEVANT_PERMISSIONS.some((p) => selectedCustomRole.permissions.includes(p))
+        : false;
+
+  function handleSelectionChange(value: string) {
+    setSelectedLocationIds([]); // reset — a location choice for the old role shouldn't silently carry over
+
+    if (value.startsWith("custom:")) {
+      setSelection({ kind: "custom", customRoleId: value.slice("custom:".length) });
+    } else {
+      setSelection({ kind: "builtin", role: value as StaffRole });
+    }
+  }
 
   function toggleLocation(locationId: string) {
     setSelectedLocationIds((current) =>
@@ -102,7 +158,8 @@ export default function InviteStaffModal({
       await inviteStaff({
         fullname,
         email,
-        role,
+        role: selection.kind === "custom" ? "custom" : selection.role,
+        ...(selection.kind === "custom" ? { customRoleId: selection.customRoleId } : {}),
         ...(needsLocation ? { locationIds: selectedLocationIds } : {}),
       });
       toast.success("Staff member invited successfully.");
@@ -170,18 +227,28 @@ export default function InviteStaffModal({
               Role
             </label>
             <select
-              value={role}
-              onChange={(e) => {
-                setRole(e.target.value as StaffRole);
-                setSelectedLocationIds([]); // reset — a location choice for the old role shouldn't silently carry over
-              }}
+              value={
+                selection.kind === "custom" ? `custom:${selection.customRoleId}` : selection.role
+              }
+              onChange={(e) => handleSelectionChange(e.target.value)}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr/30 focus:border-acc-clr transition-colors sec-ff bg-white"
             >
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
+              <optgroup label="Standard roles">
+                {BUILT_IN_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </optgroup>
+              {!customRolesLoading && customRoles.length > 0 && (
+                <optgroup label="Custom roles">
+                  {customRoles.map((r) => (
+                    <option key={r._id} value={`custom:${r._id}`}>
+                      {r.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 

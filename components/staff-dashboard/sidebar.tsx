@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  MoreHorizontal,
 } from "lucide-react";
 import { useSidebar } from "@/context/sidebar-context";
 import { useAuthStore } from "@/store/useStore";
@@ -143,31 +144,81 @@ export function StaffMobileTopBar() {
 }
 
 // ─── Mobile Bottom Nav ──────────────────────────────────────────────────────
+// ─── Mobile Bottom Nav ──────────────────────────────────────────────────────
 export function StaffMobileBottomNav() {
   const pathname = usePathname();
   const items = useVisibleNavItems();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const MAX_VISIBLE = 4;
+  const overflowing = items.length > MAX_VISIBLE;
+  const primaryItems = overflowing ? items.slice(0, MAX_VISIBLE - 1) : items;
+  const overflowItems = overflowing ? items.slice(MAX_VISIBLE - 1) : [];
+  const isOverflowActive = overflowItems.some((item) => isRouteActive(pathname, item.href, item.exact));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg pry-ff z-50">
-      <div className="flex justify-around items-center h-16">
-        {items.map((item) => {
-          const Icon = item.icon;
-          const isActive = isRouteActive(pathname, item.href, item.exact);
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
+    <>
+      {moreOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setMoreOpen(false)} />
+          <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 shadow-lg rounded-t-2xl pry-ff z-50 p-3">
+            <div className="grid grid-cols-4 gap-2">
+              {overflowItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = isRouteActive(pathname, item.href, item.exact);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl transition-colors ${
+                      isActive ? "text-acc-clr bg-acc-clr/5" : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="text-[10px] font-medium text-center">{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg pry-ff z-50">
+        <div className="flex justify-around items-center h-16">
+          {primaryItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = isRouteActive(pathname, item.href, item.exact);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setMoreOpen(false)}
+                className={`flex flex-1 flex-col items-center justify-center gap-1 h-full transition-all active:scale-90 ${
+                  isActive ? "text-acc-clr" : "text-gray-400 hover:text-acc-clr"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
+
+          {overflowing && (
+            <button
+              onClick={() => setMoreOpen((v) => !v)}
               className={`flex flex-1 flex-col items-center justify-center gap-1 h-full transition-all active:scale-90 ${
-                isActive ? "text-acc-clr" : "text-gray-400 hover:text-acc-clr"
+                isOverflowActive || moreOpen ? "text-acc-clr" : "text-gray-400 hover:text-acc-clr"
               }`}
             >
-              <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.name}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+              <MoreHorizontal className="h-5 w-5" />
+              <span className="text-[10px] font-medium">More</span>
+            </button>
+          )}
+        </div>
+      </nav>
+    </>
   );
 }
 

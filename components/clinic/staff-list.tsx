@@ -1,7 +1,7 @@
 // components/clinic/staff-list.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Search, MoreVertical, ShieldOff, ShieldCheck, UserCog } from "lucide-react";
@@ -12,11 +12,13 @@ import {
   revokeStaffAccess,
   restoreStaffAccess,
 } from "@/lib/staff";
+import { listCustomRoles, type CustomRole } from "@/lib/custom-roles";
 import InviteStaffBtn from "@/components/clinic/invite-staff-btn";
 
 const ROLE_OPTIONS: { value: StaffRole; label: string }[] = [
   { value: "vet", label: "Vet" },
   { value: "receptionist", label: "Receptionist" },
+  { value: "sales", label: "Sales" },
 ];
 
 const STATUS_STYLES: Record<Staff["status"], string> = {
@@ -43,6 +45,21 @@ export default function StaffList({
   const router = useRouter();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCustomRoles()
+      .then((res) => {
+        if (!cancelled) setCustomRoles(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setCustomRoles([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered = staffList.filter(
     (s) =>
@@ -62,10 +79,10 @@ export default function StaffList({
     router.push(`/dashboard/profile/staffs/${staff._id}?${query}`);
   }
 
-  async function handleRoleChange(staffId: string, role: StaffRole) {
+  async function handleRoleChange(staffId: string, role: StaffRole, customRoleId?: string) {
     setBusyId(staffId);
     try {
-      await updateStaffRole(staffId, { role });
+      await updateStaffRole(staffId, { role, ...(customRoleId ? { customRoleId } : {}) });
       toast.success("Role updated");
       onUpdate();
     } catch (error) {
@@ -150,7 +167,9 @@ export default function StaffList({
                 </span>
               </div>
               <p className="text-xs text-gray-500 sec-ff truncate">{staff.email}</p>
-              <p className="text-xs text-gray-400 sec-ff capitalize mt-0.5">{staff.role}</p>
+              <p className="text-xs text-gray-400 sec-ff capitalize mt-0.5">
+                {staff.role === "custom" ? (staff.customRoleName ?? "Custom role") : staff.role}
+              </p>
             </div>
 
             <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -165,7 +184,7 @@ export default function StaffList({
               </button>
 
               {openMenuId === staff._id && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-10 pry-ff">
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1.5 z-10 pry-ff">
                   {staff.status !== "revoked" && (
                     <>
                       <p className="px-3 pt-1.5 pb-1 text-[11px] font-medium text-gray-400 uppercase tracking-wide">
@@ -181,6 +200,18 @@ export default function StaffList({
                           Set as {r.label}
                         </button>
                       ))}
+                      {customRoles
+                        .filter((r) => !(staff.role === "custom" && staff.customRoleId === r._id))
+                        .map((r) => (
+                          <button
+                            key={r._id}
+                            onClick={() => handleRoleChange(staff._id, "custom", r._id)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors pry-ff"
+                          >
+                            <UserCog className="w-3.5 h-3.5 text-gray-400" />
+                            Set as {r.name}
+                          </button>
+                        ))}
                       <div className="my-1 border-t border-gray-100" />
                       <button
                         onClick={() => handleRevoke(staff._id)}
