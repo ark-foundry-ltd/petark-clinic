@@ -105,101 +105,105 @@ export default function SalesHistory({ locationId, canVoid = true }: Readonly<Sa
             </div>
 
             <div className="overflow-hidden rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
-                <table className="w-full text-left text-sm">
-                    <thead>
-                        <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400 sec-ff">
-                            <th className="px-4 py-3 font-medium">Date</th>
-                            <th className="px-4 py-3 font-medium">Items</th>
-                            <th className="px-4 py-3 font-medium">Total</th>
-                            <th className="px-4 py-3 font-medium">Payment</th>
-                            <th className="px-4 py-3 font-medium">Status</th>
-                            {canVoid && <th className="px-4 py-3 font-medium">Actions</th>}
-                        </tr>
-                    </thead>
-                    <tbody className="pry-ff">
-                        {loading && (
-                            <tr>
-                                <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
-                                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-acc-clr" />
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[640px] text-left text-sm">
+                        <thead>
+                            <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400 sec-ff">
+                                <th className="px-4 py-3 font-medium whitespace-nowrap">Date</th>
+                                <th className="px-4 py-3 font-medium whitespace-nowrap">Items</th>
+                                <th className="px-4 py-3 font-medium whitespace-nowrap">Total</th>
+                                <th className="px-4 py-3 font-medium whitespace-nowrap">Payment</th>
+                                <th className="px-4 py-3 font-medium whitespace-nowrap">Status</th>
+                                {canVoid && <th className="px-4 py-3 font-medium whitespace-nowrap">Actions</th>}
                             </tr>
-                        )}
+                        </thead>
+                        <tbody className="pry-ff">
+                            {loading && (
+                                <tr>
+                                    <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
+                                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-acc-clr" />
+                                    </td>
+                                </tr>
+                            )}
 
-                        {!loading && loadError && (
-                            <tr>
-                                <td colSpan={colCount} className="px-4 py-8 text-center text-red-500">
-                                    {loadError}
-                                </td>
-                            </tr>
-                        )}
+                            {!loading && loadError && (
+                                <tr>
+                                    <td colSpan={colCount} className="px-4 py-8 text-center text-red-500">
+                                        {loadError}
+                                    </td>
+                                </tr>
+                            )}
 
-                        {!loading && !loadError && sales.length === 0 && (
-                            <tr>
-                                <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
-                                    No sales yet at this location.
-                                </td>
-                            </tr>
-                        )}
+                            {!loading && !loadError && sales.length === 0 && (
+                                <tr>
+                                    <td colSpan={colCount} className="px-4 py-8 text-center text-slate-400">
+                                        No sales yet at this location.
+                                    </td>
+                                </tr>
+                            )}
 
-                        {!loading && !loadError && sales.map((sale) => (
-                            <tr key={sale._id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
-                                <td className="px-4 py-3 text-slate-600">
-                                    {new Date(sale.createdAt).toLocaleString(undefined, {
-                                        dateStyle: "medium",
-                                        timeStyle: "short",
-                                    })}
-                                </td>
-                                <td className="px-4 py-3 text-slate-600">
-                                    {sale.items.length} item{sale.items.length === 1 ? "" : "s"}
-                                    <div className="text-xs text-slate-400 truncate max-w-[220px]">
-                                        {sale.items.map((i) => i.name).join(", ")}
-                                    </div>
-                                </td>
-                                <td className="px-4 py-3 font-medium text-slate-800">
-                                    ₦{sale.totalAmount.toFixed(2)}
-                                </td>
-                                <td className="px-4 py-3 text-slate-600">
-                                    {PAYMENT_LABELS[sale.paymentMethod]}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[sale.status]}`}>
-                                        {sale.status === "paid" ? "Paid" : "Voided"}
-                                    </span>
-                                    {sale.status === "voided" && sale.voidReason && (
-                                        <div className="mt-1 text-xs text-slate-400">{sale.voidReason}</div>
-                                    )}
-                                </td>
-                                {canVoid && (
-                                    <td className="px-4 py-3">
-                                        {sale.status === "paid" && (
-                                            <div className="flex items-center gap-1.5">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Void reason"
-                                                    value={voidingId === sale._id ? voidReason : ""}
-                                                    onChange={(e) => {
-                                                        setVoidingId(sale._id);
-                                                        setVoidReason(e.target.value);
-                                                    }}
-                                                    className="w-28 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-acc-clr"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleVoid(sale._id)}
-                                                    disabled={voidingId === sale._id && voidReason === ""}
-                                                    className="flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <RotateCcw className="h-3 w-3" />
-                                                    Void
-                                                </button>
-                                            </div>
+                            {!loading && !loadError && sales.map((sale) => (
+                                <tr key={sale._id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
+                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                                        {new Date(sale.createdAt).toLocaleString(undefined, {
+                                            dateStyle: "medium",
+                                            timeStyle: "short",
+                                        })}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        <span className="whitespace-nowrap">
+                                            {sale.items.length} item{sale.items.length === 1 ? "" : "s"}
+                                        </span>
+                                        <div className="text-xs text-slate-400 truncate max-w-[220px]">
+                                            {sale.items.map((i) => i.name).join(", ")}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">
+                                        ₦{sale.totalAmount.toFixed(2)}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                                        {PAYMENT_LABELS[sale.paymentMethod]}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap">
+                                        <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[sale.status]}`}>
+                                            {sale.status === "paid" ? "Paid" : "Voided"}
+                                        </span>
+                                        {sale.status === "voided" && sale.voidReason && (
+                                            <div className="mt-1 text-xs text-slate-400">{sale.voidReason}</div>
                                         )}
                                     </td>
-                                )}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                    {canVoid && (
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            {sale.status === "paid" && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Void reason"
+                                                        value={voidingId === sale._id ? voidReason : ""}
+                                                        onChange={(e) => {
+                                                            setVoidingId(sale._id);
+                                                            setVoidReason(e.target.value);
+                                                        }}
+                                                        className="w-28 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-acc-clr"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleVoid(sale._id)}
+                                                        disabled={voidingId === sale._id && voidReason === ""}
+                                                        className="flex items-center gap-1 rounded-lg bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        <RotateCcw className="h-3 w-3" />
+                                                        Void
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

@@ -2,13 +2,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { Download, Loader2 as Loader2Icon, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import {
     getSalesReport,
     getInventoryReport,
     type SalesReport,
     type InventoryReport,
     type MovementType,
+    exportReports,
+    type ReportType,
+    type ExportFormat,
 } from "@/lib/report";
 
 const MOVEMENT_LABELS: Record<MovementType, string> = {
@@ -48,6 +51,37 @@ export default function LocationReports({ locationId }: Readonly<LocationReports
     const [inventoryReport, setInventoryReport] = useState<InventoryReport | null>(null);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
+
+    const [selectedExportTypes, setSelectedExportTypes] = useState<ReportType[]>(["sales"]);
+const [exportFormat, setExportFormat] = useState<ExportFormat>("xlsx");
+const [exporting, setExporting] = useState(false);
+
+function toggleExportType(type: ReportType) {
+    setSelectedExportTypes((current) =>
+        current.includes(type) ? current.filter((t) => t !== type) : [...current, type]
+    );
+}
+
+async function handleExport() {
+    if (selectedExportTypes.length === 0) {
+        setLoadError("Select at least one report to export.");
+        return;
+    }
+    setExporting(true);
+    try {
+        await exportReports({
+            reports: selectedExportTypes,
+            format: exportFormat,
+            from: appliedRange.from,
+            to: appliedRange.to,
+            locationId,
+        });
+    } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Export failed.");
+    } finally {
+        setExporting(false);
+    }
+}
 
     useEffect(() => {
         let cancelled = false;
@@ -95,7 +129,7 @@ export default function LocationReports({ locationId }: Readonly<LocationReports
     return (
         <div>
             {/* Date range controls */}
-            <div className="mb-6 flex flex-wrap items-end gap-3">
+            <div className="mb-6 flex flex-wrap items-end gap-3 pry-ff">
                 <div>
                     <label htmlFor="report-from" className="mb-1 block text-xs font-medium text-slate-500">
                         From
@@ -136,18 +170,70 @@ export default function LocationReports({ locationId }: Readonly<LocationReports
                 </button>
             </div>
 
+            {/* Export controls */}
+<div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+    <span className="text-xs font-medium text-slate-500 sec-ff">Export:</span>
+
+    <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
+        <input
+            type="checkbox"
+            checked={selectedExportTypes.includes("sales")}
+            onChange={() => toggleExportType("sales")}
+            className="rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
+        />
+        Sales
+    </label>
+    <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
+        <input
+            type="checkbox"
+            checked={selectedExportTypes.includes("inventory")}
+            onChange={() => toggleExportType("inventory")}
+            className="rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
+        />
+        Inventory
+    </label>
+    <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
+        <input
+            type="checkbox"
+            checked={selectedExportTypes.includes("clinic")}
+            onChange={() => toggleExportType("clinic")}
+            className="rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
+        />
+        Clinic Operations
+    </label>
+
+    <select
+        value={exportFormat}
+        onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+        className="rounded-lg border border-slate-200 bg-pry-clr px-2.5 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr pry-ff"
+    >
+        <option value="xlsx">XLSX</option>
+        <option value="csv">CSV</option>
+    </select>
+
+    <button
+        type="button"
+        onClick={handleExport}
+        disabled={exporting || selectedExportTypes.length === 0}
+        className="ml-auto flex items-center gap-2 rounded-lg bg-acc-clr px-4 py-1.5 text-sm font-medium text-pry-clr hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 pry-ff"
+    >
+        {exporting ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        Download
+    </button>
+</div>
+
             {loading ? (
                 <div className="flex justify-center py-16">
-                    <Loader2 className="h-6 w-6 animate-spin text-acc-clr" />
+                    <Loader2Icon className="h-6 w-6 animate-spin text-acc-clr" />
                 </div>
             ) : loadError ? (
-                <p className="py-8 text-center text-sm text-red-500">{loadError}</p>
+                <p className="py-8 text-center text-sm text-red-500 sec-ff">{loadError}</p>
             ) : (
                 <div className="space-y-8">
                     {/* ── Sales report ── */}
                     {salesReport && (
                         <section>
-                            <h3 className="mb-3 text-sm font-semibold text-slate-800">Sales</h3>
+                            <h3 className="mb-3 text-sm font-semibold text-slate-800 sec-ff">Sales</h3>
                             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                                 <ReportStat label="Revenue" value={`₦${salesReport.totalRevenue.toLocaleString()}`} />
                                 <ReportStat label="Cost" value={`₦${salesReport.totalCost.toLocaleString()}`} />
@@ -168,7 +254,7 @@ export default function LocationReports({ locationId }: Readonly<LocationReports
                                 </p>
                             )}
 
-                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 pry-ff">
                                 {/* By payment method */}
                                 <div className="rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
                                     <div className="border-b border-slate-100 px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">
@@ -218,16 +304,16 @@ export default function LocationReports({ locationId }: Readonly<LocationReports
                     {inventoryReport && (
                         <section>
                             <div className="mb-3 flex items-center justify-between">
-                                <h3 className="text-sm font-semibold text-slate-800">Inventory Movement</h3>
+                                <h3 className="text-sm font-semibold text-slate-800 sec-ff">Inventory Movement</h3>
                                 {inventoryReport.currentLowStockCount > 0 && (
-                                    <span className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                                    <span className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-100 px-3 py-1 text-xs font-medium text-amber-700 pry-ff">
                                         <AlertTriangle className="h-3 w-3" />
                                         {inventoryReport.currentLowStockCount} item(s) currently low stock
                                     </span>
                                 )}
                             </div>
 
-                            <div className="overflow-hidden rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
+                            <div className="overflow-hidden rounded-xl border border-slate-100 bg-pry-clr shadow-sm  pry-ff">
                                 <table className="w-full text-left text-sm">
                                     <thead>
                                         <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
@@ -251,7 +337,7 @@ export default function LocationReports({ locationId }: Readonly<LocationReports
                                     </tbody>
                                 </table>
                             </div>
-                            <p className="mt-2 text-xs text-slate-400">
+                            <p className="mt-2 text-xs text-slate-400 pry-ff">
                                 Values use each movement&apos;s recorded unit cost — historical figures won&apos;t change if item prices are edited later.
                             </p>
                         </section>
@@ -271,7 +357,7 @@ interface ReportStatProps {
 
 function ReportStat({ label, value, icon: Icon, tone }: Readonly<ReportStatProps>) {
     return (
-        <div className="rounded-xl border border-slate-100 bg-pry-clr p-3 shadow-sm">
+        <div className="rounded-xl border border-slate-100 bg-pry-clr p-3 shadow-sm pry-ff">
             <p className="mb-1 text-xs text-slate-400">{label}</p>
             <div className="flex items-center gap-1.5">
                 {Icon && (

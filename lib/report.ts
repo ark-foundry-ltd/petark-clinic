@@ -98,3 +98,42 @@ export async function getInventoryReport(params: ReportParams = {}): Promise<Inv
         throw error;
     }
 }
+
+// ─── Combined export ──────────────────────────────────────────────────────
+
+export type ReportType = "sales" | "inventory" | "clinic";
+export type ExportFormat = "xlsx" | "csv";
+
+export interface ExportReportsParams extends ReportParams {
+    reports: ReportType[];
+    format: ExportFormat;
+}
+
+export async function exportReports(params: ExportReportsParams): Promise<void> {
+    try {
+        const response = await api.get("/reports/export", {
+            params: { ...params, reports: params.reports.join(",") },
+            responseType: "blob",
+        });
+
+        const contentDisposition = response.headers["content-disposition"] as string | undefined;
+        const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+        const filename = filenameMatch?.[1] ?? `petark-report.${params.format}`;
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            console.error("Error exporting reports:", error.response?.data || error.message);
+            throw new Error("Failed to export reports");
+        }
+        console.error("Error exporting reports:", error);
+        throw error;
+    }
+}
