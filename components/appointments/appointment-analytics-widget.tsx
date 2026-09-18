@@ -47,7 +47,7 @@ export default function AppointmentAnalyticsWidget() {
                 </h3>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-3 gap-3 mb-4 sec-ff">
                 <div>
                     <p className="text-xs text-gray-400">Today</p>
                     <p className="text-sm font-semibold text-gray-900">{data.today}</p>
@@ -62,7 +62,7 @@ export default function AppointmentAnalyticsWidget() {
                 </div>
             </div>
 
-            <div className="flex items-end gap-1.5 h-16">
+            <div className="flex items-end gap-1.5 h-16 sec-ff">
                 {data.trend.map((p) => (
                     <div key={p.label} className="flex-1 flex flex-col items-center gap-1">
                         <div className="w-full flex items-end justify-center h-12">
