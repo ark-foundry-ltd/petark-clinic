@@ -10,6 +10,7 @@ import { useAppointmentsContext } from "@/context/appointments-context";
 import { useAuthStore } from "@/store/useStore";
 import VisitBtn from "@/components/clinic/visit-btn";
 import { CalendarDays, Clock, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, CheckCheck, CalendarX, AlarmClockOff } from "lucide-react";
+import AppointmentAnalyticsWidget from "@/components/appointments/appointment-analytics-widget";
 
 const STATUS_STYLES = {
   pending:   { className: "bg-yellow-50 text-yellow-700 border border-yellow-200", icon: Clock },
@@ -123,7 +124,8 @@ export default function GetAppointments({
     const hasNext = page < totalPages;
 
     return (
-        <section className="space-y-4 w-full pry-ff">
+        <main>
+            <section className="space-y-4 w-full pry-ff">
             {/* Header with filter */}
             <div className="flex items-center justify-between">
                 <div>
@@ -307,5 +309,6 @@ export default function GetAppointments({
                 </div>
             )}
         </section>
+        </main>
     );
 }

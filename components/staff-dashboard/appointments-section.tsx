@@ -3,6 +3,8 @@
 import { AppointmentsProvider } from "@/context/appointments-context";
 import AppointmentStats from "@/components/clinic/appointment-stats";
 import GetAppointments from "@/components/clinic/get-appointments";
+import AppointmentAnalyticsWidget from "../appointments/appointment-analytics-widget";
+
 
 export default function AppointmentsSection() {
     return (
@@ -13,6 +15,7 @@ export default function AppointmentsSection() {
                     <p className="text-sm text-gray-400 sec-ff">Your clinic's appointment schedule</p>
                 </div>
 
+                <AppointmentAnalyticsWidget />
                 <AppointmentStats />
                 <GetAppointments basePath="/staff-dashboard/appointments" />
             </div>

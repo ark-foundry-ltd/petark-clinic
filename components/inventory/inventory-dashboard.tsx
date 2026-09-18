@@ -17,6 +17,7 @@ import StatCard from "@/components/inventory/stat-card";
 import InventoryTable from "@/components/inventory/inventory-table";
 import AddItemModal from "@/components/inventory/add-item-modal";
 import UpdateItemModal from "@/components/inventory/update-item-modal";
+import InventoryAnalyticsWidget from "@/components/inventory/inventory-analytics-widget";
 
 const PAGE_SIZE = 8;
 
@@ -165,7 +166,7 @@ export default function InventoryDashboard({
     }
 
     return (
-        <div className="min-h-screen p-6 pry-ff">
+        <div className="min-h-screen p-6 pry-ff space-y-4">
             {!scoped && <h1 className="mb-4 text-2xl font-semibold text-slate-800">Inventory</h1>}
 
             {!scoped && (
@@ -188,6 +189,8 @@ export default function InventoryDashboard({
                 onAddItem={handleAddItemClick}
                 canManage={canManage}
             />
+
+            <InventoryAnalyticsWidget locationId={activeLocationId ?? undefined} />
 
             {canManage && activeLocationId && (
                 <AddItemModal

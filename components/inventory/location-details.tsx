@@ -9,6 +9,7 @@ import InventoryDashboard from "@/components/inventory/inventory-dashboard";
 import PosCheckout from "../sales/pos-checkout";
 import SalesHistory from "../sales/sales-history";
 import LocationReports from "../reports/location-reports";
+import SalesAnalyticsWidget from "../sales/sales-analytics-widget";
 
 type Tab = "inventory" | "sales" | "reports";
 
@@ -26,13 +27,14 @@ function SalesSubView({ locationId }: { locationId: string }) {
     const [subTab, setSubTab] = useState<"checkout" | "history">("checkout");
 
     return (
-        <div>
+        <div className="space-y-4">
+            <SalesAnalyticsWidget locationId={locationId} />
             <div className="mb-4 flex gap-2">
                 <button
                     type="button"
                     onClick={() => setSubTab("checkout")}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                        subTab === "checkout" ? "bg-acc-clr text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        subTab === "checkout" ? "bg-acc-clr text-pry-clr" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                 >
                     New Sale
@@ -41,7 +43,7 @@ function SalesSubView({ locationId }: { locationId: string }) {
                     type="button"
                     onClick={() => setSubTab("history")}
                     className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                        subTab === "history" ? "bg-acc-clr text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        subTab === "history" ? "bg-acc-clr text-pry-clr" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                 >
                     History

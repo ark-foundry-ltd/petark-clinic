@@ -6,6 +6,7 @@ import AppointmentStats from "@/components/clinic/appointment-stats";
 import GetAppointments from "@/components/clinic/get-appointments";
 // import GetVisits from "@/components/clinic/get-visits";
 import ActivityFeed from "@/components/clinic/activity-feed";
+import AppointmentAnalyticsWidget from "@/components/appointments/appointment-analytics-widget";
 
 export const metadata: Metadata = {
     title: "Appointments",
@@ -17,6 +18,7 @@ export default function AppointmentsPage() {
         <AppointmentsProvider>
             <div className="px-8 py-8 space-y-10 pry-ff">
                 <AppointmentHeader />
+                <AppointmentAnalyticsWidget />
                 <AppointmentStats />
                 
                 {/* Two column layout: GetVisits (left) + GetAppointments (right) */}

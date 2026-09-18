@@ -4,6 +4,7 @@
 import { useClinicLocations } from "@/hooks/useClinicLocations";
 import LocationBar from "@/components/inventory/location-bar";
 import PosCheckout from "@/components/sales/pos-checkout";
+import SalesAnalyticsWidget from "@/components/sales/sales-analytics-widget";
 
 export default function PosSection() {
     const {
@@ -38,6 +39,7 @@ export default function PosSection() {
                 loading={loading}
                 hasAnyLocation={hasAnyLocation}
             />
+            <SalesAnalyticsWidget locationId={activeLocationId} />
             <PosCheckout locationId={activeLocationId} />
         </div>
     );
