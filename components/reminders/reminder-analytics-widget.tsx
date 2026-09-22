@@ -65,7 +65,7 @@ export default function ReminderAnalyticsWidget() {
 
     if (!data) return null;
 
-    const maxTrend = Math.max(...data.trend.map((p) => p.value), 1);
+    const maxTrend = Math.max(...data.trend.map((p: { label: string; value: number }) => p.value), 1);
 
     return (
         <div className="rounded-xl border border-gray-200 p-4 bg-pry-clr">
@@ -109,7 +109,7 @@ export default function ReminderAnalyticsWidget() {
 
             <p className="text-xs text-gray-400 mb-1.5">Reminders Sent (Trend)</p>
             <div className="flex items-end gap-1.5 h-16">
-                {data.trend.map((p) => (
+                {data.trend.map((p: { label: string; value: number }) => (
                     <div key={p.label} className="flex-1 flex flex-col items-center gap-1">
                         <div className="w-full flex items-end justify-center h-12">
                             <div
