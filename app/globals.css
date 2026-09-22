@@ -18,7 +18,7 @@ body {
 :root {
     --pry-clr: #FFFFFF;
     --bg-clr: #D7F9E5;
-    --acc-clr: #22c55e;
+    --acc-clr: #22c55e; /* or #319C5A */
     --sec-clr: #333333;
     --black-clr: #030303;
 
