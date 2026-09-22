@@ -170,3 +170,28 @@ export async function getReferralWidget(): Promise<ReferralWidgetData> {
         throw error;
     }
 }
+
+export interface ReminderWidgetData {
+    trend: any;
+    totalReminders: number;
+    remindersSentThisMonth: number;
+    remindersLimit: number;
+    unlimited: boolean;
+    overdueCount: number;
+    upcomingCount: number;
+}
+
+export async function getReminderWidget(): Promise<ReminderWidgetData> {
+    try {
+        const response = await api.get("/analytics/reminder-widget");
+        return response.data.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            const message = error.response?.data?.message || error.message;
+            console.error("Error fetching referral widget:", error.response?.data || error.message);
+            throw new Error(message);
+        }
+        console.error("Error fetching referral widget:", error);
+        throw error;
+    }
+}
