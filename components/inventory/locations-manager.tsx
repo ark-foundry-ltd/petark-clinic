@@ -25,6 +25,7 @@ import {
     X,
 } from "lucide-react";
 import { getPlanInfo } from "@/lib/plan";
+import UsageSummaryCard from "@/components/clinic/usage-summary-card";
 
 interface LocationFormState {
     name: string;
@@ -219,7 +220,8 @@ export default function LocationsManager() {
     }
 
     return (
-        <div className="w-full pry-ff">
+        <div className="w-full pry-ff space-y-3">
+            
             <div className="flex items-center justify-between mb-4">
                 <div>
                     <h2 className="text-lg font-bold text-sec-clr">Locations</h2>
@@ -227,6 +229,7 @@ export default function LocationsManager() {
                         Manage the branches your clinic operates from.
                     </p>
                 </div>
+
                 <button
                     type="button"
                     onClick={openAddModal}
@@ -236,6 +239,8 @@ export default function LocationsManager() {
                     Add Location
                 </button>
             </div>
+
+            <UsageSummaryCard />
 
             {loading ? (
                 <div className="flex justify-center py-12">
