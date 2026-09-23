@@ -16,8 +16,8 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
         <MobileTopBar />
-        <main className="flex-1 min-w-0 overflow-y-auto pb-16">
-          <div className="p-4 absolute z-20">
+        <main className="relative flex-1 min-w-0 overflow-y-auto pb-16">
+          <div className="absolute top-0 inset-x-0 z-20 p-4">
             <NotificationPermissionBanner />
           </div>
           {children}
@@ -30,8 +30,8 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
-      <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="p-4">
+      <main className="relative flex-1 min-w-0 overflow-y-auto">
+        <div className="absolute top-0 inset-x-0 z-20 p-4">
           <NotificationPermissionBanner />
         </div>
         {children}
@@ -47,7 +47,7 @@ export default function DashboardClientLayout({
   const { clinic_token, profile, role, fetchProfile, isLoading, hasHydrated } = useAuthStore();
 
   useEffect(() => {
-    if (!hasHydrated) return; // wait for localStorage to restore before deciding anything
+    if (!hasHydrated) return;
 
     if (!clinic_token) {
       router.replace("/login");
