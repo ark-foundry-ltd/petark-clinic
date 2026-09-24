@@ -20,7 +20,10 @@ export default function ClinicalOverview() {
     const status = clinicProfile?.subscription?.status;
     const isActive = status === "active";
     const isProOrAbove = (plan === "pro" || plan === "enterprise") && isActive;
-    const isStandardOrAbove = (plan === "standard" || plan === "pro" || plan === "enterprise") && isActive;
+    // Was isStandardOrAbove — Inventory & POS is actually a Starter+ feature
+    // per the pricing table (backend already gates it at requirePlanForAny('starter')).
+    const isStarterOrAbove =
+        (plan === "starter" || plan === "standard" || plan === "pro" || plan === "enterprise") && isActive;
 
     const handleLockedClick = (feature: string, requiredPlan: string) => {
         toast.error(`${feature} is a ${requiredPlan} feature`, {
@@ -71,7 +74,7 @@ export default function ClinicalOverview() {
                     <p className="text-xs text-gray-400">Browse past visits</p>
                 </Link>
 
-                {isStandardOrAbove ? (
+                {isStarterOrAbove ? (
                     <Link
                         href="/dashboard/clinical/locations"
                         className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
@@ -90,12 +93,12 @@ export default function ClinicalOverview() {
                 ) : (
                     <button
                         type="button"
-                        onClick={() => handleLockedClick("Inventory", "Standard")}
+                        onClick={() => handleLockedClick("Inventory", "Starter")}
                         className="relative text-left bg-gray-50 border border-gray-100 rounded-xl p-5 cursor-not-allowed opacity-75 pry-ff"
                     >
                         <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold bg-blue-700 text-white px-2 py-0.5 rounded-full">
                             <Lock className="w-2.5 h-2.5" />
-                            Standard
+                            Starter
                         </span>
                         <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                             <Package className="w-5 h-5 text-gray-400" />
@@ -105,7 +108,7 @@ export default function ClinicalOverview() {
                             Track drugs, supplies, and stock levels
                         </p>
                         <p className="text-xs text-gray-400 flex items-center gap-1">
-                            Upgrade to Standard to unlock
+                            Upgrade to Starter to unlock
                         </p>
                     </button>
                 )}

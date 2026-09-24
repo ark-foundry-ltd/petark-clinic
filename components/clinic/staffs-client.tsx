@@ -13,6 +13,8 @@ import type { User } from "@/lib/user";
 import StaffList from "@/components/clinic/staff-list";
 import InviteStaffModal from "@/components/clinic/invite-staff-modal";
 import CustomRolesList from "@/components/clinic/custom-roles-list";
+import UsagePill from "@/components/clinic/usage-pill";
+import { getClinicUsage, type UsageSummary } from "@/lib/usage";
 
 type Tab = "staff" | "roles";
 
@@ -28,9 +30,28 @@ export default function StaffsClient() {
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [rolesLoading, setRolesLoading] = useState(true);
 
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
+
   const profile = useAuthStore((s) => s.profile) as User | null;
   const plan = profile?.subscription?.plan;
-  const isProOrAbove = plan === "pro" || plan === "enterprise";
+  // Matches the backend's requirePlanForAny('starter') gate on custom roles —
+  // every paid tier (Starter, Standard, Pro, Enterprise) has access, only Free doesn't.
+  const hasCustomRolesAccess =
+    plan === "starter" || plan === "standard" || plan === "pro" || plan === "enterprise";
+
+  useEffect(() => {
+    let cancelled = false;
+    getClinicUsage()
+      .then((data) => {
+        if (!cancelled) setUsage(data);
+      })
+      .catch(() => {
+        if (!cancelled) setUsage(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +78,7 @@ export default function StaffsClient() {
   }, []);
 
   useEffect(() => {
-    if (!isProOrAbove) {
+    if (!hasCustomRolesAccess) {
       setRolesLoading(false);
       return;
     }
@@ -82,7 +103,7 @@ export default function StaffsClient() {
     return () => {
       cancelled = true;
     };
-  }, [isProOrAbove]);
+  }, [hasCustomRolesAccess]);
 
   async function refetchStaff() {
     try {
@@ -154,9 +175,16 @@ export default function StaffsClient() {
               }`}
             >
               Custom Roles
-              {!isProOrAbove && <Lock className="w-3 h-3 text-gray-400" />}
+              {!hasCustomRolesAccess && <Lock className="w-3 h-3 text-gray-400" />}
             </button>
           </div>
+
+          {usage && (
+            <div className="flex items-center gap-4">
+              <UsagePill label="Staff" count={usage.staff.count} limit={usage.staff.limit} unlimited={usage.staff.unlimited} />
+              <UsagePill label="Custom Roles" count={usage.customRoles.count} limit={usage.customRoles.limit} unlimited={usage.customRoles.unlimited} />
+            </div>
+          )}
 
           {/* Body */}
           {tab === "staff" &&
@@ -177,22 +205,22 @@ export default function StaffsClient() {
             ))}
 
           {tab === "roles" &&
-            (!isProOrAbove ? (
+            (!hasCustomRolesAccess ? (
               <div className="text-center py-16 border border-gray-100 rounded-2xl space-y-3">
                 <Lock className="w-6 h-6 text-gray-300 mx-auto" />
                 <div>
                   <p className="text-sm font-medium text-gray-700 pry-ff">
-                    Custom Roles is a Pro feature
+                    Custom Roles requires a paid plan
                   </p>
                   <p className="text-sm text-gray-400 sec-ff mt-1">
-                    Upgrade to Pro to build named roles with custom permission sets.
+                    Upgrade to Starter or above to build named roles with custom permission sets.
                   </p>
                 </div>
                 <button
                   onClick={() => router.push("/dashboard/profile/subscription")}
                   className="text-sm font-medium bg-acc-clr text-pry-clr px-4 py-2 rounded-lg pry-ff"
                 >
-                  Upgrade to Pro
+                  Upgrade Plan
                 </button>
               </div>
             ) : rolesLoading ? (
