@@ -61,6 +61,11 @@ export interface User {
         enabled: boolean;
         fee: number;
     };
+    trial?: {
+        startedAt: string;
+        endsAt: string;
+        convertedAt: string | null;
+    }
 }
 
 export interface StaffProfile {

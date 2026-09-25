@@ -10,6 +10,7 @@ import StepIndicator from "./register-step-indicator";
 import RegisterStepClinicInfo from "./register-step1-clinic-info";
 import RegisterStepAddress from "./register-step2-address";
 import RegisterStepDocuments from "./register-step3-documents";
+import { toast } from "sonner";
 
 interface RegisterError {
     status: number;
@@ -166,6 +167,7 @@ export default function RegisterComp() {
             };
 
             await registerClinic(formData);
+            toast.success("Clinic registered successfully!");
             router.push("/login");
         } catch (error) {
             console.error("Registration error:", error);
