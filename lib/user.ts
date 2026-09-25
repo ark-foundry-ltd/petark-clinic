@@ -44,6 +44,7 @@ export interface Subscription {
 export interface User {
     id: string;
     clinicName: string;
+    ownerName: string;
     email: string;
     phoneNumber: string;
     address: Address;
@@ -74,7 +75,7 @@ export interface StaffProfile {
     isEmailVerified: boolean;
     createdAt: string;
     clinicName: string;
-    clinicPlan: 'free' | 'pro' | 'standard' | 'enterprise';
+    clinicPlan: 'free' | 'starter' | 'pro' | 'standard' | 'enterprise';
     clinicPlanStatus: 'active' | 'inactive' | 'cancelled';
     clinicRegistrationFee: number;     
     clinicRegistrationEnabled: boolean;

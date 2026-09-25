@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { getUser, User } from "@/lib/user";
-import { Loader2, MapPin, Phone, Mail, Building2, Clock, PawPrint } from "lucide-react";
+import { Loader2, MapPin, Phone, Mail, Building2, Clock, PawPrint, UserIcon } from "lucide-react";
 import UpdateServices from "@/components/clinic/update-services";
 
 export default function ProfileCard() {
@@ -142,6 +142,14 @@ export default function ProfileCard() {
                             <div className="min-w-0">
                                 <p className="text-sm text-gray-500">Status</p>
                                 <p className="font-medium text-sec-clr capitalize">{profile.status}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <UserIcon className="w-5 h-5 text-acc-clr shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-sm text-gray-500">Owner Name</p>
+                                <p className="font-medium text-sec-clr capitalize">{profile.ownerName}</p>
                             </div>
                         </div>
                     </div>

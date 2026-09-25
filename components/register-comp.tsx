@@ -259,7 +259,7 @@ export default function RegisterComp() {
 
                 <StepIndicator step={step} />
 
-                <form onSubmit={handleRegister} className="px-6 sm:px-8 pb-8 sm:pb-10 space-y-5 sec-ff">
+                <form onSubmit={handleRegister} className="px-6 sm:px-8 pb-8 sm:pb-10 space-y-5 pry-ff">
                     {step === 1 && (
                         <RegisterStepClinicInfo
                             clinicName={clinicName}

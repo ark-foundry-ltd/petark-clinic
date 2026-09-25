@@ -24,7 +24,7 @@ export function DocumentCard({
     onRemove,
     onView,
     uploadLabel = "Upload",
-}: DocumentCardProps) {
+}: Readonly<DocumentCardProps>) {
     const isRequired = tag === "Required";
 
     return (
