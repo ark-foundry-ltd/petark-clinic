@@ -9,13 +9,15 @@ import {
     ClinicPatientRecord,
     RegisterPatientPayload,
 } from "@/lib/clinic-patient";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 import { toast } from 'sonner';
+import type { HealthProfileInput } from "@/lib/clinic-patient";
+import HealthProfileFields from "./health-profile-fields";
 
 const SPECIES_OPTIONS = [
     "Dog", "Cat", "Rabbit", "Bird", "Hamster", "Horse",
     "Snake", "Sheep", "Goat", "Cow", "Chicken", "Ferret",
-    "Pig", "Turtle", "Lizard", "Fish",
+    "Pig", "Turtle", "Lizard", "Fish", "Monkey", "Guinea Pig", "Hamster", "Chipmunk", "Other"
 ];
 
 interface RegisterPatientProps {
@@ -58,6 +60,9 @@ export default function RegisterPatient({
 
     const [registering, setRegistering] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const [showHealth, setShowHealth] = useState(false);
+    const [health, setHealth] = useState<HealthProfileInput>({});
 
     const isKnownOwner = Boolean(ownerId);
 
@@ -109,6 +114,7 @@ export default function RegisterPatient({
         try {
             const payload: RegisterPatientPayload = {
                 registrationNo: registrationNo.trim(),
+                ...health,
                 petName: petName.trim(),
                 species,
                 breed: breed.trim() || undefined,
@@ -126,7 +132,7 @@ export default function RegisterPatient({
                           fullname: ownerFullname.trim(),
                           phoneNumber: ownerPhone.trim(),
                           email: ownerEmail.trim() || undefined,
-                      }),
+                })
             };
 
             const patient = await registerPatient(payload);
@@ -280,6 +286,22 @@ export default function RegisterPatient({
                     </div>
                 </div>
             )}
+
+            <div className="mb-6">
+    <button
+        type="button"
+        onClick={() => setShowHealth((s) => !s)}
+        className="flex items-center gap-2 text-sm font-semibold text-sec-clr"
+    >
+        <ChevronDown size={16} className={`transition-transform ${showHealth ? "rotate-180" : ""}`} />
+        Health details <span className="text-gray-400 font-normal">(optional)</span>
+    </button>
+    {showHealth && (
+        <div className="mt-3">
+            <HealthProfileFields value={health} onChange={setHealth} />
+        </div>
+    )}
+</div>
 
             {/* Registration Fee */}
             <div className="mb-6 bg-gray-50 rounded-lg p-4">

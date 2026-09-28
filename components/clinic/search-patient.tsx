@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { searchClinicPatients, getAllPatients, ClinicPatientRecord } from "@/lib/clinic-patient";
 import { Search, Loader2, PawPrint, UserPlus } from "lucide-react";
+import PatientDetailsModal from "@/components/clinic/patient-details-modal";
 
 interface SearchPatientProps {
     onProceedToVisit: (patient: ClinicPatientRecord) => void;
@@ -25,6 +26,7 @@ export default function SearchPatient({
     const [results, setResults] = useState<ClinicPatientRecord[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [detailsId, setDetailsId] = useState<string | null>(null);
 
     const loadAllPatients = async () => {
         setLoading(true);
@@ -224,6 +226,16 @@ export default function SearchPatient({
                     </div>
                 </>
             )}
+            {detailsId && (
+    <PatientDetailsModal
+        clinicPatientId={detailsId}
+        onClose={() => setDetailsId(null)}
+        onStartVisit={(patient) => {
+            setDetailsId(null);
+            handleProceedToVisit(patient);
+        }}
+    />
+)}
         </div>
     );
 }

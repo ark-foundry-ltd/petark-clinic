@@ -29,6 +29,34 @@ export interface PatientOwner {
     email?: string;
 }
 
+// ─── Health profile (permanent, patient-level, not visit-scoped) ───────────
+
+export interface HealthProfile {
+    bloodType: string | null; // free text, works for any species
+    allergies: string[];
+    chronicConditions: string[];
+    knownDrugReactions: string[];
+    neutered: boolean | null;
+    microchipNo: string | null;
+    notes: string | null;
+    updatedBy?: string | null;
+    updatedAt?: string | null;
+}
+
+// Every field optional — used for both register and update
+export type HealthProfileInput = Partial<
+    Pick<
+        HealthProfile,
+        | "bloodType"
+        | "allergies"
+        | "chronicConditions"
+        | "knownDrugReactions"
+        | "neutered"
+        | "microchipNo"
+        | "notes"
+    >
+>;
+
 export interface ClinicPatientRecord {
     _id: string;
     registrationNo: string;
@@ -38,12 +66,14 @@ export interface ClinicPatientRecord {
     clinicId: string;
     pet: PatientPet;
     owner?: PatientOwner;
+    // Optional: patients registered before this feature have no healthProfile
+    healthProfile?: HealthProfile;
 }
 
 // ─── Register: existing pet (petId), known owner + new pet (ownerId), ─────
 // ─── or brand-new owner + pet (raw details) ────────────────────────────────
 
-export interface RegisterPatientPayload {
+export interface RegisterPatientPayload extends HealthProfileInput {
     registrationNo: string; // required — staff-typed, unique per clinic
 
     // Present → existing pet path. Takes priority over ownerId if both present.
@@ -63,7 +93,7 @@ export interface RegisterPatientPayload {
     weight?: number;
     weightUnit?: "kg" | "lbs";
     gender?: "male" | "female";
-    
+
     fullname?: string;
     phoneNumber?: string;
     email?: string;
@@ -207,6 +237,31 @@ export async function getClinicPatientById(id: string): Promise<ClinicPatientRec
             console.error("Error fetching patient:", error.response?.data || error.message);
         } else {
             console.error("Error fetching patient:", error);
+        }
+        throw error;
+    }
+}
+
+// ─── Update the permanent health profile (partial — only sent fields change) ─
+
+export async function updateHealthProfile(
+    clinicPatientId: string,
+    payload: HealthProfileInput
+): Promise<HealthProfile> {
+    try {
+        const response = await api.patch(
+            `/patients/${clinicPatientId}/health-profile`,
+            payload
+        );
+        return response.data.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            console.error(
+                "Error updating health profile:",
+                error.response?.data || error.message
+            );
+        } else {
+            console.error("Error updating health profile:", error);
         }
         throw error;
     }

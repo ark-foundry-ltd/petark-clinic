@@ -25,7 +25,8 @@ import {
     X,
 } from "lucide-react";
 import { getPlanInfo } from "@/lib/plan";
-import UsageSummaryCard from "@/components/clinic/usage-summary-card";
+import UsagePill from "@/components/clinic/usage-pill";
+import { getClinicUsage, type UsageSummary } from "@/lib/usage";
 
 interface LocationFormState {
     name: string;
@@ -75,6 +76,21 @@ export default function LocationsManager() {
     const [saving, setSaving] = useState(false);
 
     const [togglingId, setTogglingId] = useState<string | null>(null);
+    const [usage, setUsage] = useState<UsageSummary | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getClinicUsage()
+            .then((data) => {
+                if (!cancelled) setUsage(data);
+            })
+            .catch(() => {
+                if (!cancelled) setUsage(null);
+            });
+            return () => {
+                cancelled = true;
+            };
+    }, []);
 
     useEffect(() => {
         if (!hasLocationAccess) {
@@ -240,7 +256,11 @@ export default function LocationsManager() {
                 </button>
             </div>
 
-            <UsageSummaryCard />
+            {usage && (
+                <div className="flex items-center gap-4">
+                    <UsagePill label="Locations" count={usage.locations.count} limit={usage.locations.limit} unlimited={usage.locations.unlimited} />
+                </div>
+            )}
 
             {loading ? (
                 <div className="flex justify-center py-12">

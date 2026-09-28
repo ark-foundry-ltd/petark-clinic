@@ -4,8 +4,55 @@
 
 import { useEffect, useState } from "react";
 import { getUser, User } from "@/lib/user";
-import { Loader2, MapPin, Phone, Mail, Building2, Clock, PawPrint, UserIcon } from "lucide-react";
+import {
+    Loader2, MapPin, Phone, Mail, Building2, Clock, PawPrint, UserIcon,
+    Sparkles, Rocket, Layers, Zap, Crown, LucideIcon
+} from "lucide-react";
 import UpdateServices from "@/components/clinic/update-services";
+
+type PlanKey = "free" | "starter" | "standard" | "pro" | "enterprise";
+
+const PLAN_STYLES: Record<PlanKey, { label: string; icon: LucideIcon; className: string }> = {
+    free: {
+        label: "Free",
+        icon: Zap,
+        className: "bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200",
+    },
+    starter: {
+        label: "Starter",
+        icon: Layers,
+        className: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+    },
+    standard: {
+        label: "Standard",
+        icon: Rocket,
+        className: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
+    },
+    pro: {
+        label: "Pro",
+        icon: Sparkles,
+        className: "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-sm shadow-violet-200",
+    },
+    enterprise: {
+        label: "Enterprise",
+        icon: Crown,
+        className: "bg-gradient-to-r from-slate-900 to-slate-700 text-amber-300 shadow-sm ring-1 ring-amber-400/40",
+    },
+};
+
+function SubscriptionBadge({ plan }: Readonly<{ plan?: string }>) {
+    const key = (plan && plan in PLAN_STYLES ? plan : "free") as PlanKey;
+    const { label, icon: Icon, className } = PLAN_STYLES[key];
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1 shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${className}`}
+        >
+            <Icon className="h-3 w-3" />
+            {label}
+        </span>
+    );
+}
 
 export default function ProfileCard() {
     const [profile, setProfile] = useState<User | null>(null);
@@ -57,37 +104,20 @@ export default function ProfileCard() {
                                 {profile.clinicName.charAt(0)}
                             </div>
                             <div className="pry-ff min-w-0">
-<div className="flex items-center gap-2 flex-wrap">
-    <h2 className="text-xl font-bold text-sec-clr truncate">{profile.clinicName}</h2>
-    {profile.subscription?.plan === 'enterprise' ? (
-        <span className="flex items-center gap-1 text-[10px] font-semibold bg-slate-800 text-white px-2 py-0.5 rounded-full shrink-0">
-            Enterprise
-        </span>
-    ) : profile.subscription?.plan === 'pro' ? (
-        <span className="flex items-center gap-1 text-[10px] font-semibold bg-acc-clr text-white px-2 py-0.5 rounded-full shrink-0">
-            ✦ Pro
-        </span>
-    ) : profile.subscription?.plan === 'standard' ? (
-        <span className="flex items-center gap-1 text-[10px] font-semibold bg-blue-600 text-white px-2 py-0.5 rounded-full shrink-0">
-            Standard
-        </span>
-    ) : (
-        <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full shrink-0">
-            Free
-        </span>
-    )}
-</div>
-<p className="text-gray-500 truncate">{profile.email}</p>
-{profile.subscription?.plan !== 'free' && profile.subscription?.expiresAt && (
-    <p className="text-xs text-gray-400 mt-0.5">
-        Renews {new Date(profile.subscription.expiresAt).toLocaleDateString(undefined, {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-        })}
-    </p>
-)}
-                                {/* <p className="text-gray-500 truncate">{profile.email}</p> */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h2 className="text-xl font-bold text-sec-clr truncate">{profile.clinicName}</h2>
+                                    <SubscriptionBadge plan={profile.subscription?.plan} />
+                                </div>
+                                <p className="text-gray-500 truncate">{profile.email}</p>
+                                {profile.subscription?.plan !== "free" && profile.subscription?.expiresAt && (
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                        Renews {new Date(profile.subscription.expiresAt).toLocaleDateString(undefined, {
+                                            month: "long",
+                                            day: "numeric",
+                                            year: "numeric",
+                                        })}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
