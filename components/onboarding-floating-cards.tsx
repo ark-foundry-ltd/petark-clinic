@@ -12,7 +12,7 @@ export function ClinicSyncCard() {
           </p>
           <p className="sec-ff text-xs text-sec-clr/60">PetArk Active Instance</p>
         </div>
-        <span className="flex items-center gap-1 rounded-full bg-acc-clr/10 px-2 py-1 text-[11px] font-medium text-acc-clr">
+        <span className="flex items-center gap-1 rounded-full bg-acc-clr/10 px-2 py-1 text-[11px] font-medium text-acc-clr sec-ff">
           <span className="h-1.5 w-1.5 rounded-full bg-acc-clr" />
           Active
         </span>
@@ -37,7 +37,7 @@ export function ClinicSyncCard() {
           </p>
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-1.5 border-t border-gray-100 pt-3 text-[11px] text-sec-clr/70">
+      <div className="mt-3 flex items-center gap-1.5 border-t border-gray-100 pt-3 text-[11px] text-sec-clr/70 sec-ff">
         <Check className="h-3.5 w-3.5 text-acc-clr" />
         All Systems Normal
       </div>
@@ -55,7 +55,7 @@ export function PatientRecordCard() {
           </p>
           <p className="sec-ff text-xs text-sec-clr/60">Visit Summary</p>
         </div>
-        <span className="flex items-center gap-1 rounded-full bg-acc-clr/10 px-2 py-1 text-[11px] font-medium text-acc-clr">
+        <span className="flex items-center gap-1 rounded-full bg-acc-clr/10 px-2 py-1 text-[11px] font-medium text-acc-clr sec-ff">
           <Check className="h-3 w-3" />
           Signed &amp; Finalized
         </span>
@@ -92,7 +92,7 @@ export function QueueCard() {
           </p>
           <p className="sec-ff text-xs text-sec-clr/60">10:32 AM</p>
         </div>
-        <span className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-sec-clr/70">
+        <span className="rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-sec-clr/70 sec-ff">
           Queue #04
         </span>
       </div>
@@ -101,7 +101,7 @@ export function QueueCard() {
           <p className="sec-ff text-[12px] font-medium text-sec-clr">Max (Beagle)</p>
           <p className="sec-ff text-[11px] text-sec-clr/60">Ear Infection Check · Room 2</p>
         </div>
-        <button className="rounded-lg bg-acc-clr px-3 py-1.5 text-[11px] font-medium text-pry-clr hover:bg-acc-clr/90 transition-all duration-200">
+        <button className="rounded-lg bg-acc-clr px-3 py-1.5 text-[11px] font-medium text-pry-clr hover:bg-acc-clr/90 transition-all duration-200 sec-ff">
           Start Visit
         </button>
       </div>

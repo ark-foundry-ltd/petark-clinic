@@ -77,7 +77,7 @@ export const steps: StepConfig[] = [
     description:
       "Keep your clinic organized with scheduling, reminders, and clear appointment information.",
     features: [
-      { icon: MessageSquare, label: "Automated SMS & WhatsApp reminders" },
+      { icon: MessageSquare, label: "Automatic app and email reminders" },
       { icon: Radar, label: "Real-time daily agenda & exam room queue" },
       { icon: TrendingDown, label: "Reduce no-shows by up to 45%" },
     ],
