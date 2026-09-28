@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
                 {!loading && !error && data && !data.locked && (
                     <div className="space-y-6">
                         {data.snapshot && (
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sec-ff">
                                 <Stat icon={TrendingUp} label="Revenue (MTD)" value={`₦${data.snapshot.revenue.toLocaleString()}`} />
                                 <Stat icon={Activity} label="Sales" value={data.snapshot.salesCount.toLocaleString()} />
                                 <Stat icon={Calendar} label="Appointments" value={data.snapshot.appointmentCount.toLocaleString()} />
@@ -123,9 +123,9 @@ export default function AnalyticsPage() {
         <div className="rounded-xl border border-gray-100 p-5">
             <h3 className="text-sm font-semibold text-gray-900 pry-ff mb-3">Top Sales Staff</h3>
             {data.staffPerformance.salesByStaff.length === 0 ? (
-                <p className="text-sm text-gray-400">No sales in this range.</p>
+                <p className="text-sm text-gray-400 sec-ff">No sales in this range.</p>
             ) : (
-                <ul className="space-y-2.5">
+                <ul className="space-y-2.5 sec-ff">
                     {(() => {
                         const maxRevenue = Math.max(...data.staffPerformance.salesByStaff.map((s) => s.revenue), 1);
                         return data.staffPerformance.salesByStaff.map((s) => (
@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
         <div className="rounded-xl border border-gray-100 p-5">
             <h3 className="text-sm font-semibold text-gray-900 pry-ff mb-3">Vet Completed Appointments</h3>
             {data.staffPerformance.appointmentsByVet.length === 0 ? (
-                <p className="text-sm text-gray-400">No completed appointments in this range.</p>
+                <p className="text-sm text-gray-400 sec-ff">No completed appointments in this range.</p>
             ) : (
                 <ul className="space-y-2.5">
                     {(() => {
@@ -181,11 +181,11 @@ export default function AnalyticsPage() {
                             <div className="rounded-xl border border-gray-100 p-5">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-sm font-semibold text-gray-900 pry-ff">This Week's Visits</h3>
-                                    <span className="text-xs text-gray-400">
+                                    <span className="text-xs text-gray-400 sec-ff">
                                         {data.weeklyVisits.completedThisWeek} of {data.weeklyVisits.totalThisWeek} completed
                                     </span>
                                 </div>
-                                <div className="flex items-end gap-2 h-32">
+                                <div className="flex items-end gap-2 h-32 sec-ff">
                                     {data.weeklyVisits.dailyVisits.map((d) => {
                                         const max = Math.max(1, ...data.weeklyVisits!.dailyVisits.map((x) => x.total));
                                         return (
