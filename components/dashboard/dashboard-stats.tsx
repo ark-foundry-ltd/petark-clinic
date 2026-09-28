@@ -12,7 +12,7 @@ import {
 } from "@/lib/dashboard";
 import { BarChart, LineChart, type Pt } from "@/components/dashboard/mini-charts";
 
-const SUBSCRIPTION_HREF = "/dashboard/profile/subscription";
+const SUBSCRIPTION_HREF = "/dashboard/profile/upgrade";
 const naira = (n: number) => `₦${n.toLocaleString()}`;
 
 interface Tile {
