@@ -103,14 +103,14 @@ export default function LoginComp() {
                     <label htmlFor="password" className="block text-sm font-medium text-sec-ff">
                         Password
                     </label>
-                    <div className="relative">
+                    <div className="relative mt-1">
                         <input
                             id="password"
                             type={showPassword ? "text" : "password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-acc-clr focus:border-acc-clr"
+                            className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-acc-clr focus:border-acc-clr"
                             placeholder="••••••••"
                         />
                         <button
@@ -125,6 +125,15 @@ export default function LoginComp() {
                             )}
                         </button>
                     </div>
+                </div>
+
+                <div className="flex items-center justify-end">
+                    <a
+                        href="/forgot-password"
+                        className="text-sm text-sec-clr hover:text-acc-clr transition-colors duration-200"
+                    >
+                        Forgot password?
+                    </a>
                 </div>
 
                 <button

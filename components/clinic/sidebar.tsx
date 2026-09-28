@@ -67,6 +67,13 @@ function PlanBadge({ plan, status }: { plan?: string; status?: string }) {
       </span>
     );
   }
+  if (plan === "starter" && isActive) {
+    return (
+      <span className="text-[9px] font-semibold bg-green-600 text-white px-1.5 py-0.5 rounded-full shrink-0">
+        Starter
+      </span>
+    );
+  }
   if (plan === "standard" && isActive) {
     return (
       <span className="text-[9px] font-semibold bg-blue-600 text-white px-1.5 py-0.5 rounded-full shrink-0">

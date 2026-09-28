@@ -36,6 +36,36 @@ interface LoginResponse {
     message?: string;
 }
 
+interface ForgotPasswordData {
+    email: string;
+}
+
+interface ForgotPasswordResponse {
+    success: boolean;
+    message: string;
+}
+
+interface VerifyResetOtpData {
+    email: string;
+    otp: string;
+}
+
+interface VerifyResetOtpResponse {
+    success: boolean;
+    message: string;
+    resetToken: string;
+}
+
+interface ResetPasswordData {
+    resetToken: string;
+    newPassword: string;
+}
+
+interface ResetPasswordResponse {
+    success: boolean;
+    message: string;
+}
+
 interface ApiErrorResponse {
     message?: string;
     error?: string;
@@ -102,28 +132,28 @@ export async function registerClinic(data: RegisterData) {
 export async function loginClinic(data: LoginData) {
     try {
         const response = await api.post<LoginResponse>("/auth/clinic/login", data);
-        
+
         // Store the clinic_token in localStorage
         if (response.data.token) {
             localStorage.setItem("clinic_token", response.data.token);
         }
-        
+
         return response.data;
     }
     catch (error) {
         if (error instanceof AxiosError) {
             const axiosError = error as AxiosError<ApiErrorResponse>;
-            
+
             if (axiosError.response) {
                 console.error("Server error:", axiosError.response.status);
                 console.error("Error data:", axiosError.response.data);
-                
+
                 throw {
                     status: axiosError.response.status,
                     message: axiosError.response.data?.message || axiosError.response.data?.error || "Login failed",
                     errors: axiosError.response.data?.errors,
                 };
-            } 
+            }
             else if (axiosError.request) {
                 console.error("No response from server:", axiosError.request);
                 throw {
@@ -139,7 +169,143 @@ export async function loginClinic(data: LoginData) {
                 };
             }
         }
-        
+
+        console.error("Non-Axios error:", error);
+        throw {
+            status: 500,
+            message: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
+}
+
+// Step 1 — request an OTP be emailed to the clinic/staff account.
+// Covers the clinic (owner) role and all staff roles (vet, receptionist,
+// sales, custom) since they all live in the same users collection and
+// forgotPassword on the backend looks up by email only.
+export async function forgotPasswordClinic(data: ForgotPasswordData) {
+    try {
+        const response = await api.post<ForgotPasswordResponse>("/auth/clinic/forgot-password", data);
+        return response.data;
+    }
+    catch (error) {
+        if (error instanceof AxiosError) {
+            const axiosError = error as AxiosError<ApiErrorResponse>;
+
+            if (axiosError.response) {
+                console.error("Server error:", axiosError.response.status);
+                console.error("Error data:", axiosError.response.data);
+
+                throw {
+                    status: axiosError.response.status,
+                    message: axiosError.response.data?.message || axiosError.response.data?.error || "Could not send reset OTP",
+                    errors: axiosError.response.data?.errors,
+                };
+            }
+            else if (axiosError.request) {
+                console.error("No response from server:", axiosError.request);
+                throw {
+                    status: 0,
+                    message: "Unable to connect to server. Please check your internet connection.",
+                };
+            }
+            else {
+                console.error("Error setting up request:", axiosError.message);
+                throw {
+                    status: 0,
+                    message: axiosError.message || "An unexpected error occurred",
+                };
+            }
+        }
+
+        console.error("Non-Axios error:", error);
+        throw {
+            status: 500,
+            message: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
+}
+
+// Step 2 — verify the 6-digit OTP and exchange it for a short-lived
+// resetToken (JWT, 15m expiry on the backend) used to authorize step 3.
+export async function verifyResetOtpClinic(data: VerifyResetOtpData) {
+    try {
+        const response = await api.post<VerifyResetOtpResponse>("/auth/clinic/verify-reset-otp", data);
+        return response.data;
+    }
+    catch (error) {
+        if (error instanceof AxiosError) {
+            const axiosError = error as AxiosError<ApiErrorResponse>;
+
+            if (axiosError.response) {
+                console.error("Server error:", axiosError.response.status);
+                console.error("Error data:", axiosError.response.data);
+
+                throw {
+                    status: axiosError.response.status,
+                    message: axiosError.response.data?.message || axiosError.response.data?.error || "Invalid or expired OTP",
+                    errors: axiosError.response.data?.errors,
+                };
+            }
+            else if (axiosError.request) {
+                console.error("No response from server:", axiosError.request);
+                throw {
+                    status: 0,
+                    message: "Unable to connect to server. Please check your internet connection.",
+                };
+            }
+            else {
+                console.error("Error setting up request:", axiosError.message);
+                throw {
+                    status: 0,
+                    message: axiosError.message || "An unexpected error occurred",
+                };
+            }
+        }
+
+        console.error("Non-Axios error:", error);
+        throw {
+            status: 500,
+            message: error instanceof Error ? error.message : "An unexpected error occurred",
+        };
+    }
+}
+
+// Step 3 — set the new password using the resetToken from step 2.
+export async function resetPasswordClinic(data: ResetPasswordData) {
+    try {
+        const response = await api.post<ResetPasswordResponse>("/auth/clinic/reset-password", data);
+        return response.data;
+    }
+    catch (error) {
+        if (error instanceof AxiosError) {
+            const axiosError = error as AxiosError<ApiErrorResponse>;
+
+            if (axiosError.response) {
+                console.error("Server error:", axiosError.response.status);
+                console.error("Error data:", axiosError.response.data);
+
+                throw {
+                    status: axiosError.response.status,
+                    message: axiosError.response.data?.message || axiosError.response.data?.error || "Could not reset password",
+                    errors: axiosError.response.data?.errors,
+                };
+            }
+            else if (axiosError.request) {
+                console.error("No response from server:", axiosError.request);
+                throw {
+                    status: 0,
+                    message: "Unable to connect to server. Please check your internet connection.",
+                };
+            }
+            else {
+                console.error("Error setting up request:", axiosError.message);
+                throw {
+                    status: 0,
+                    message: axiosError.message || "An unexpected error occurred",
+                };
+            }
+        }
+
         console.error("Non-Axios error:", error);
         throw {
             status: 500,
@@ -184,14 +350,14 @@ export function isClinicAuthenticated(): boolean {
 export function handleApiError(error: unknown): { message: string; status: number; errors?: Record<string, string[]> } {
     if (error instanceof AxiosError) {
         const axiosError = error as AxiosError<ApiErrorResponse>;
-        
+
         if (axiosError.response) {
             // Handle unauthorized (token expired)
             if (axiosError.response.status === 401) {
                 // Auto logout if token expired
                 logoutClinic();
             }
-            
+
             return {
                 status: axiosError.response.status,
                 message: axiosError.response.data?.message || axiosError.response.data?.error || "Request failed",
@@ -209,7 +375,7 @@ export function handleApiError(error: unknown): { message: string; status: numbe
             };
         }
     }
-    
+
     return {
         status: 500,
         message: error instanceof Error ? error.message : "An unexpected error occurred",
@@ -221,11 +387,11 @@ export async function refreshClinicToken(): Promise<string | null> {
     try {
         const response = await api.post<{ token: string }>("/auth/clinic/refresh-token");
         const newToken = response.data.token;
-        
+
         if (newToken && typeof window !== "undefined") {
             localStorage.setItem("clinic_token", newToken);
         }
-        
+
         return newToken;
     } catch (error) {
         console.error("Failed to refresh token:", error);
