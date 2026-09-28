@@ -29,21 +29,17 @@ const PLANS: PlanDefinition[] = [
     id: "free",
     name: "Free",
     icon: Zap,
-    tagline: "Explore PetArk with core clinic management",
+    tagline: "Get to know PetArk with the essentials of clinic management",
     features: [
       "1 staff account",
       "Primary clinic location",
-      "Appointments management only",
-      "Basic manual SOAP notes",
-      "Pet profiles & visit history",
+      "Appointment management",
+      "Manual SOAP notes",
+      "Pet profiles and visit history",
       "Unlimited patients",
-      "10 treatments / month",
-      "10 reminders / month",
-      "No inventory & POS",
-      "No lab results",
-      "No drug dosage calculator",
-      "No advanced analytics",
-      "No cross-clinic referrals",
+      "10 treatments per month",
+      "10 reminders per month",
+      "Self-service help center and setup guides",
     ],
     purchasable: false,
   },
@@ -51,19 +47,20 @@ const PLANS: PlanDefinition[] = [
     id: "starter",
     name: "Starter",
     icon: Layers,
-    tagline: "For small clinics ready to go digital",
+    tagline: "For small clinics moving from paper to digital records",
     features: [
       "Up to 3 staff accounts",
       "Up to 3 custom roles",
       "Primary clinic location",
       "Unlimited patients",
       "25 inventory SKUs",
-      "80 treatments / month",
-      "80 reminders / month",
-      "Inventory & POS",
-      "Basic clinic reports",
-      "Treatment & visit summaries",
-      "Basic sales/inventory reports",
+      "80 treatments per month",
+      "80 reminders per month",
+      "Inventory and point of sale (POS)",
+      "Treatment and visit summaries",
+      "Basic clinic, sales and inventory reports",
+      "Email support during business hours",
+      "Onboarding checklist and Excel/CSV import template",
       "Everything in Free",
     ],
     purchasable: true,
@@ -72,18 +69,20 @@ const PLANS: PlanDefinition[] = [
     id: "standard",
     name: "Standard",
     icon: Rocket,
-    tagline: "For growing clinics that need more capacity",
+    tagline: "For growing clinics that need more capacity and hands-on help",
     features: [
       "Up to 8 staff accounts",
       "Up to 8 custom roles",
       "1 additional branch",
       "Unlimited patients",
       "100 inventory SKUs",
-      "160 treatments / month",
-      "160 reminders / month",
-      "Inventory & POS",
+      "160 treatments per month",
+      "160 reminders per month",
       "Lab results",
       "Drug dosage calculator",
+      "Priority support",
+      "Guided onboarding session",
+      "Assisted Excel/CSV data migration",
       "Everything in Starter",
     ],
     purchasable: true,
@@ -93,21 +92,22 @@ const PLANS: PlanDefinition[] = [
     id: "pro",
     name: "Pro",
     icon: Sparkles,
-    tagline: "For clinics that need advanced tools and unlimited capacity",
+    tagline: "For busy, multi-branch clinics that need advanced tools and no limits",
     features: [
       "Up to 15 staff accounts",
       "Up to 15 custom roles",
       "Up to 2 additional branches",
       "Unlimited patients",
-      "Unlimited inventory & POS",
+      "Unlimited inventory and POS",
       "Unlimited treatments",
-      "Unlimited reminders",
-      "Lab results",
-      "Drug dosage calculator",
-      "AI SOAP formatting & discharge summaries",
+      "Unlimited reminders (fair use)",
+      "AI SOAP formatting and discharge summaries",
       "Vitals trends",
-      "Revenue & appointment analytics",
+      "Revenue and appointment analytics",
       "Cross-clinic referrals",
+      "Dedicated onboarding and managed data migration",
+      "Staff training and go-live assistance",
+      "Same-day support for standard issues",
       "Everything in Standard",
     ],
     purchasable: true,
@@ -156,7 +156,7 @@ export default function SubscriptionPlans() {
             })
             .catch(() => {
                 if (cancelled) return;
-                setErrorMessage("Couldn't load your current plan.");
+                setErrorMessage("We couldn't load your current plan. Please refresh the page.");
             });
 
         return () => {
@@ -175,7 +175,7 @@ export default function SubscriptionPlans() {
             window.location.assign(authorizationUrl);
         } catch (err) {
             console.error("Upgrade checkout failed:", err);
-            setErrorMessage("Couldn't start checkout. Please try again.");
+            setErrorMessage("We couldn't start checkout. Please try again.");
             setUpgradingPlan(null);
         }
     }
@@ -192,17 +192,18 @@ export default function SubscriptionPlans() {
     }
 
     return (
-        <div className="mx-auto max-w-6xl px-6 py-14 pry-ff">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 pry-ff">
             <div className="mb-8 text-center">
                 <span className="mb-3 inline-block rounded-full bg-acc-clr/10 px-3 py-1 text-xs font-medium text-acc-clr">
                     Pricing
                 </span>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
                     Choose the plan that fits your clinic
                 </h1>
-                <p className="sec-ff mx-auto mt-3 max-w-md text-sm text-slate-500">
-                    Every plan starts simple. Upgrade whenever your clinic is ready
-                    for more.
+                <p className="sec-ff mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-500">
+                    Start with a 30-day free trial of every Pro feature. Then stay
+                    on the plan that suits you, and upgrade whenever your clinic
+                    needs more.
                 </p>
             </div>
 
@@ -212,7 +213,7 @@ export default function SubscriptionPlans() {
                     <button
                         type="button"
                         onClick={() => setBillingCycle("monthly")}
-                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                        className={`rounded-full px-5 py-2 text-sm font-medium transition sm:px-4 sm:py-1.5 ${
                             billingCycle === "monthly"
                                 ? "bg-white text-slate-900 shadow-sm"
                                 : "text-slate-500 hover:text-slate-700"
@@ -223,7 +224,7 @@ export default function SubscriptionPlans() {
                     <button
                         type="button"
                         onClick={() => setBillingCycle("annual")}
-                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                        className={`rounded-full px-5 py-2 text-sm font-medium transition sm:px-4 sm:py-1.5 ${
                             billingCycle === "annual"
                                 ? "bg-white text-slate-900 shadow-sm"
                                 : "text-slate-500 hover:text-slate-700"
@@ -233,19 +234,22 @@ export default function SubscriptionPlans() {
                     </button>
                 </div>
                 {billingCycle === "annual" && (
-                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 border border-green-100">
-                        Get 2 months free
+                    <span className="rounded-full bg-green-50 px-3 py-1 text-center text-xs font-semibold text-green-700 border border-green-100">
+                        Pay for 10 months, get 12
                     </span>
                 )}
             </div>
 
             {errorMessage && (
-                <div className="mx-auto mb-8 max-w-md rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-center text-sm text-red-600">
+                <div
+                    role="alert"
+                    className="mx-auto mb-8 max-w-md rounded-lg border border-red-100 bg-red-50 px-4 py-2.5 text-center text-sm text-red-600"
+                >
                     {errorMessage}
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
                 {PLANS.map((plan) => {
                     const isCurrent = subscription?.plan === plan.id;
                     const isUpgrading = upgradingPlan === plan.id;
@@ -255,9 +259,9 @@ export default function SubscriptionPlans() {
                     return (
                         <div
                             key={plan.id}
-                            className={`relative flex flex-col rounded-2xl border bg-pry-clr p-6 transition-all duration-200 ${
+                            className={`relative flex flex-col rounded-2xl border bg-pry-clr p-5 transition-all duration-200 sm:p-6 ${
                                 plan.highlighted
-                                    ? "border-acc-clr shadow-lg shadow-acc-clr/10 lg:-translate-y-2"
+                                    ? "border-acc-clr shadow-lg shadow-acc-clr/10 xl:-translate-y-2"
                                     : "border-slate-100 shadow-sm hover:-translate-y-1 hover:shadow-md"
                             }`}
                         >
@@ -280,12 +284,12 @@ export default function SubscriptionPlans() {
                             <h2 className="text-lg font-semibold text-slate-900">
                                 {plan.name}
                             </h2>
-                            <p className="sec-ff mt-1 text-xs leading-snug text-slate-500">
+                            <p className="sec-ff mt-1 min-h-[2.5rem] text-xs leading-snug text-slate-500">
                                 {plan.tagline}
                             </p>
 
-                            <div className="mt-5 flex items-baseline gap-1 h-9">
-                                <span className="text-3xl font-bold tracking-tight text-slate-900">
+                            <div className="mt-5 flex h-9 items-baseline gap-1">
+                                <span className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                                     {price}
                                 </span>
                                 <span className="text-sm font-medium text-slate-400">
@@ -324,7 +328,7 @@ export default function SubscriptionPlans() {
                                         disabled
                                         className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 text-sm font-medium text-slate-400"
                                     >
-                                        Current Plan
+                                        Current plan
                                     </button>
                                 ) : plan.purchasable ? (
                                     <button
@@ -343,9 +347,9 @@ export default function SubscriptionPlans() {
                                             <Loader2 className="h-4 w-4 animate-spin" />
                                         )}
                                         {isUpgrading
-                                            ? "Redirecting..."
+                                            ? "Redirecting to checkout..."
                                             : plan.id === "free"
-                                              ? "Get Started"
+                                              ? "Get started"
                                               : `Choose ${plan.name}`}
                                     </button>
                                 ) : (
@@ -354,7 +358,9 @@ export default function SubscriptionPlans() {
                                         disabled
                                         className="w-full rounded-lg border border-dashed border-slate-200 py-2.5 text-sm font-medium text-slate-400"
                                     >
-                                        {plan.id === "enterprise" ? "Coming Soon" : "Not Available"}
+                                        {plan.id === "enterprise"
+                                            ? "Coming soon"
+                                            : "No checkout required"}
                                     </button>
                                 )}
                             </div>
@@ -362,6 +368,13 @@ export default function SubscriptionPlans() {
                     );
                 })}
             </div>
+
+            <p className="sec-ff mx-auto mt-10 max-w-2xl text-center text-xs leading-relaxed text-slate-400">
+                Reminders are sent automatically through browser/PWA notifications
+                and email. PWA notifications require a supported browser or the
+                installed app, and notification permission from your client. Email
+                is used when PWA notifications are unavailable.
+            </p>
         </div>
     );
 }
