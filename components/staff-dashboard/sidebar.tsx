@@ -11,6 +11,7 @@ import {
   Calendar,
   PawPrint,
   Package,
+  Folder,
   ArrowLeftRight,
   BarChart3,
   ShoppingCart,
@@ -25,23 +26,26 @@ import { useSidebar } from "@/context/sidebar-context";
 import { useAuthStore } from "@/store/useStore";
 import { logoutClinic } from "@/lib/auth";
 
+const VISIT_PERMISSIONS = ["view_all_visits", "create_visit", "edit_visit", "manage_visits"];
+
 interface NavItem {
   name: string;
   href: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
-  need?: string; // permission required to show this link — omit for always-visible
+  need?: string[]; // any one of these shows the link — omit for always-visible
 }
 
 const NAV_ITEMS: NavItem[] = [
   { name: "Overview", href: "/staff-dashboard", icon: LayoutDashboard, exact: true },
-  { name: "Appointments", href: "/staff-dashboard/appointments", icon: Calendar, need: "manage_appointments" },
-  { name: "Patients", href: "/staff-dashboard/patients", icon: PawPrint, need: "view_patients" },
-  { name: "Inventory", href: "/staff-dashboard/inventory", icon: Package, need: "view_inventory" },
-  { name: "POS", href: "/staff-dashboard/pos", icon: ShoppingCart, need: "access_pos" },
-  { name: "Sales History", href: "/staff-dashboard/sales-history", icon: Receipt, need: "view_sales_history" },
-  { name: "Referrals", href: "/staff-dashboard/referrals", icon: ArrowLeftRight, need: "view_referrals" },
-  { name: "Reports", href: "/staff-dashboard/reports", icon: BarChart3, need: "view_reports" },
+  { name: "Appointments", href: "/staff-dashboard/appointments", icon: Calendar, need: ["manage_appointments"] },
+  { name: "Patients", href: "/staff-dashboard/patients", icon: PawPrint, need: ["view_patients"] },
+  { name: "Records", href: "/staff-dashboard/clinical/records", icon: Folder, need: VISIT_PERMISSIONS },
+  { name: "Inventory", href: "/staff-dashboard/inventory", icon: Package, need: ["view_inventory"] },
+  { name: "POS", href: "/staff-dashboard/pos", icon: ShoppingCart, need: ["access_pos"] },
+  { name: "Sales History", href: "/staff-dashboard/sales-history", icon: Receipt, need: ["view_sales_history"] },
+  { name: "Referrals", href: "/staff-dashboard/referrals", icon: ArrowLeftRight, need: ["view_referrals"] },
+  { name: "Reports", href: "/staff-dashboard/reports", icon: BarChart3, need: ["view_reports"] },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
@@ -58,7 +62,9 @@ function isRouteActive(pathname: string, href: string, exact?: boolean) {
 function useVisibleNavItems() {
   const permissions = useAuthStore((s) => s.permissions);
   const hasAll = permissions.includes("all_permissions");
-  return NAV_ITEMS.filter((item) => !item.need || hasAll || permissions.includes(item.need));
+  return NAV_ITEMS.filter(
+    (item) => !item.need || hasAll || item.need.some((p) => permissions.includes(p))
+  );
 }
 
 function useLogout() {

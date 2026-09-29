@@ -15,6 +15,7 @@ const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }>
     label: "Clinic",
     permissions: [
       "all_permissions",
+      // Clinic management
       "manage_clinic",
       "manage_staff",
       "assign_roles",
@@ -25,6 +26,8 @@ const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }>
       "view_all_patients",
       "view_all_visits",
       "view_own_clinic_data",
+      "manage_visits",
+      // Clinical
       "view_patients",
       "view_pet_history",
       "record_vitals",
@@ -32,6 +35,12 @@ const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }>
       "prescribe_medication",
       "create_treatment_plan",
       "create_followup",
+      // Referrals
+      "create_referral",
+      "search_clinics",
+      "respond_referral",
+      "view_referrals",
+      // Front desk
       "view_basic_pet_info",
       "record_basic_info",
       "manage_appointments",
@@ -39,8 +48,14 @@ const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }>
       "create_visit",
       "edit_visit",
       "delete_visit",
+      // Billing
       "generate_invoice",
       "confirm_payment",
+      "access_pos",
+      // Inventory
+      "manage_inventory",
+      "view_inventory",
+      "view_inventory_cost",
     ],
   },
   vet: {
@@ -48,7 +63,10 @@ const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }>
     permissions: [
       "view_patients",
       "view_pet_history",
+      "view_all_visits",
+      "view_own_clinic_data",
       "create_visit",
+      "manage_visits",
       "record_vitals",
       "add_diagnosis",
       "prescribe_medication",
@@ -58,7 +76,10 @@ const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }>
       "checkin_patients",
       "generate_invoice",
       "confirm_payment",
-      "view_own_clinic_data",
+      "create_referral",
+      "respond_referral",
+      "view_referrals",
+      "search_clinics",
     ],
   },
   receptionist: {
@@ -67,10 +88,22 @@ const ROLE_PERMISSIONS: Record<string, { label: string; permissions: string[] }>
       "manage_appointments",
       "checkin_patients",
       "create_visit",
+      "view_patients",
       "record_basic_info",
+      "view_basic_pet_info",
       "generate_invoice",
       "confirm_payment",
-      "view_basic_pet_info",
+      "view_referrals",
+    ],
+  },
+  sales: {
+    label: "Sales",
+    permissions: [
+      "generate_invoice",
+      "confirm_payment",
+      "access_pos",
+      "view_inventory",
+      "view_sales_history",
     ],
   },
 };

@@ -152,7 +152,7 @@ export default function GetVisitRecords({
             {/* Header */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Visit Records</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Medical Records</h2>
                     <p className="text-sm text-gray-400 mt-0.5">
                         Comprehensive list of all visits and medical activity
                     </p>

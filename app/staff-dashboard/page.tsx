@@ -3,18 +3,21 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Calendar, PawPrint, Package, ArrowLeftRight, BarChart3, ShoppingCart, Receipt, Lock, MapPin, ChevronRight } from "lucide-react";
+import { Calendar, PawPrint, Package, ArrowLeftRight, BarChart3, ShoppingCart, Receipt, Lock, MapPin, ChevronRight, Folder } from "lucide-react";
 import { useAuthStore } from "@/store/useStore";
 import { listLocations, type Location } from "@/lib/location";
 
+const VISIT_PERMISSIONS = ["view_all_visits", "create_visit", "edit_visit", "manage_visits"];
+
 const OVERVIEW_CARDS = [
-  { name: "Appointments", href: "/staff-dashboard/appointments", icon: Calendar, need: "manage_appointments", desc: "View and manage today's appointments" },
-  { name: "Patients", href: "/staff-dashboard/patients", icon: PawPrint, need: "view_patients", desc: "Search, register, and start visits" },
-  { name: "Inventory", href: "/staff-dashboard/inventory", icon: Package, need: "view_inventory", desc: "Check stock levels" },
-  { name: "POS", href: "/staff-dashboard/pos", icon: ShoppingCart, need: "access_pos", desc: "Ring up a sale" },
-  { name: "Sales History", href: "/staff-dashboard/sales-history", icon: Receipt, need: "view_sales_history", desc: "Browse past transactions" },
-  { name: "Referrals", href: "/staff-dashboard/referrals", icon: ArrowLeftRight, need: "view_referrals", desc: "Track incoming and outgoing referrals" },
-  { name: "Reports", href: "/staff-dashboard/reports", icon: BarChart3, need: "view_reports", desc: "Sales and inventory reports" },
+  { name: "Appointments", href: "/staff-dashboard/appointments", icon: Calendar, need: ["manage_appointments"], desc: "View and manage today's appointments" },
+  { name: "Patients", href: "/staff-dashboard/patients", icon: PawPrint, need: ["view_patients"], desc: "Search, register, and start visits" },
+  { name: "Records", href: "/staff-dashboard/clinical/records", icon: Folder, need: VISIT_PERMISSIONS, desc: "View and manage patient records" },
+  { name: "Inventory", href: "/staff-dashboard/inventory", icon: Package, need: ["view_inventory"], desc: "Check stock levels" },
+  { name: "POS", href: "/staff-dashboard/pos", icon: ShoppingCart, need: ["access_pos"], desc: "Ring up a sale" },
+  { name: "Sales History", href: "/staff-dashboard/sales-history", icon: Receipt, need: ["view_sales_history"], desc: "Browse past transactions" },
+  { name: "Referrals", href: "/staff-dashboard/referrals", icon: ArrowLeftRight, need: ["view_referrals"], desc: "Track incoming and outgoing referrals" },
+  { name: "Reports", href: "/staff-dashboard/reports", icon: BarChart3, need: ["view_reports"], desc: "Sales and inventory reports" },
 ];
 
 const LOCATION_RELEVANT_PERMISSIONS = [
@@ -80,7 +83,7 @@ export default function StaffDashboardOverview() {
       <div className="grid gap-4 md:grid-cols-2">
         {OVERVIEW_CARDS.map((card) => {
           const Icon = card.icon;
-          const unlocked = hasAll || permissions.includes(card.need);
+          const unlocked = hasAll || card.need.some((p) => permissions.includes(p));
 
           if (!unlocked) {
             return (
