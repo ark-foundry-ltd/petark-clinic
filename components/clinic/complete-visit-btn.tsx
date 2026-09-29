@@ -154,7 +154,7 @@ export default function CompleteVisitBtn({ visit, onComplete }: Readonly<Complet
                     Complete Visit
                 </button>
 
-                {isPro ? (
+                {/* {isPro ? (
                     <button
                         onClick={() => { setMode("ai"); setIsOpen(true); }}
                         disabled={loading}
@@ -172,7 +172,7 @@ export default function CompleteVisitBtn({ visit, onComplete }: Readonly<Complet
                         Complete with AI
                         <span className="text-[10px] bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-0.5">Pro</span>
                     </button>
-                )}
+                )} */}
             </div>
 
             {/* Modal */}

@@ -163,6 +163,24 @@ export default function AppointmentDetails({
     const appointmentDate = formatDate(appointment.date || appointment.appointmentDate || appointment.createdAt);
     const appointmentTime = formatTime(appointment.date || appointment.appointmentTime || appointment.createdAt);
 
+    function getServicesTotal(v: Visit | null): number {
+        if (!v) return 0;
+
+        // Prefer the total calculated by the backend
+        if (typeof v.billing?.total === "number" && v.billing.total > 0) {
+            return v.billing.total;
+        }
+
+        // Fallback: sum the populated services
+        const services: unknown[] = v.selectedServices ?? v.servicesProvided ?? [];
+        return services.reduce<number>((sum, s) => {
+            if (typeof s === "string") return sum;
+            return sum + ((s as { price?: number }).price ?? 0);
+        }, 0);
+    }
+
+    const servicesTotal = getServicesTotal(visit);
+
     const hasActiveVisit = visit && visit.status === "in-progress";
     const hasCompletedVisit = visit && visit.status === "completed";
     const isConfirmed = appointment.status === "confirmed";
@@ -349,13 +367,19 @@ export default function AppointmentDetails({
                                 </div>
 
                                 {visit.paymentStatus === "unpaid" && (
-                                    <div className="pt-3 border-t border-blue-100">
-                                        <MarkVisitPaidBtn
-                                            visit={visit}
-                                            onPaid={(updated) => setVisit(updated)}
-                                        />
-                                    </div>
-                                )}
+    <div className="pt-3 border-t border-blue-100 space-y-3">
+        <div className="flex items-center justify-between rounded-lg bg-white/60 border border-blue-100 px-4 py-3">
+            <span className="text-sm text-gray-600">Amount due</span>
+            <span className="text-base font-semibold text-sec-clr">
+                ₦{servicesTotal.toLocaleString()}
+            </span>
+        </div>
+        <MarkVisitPaidBtn
+            visit={visit}
+            onPaid={(updated) => setVisit(updated)}
+        />
+    </div>
+)}
                             </div>
                         )}
                     </div>

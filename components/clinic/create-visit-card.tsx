@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowLeft, Stethoscope, Plus, X } from "lucide-react";
+import { Loader2, ArrowLeft, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { type ClinicService } from "@/lib/user";
 import { getAppointmentById, type Appointment } from "@/lib/appointment";
@@ -17,14 +17,6 @@ interface Vitals {
     respiration: number | null;
     appetite: "normal" | "reduced" | "increased" | "absent" | null;
     activity: "active" | "lethargic" | "hyperactive" | "normal" | null;
-}
-
-interface FollowUpEntry {
-    serviceId: string | null;
-    serviceName: string;
-    date: string;
-    time: string;
-    notes: string;
 }
 
 type VitalErrors = Partial<Record<keyof Vitals, string>>;
@@ -70,7 +62,6 @@ export default function CreateVisitCard({
     const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
     const [chiefComplaint, setChiefComplaint] = useState("");
     const [servicesProvided, setServicesProvided] = useState<string[]>([]);
-    const [followUps, setFollowUps] = useState<FollowUpEntry[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [vitalErrors, setVitalErrors] = useState<VitalErrors>({});
 
@@ -118,24 +109,8 @@ export default function CreateVisitCard({
         }
     }
 
-    function addFollowUp(service: ClinicService) {
-        setFollowUps((prev) => [
-            ...prev,
-            { serviceId: service._id, serviceName: service.name, date: "", time: "", notes: "" },
-        ]);
-    }
-
-    function removeFollowUp(index: number) {
-        setFollowUps((prev) => prev.filter((_, i) => i !== index));
-    }
-
-    function updateFollowUp(index: number, field: keyof FollowUpEntry, value: string) {
-        setFollowUps((prev) =>
-            prev.map((f, i) => (i === index ? { ...f, [field]: value } : f))
-        );
-    }
-
     const selectedServices = clinicServices.filter((s) => servicesProvided.includes(s._id));
+    const totalAmount = selectedServices.reduce((sum, s) => sum + (s.price ?? 0), 0);
 
     async function handleSubmit() {
         if (!appointment) return;
@@ -157,7 +132,6 @@ export default function CreateVisitCard({
             ...(servicesProvided.length > 0 ? { servicesProvided } : {}),
             vitals,
             ...(chiefComplaint.trim() ? { chiefComplaint: chiefComplaint.trim() } : {}),
-            ...(followUps.length > 0 ? { followUps } : {}),
         };
 
         setSubmitting(true);
@@ -246,87 +220,29 @@ export default function CreateVisitCard({
                             );
                         })}
                     </div>
-                    {servicesProvided.length > 0 && (
-                        <p className="text-xs text-gray-400">
-                            {servicesProvided.length} service{servicesProvided.length > 1 ? "s" : ""} selected
-                        </p>
-                    )}
-                </section>
-            )}
 
-            {/* Follow-ups */}
-            {selectedServices.length > 0 && (
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-sm font-semibold text-sec-clr uppercase tracking-wide">
-                                Follow-ups
-                            </h2>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                                Optional — schedule follow-up dates per service
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                        {selectedServices.map((service) => {
-                            const alreadyAdded = followUps.some((f) => f.serviceId === service._id);
-                            return (
-                                <button
-                                    key={service._id}
-                                    type="button"
-                                    disabled={alreadyAdded}
-                                    onClick={() => addFollowUp(service)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-dashed border-gray-300 text-gray-500 hover:border-acc-clr hover:text-acc-clr disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <Plus size={11} />
-                                    {service.name}
-                                </button>
-                            );
-                        })}
-                    </div>
-
-                    {followUps.length > 0 && (
-                        <div className="space-y-3">
-                            {followUps.map((f, i) => (
+                    {selectedServices.length > 0 && (
+                        <div className="rounded-lg border border-gray-200 divide-y divide-gray-100 text-sm">
+                            {selectedServices.map((service) => (
                                 <div
-                                    key={i}
-                                    className="p-4 rounded-lg border border-gray-200 space-y-3"
+                                    key={service._id}
+                                    className="flex items-center justify-between px-4 py-2.5"
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-acc-clr uppercase tracking-wide">
-                                            {f.serviceName}
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeFollowUp(i)}
-                                            className="text-gray-400 hover:text-red-500 transition-colors"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Field
-                                            label="Date"
-                                            type="date"
-                                            value={f.date}
-                                            onChange={(v) => updateFollowUp(i, "date", v)}
-                                        />
-                                        <Field
-                                            label="Time"
-                                            type="time"
-                                            value={f.time}
-                                            onChange={(v) => updateFollowUp(i, "time", v)}
-                                        />
-                                    </div>
-                                    <Field
-                                        label="Notes"
-                                        value={f.notes}
-                                        onChange={(v) => updateFollowUp(i, "notes", v)}
-                                        placeholder="e.g. bring previous test results"
-                                    />
+                                    <span className="text-gray-700">{service.name}</span>
+                                    <span className="text-gray-600">
+                                        {service.price != null
+                                            ? `₦${service.price.toLocaleString()}`
+                                            : "—"}
+                                    </span>
                                 </div>
                             ))}
+                            <div className="flex items-center justify-between px-4 py-3 font-semibold text-sec-clr">
+                                <span>
+                                    Total ({selectedServices.length} service
+                                    {selectedServices.length > 1 ? "s" : ""})
+                                </span>
+                                <span>₦{totalAmount.toLocaleString()}</span>
+                            </div>
                         </div>
                     )}
                 </section>
@@ -475,7 +391,7 @@ interface FieldProps {
     value: string | number;
     onChange: (v: string) => void;
     onBlur?: () => void;
-    type?: "text" | "number" | "date" | "time";
+    type?: "text" | "number";
     placeholder?: string;
     min?: number;
     error?: string;

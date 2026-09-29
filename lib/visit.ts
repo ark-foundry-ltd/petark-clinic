@@ -305,3 +305,17 @@ export async function getCurrentVisitForPatient(clinicPatientId: string): Promis
         throw new Error("An unexpected error occurred while checking for an existing visit");
     }
 }
+
+export function getVisitTotal(visit: Visit | null | undefined): number {
+    if (!visit) return 0;
+
+    // Prefer the total the backend calculated
+    if (typeof visit.billing?.total === "number") return visit.billing.total;
+
+    // Fall back to summing populated services
+    const services: unknown[] = visit.selectedServices ?? visit.servicesProvided ?? [];
+    return services.reduce<number>((sum, s) => {
+        if (typeof s === "string") return sum;
+        return sum + ((s as ClinicService).price ?? 0);
+    }, 0);
+}
