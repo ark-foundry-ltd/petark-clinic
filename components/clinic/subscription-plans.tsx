@@ -274,7 +274,7 @@ export default function SubscriptionPlans() {
                     </div>
                 )}
                 <Link
-                    href="/dashboard/refer-and-earn"
+                    href="/dashboard/profile/refer-and-earn"
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-acc-clr hover:underline"
                 >
                     <Gift className="h-3.5 w-3.5" />
