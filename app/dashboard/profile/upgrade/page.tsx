@@ -1,4 +1,4 @@
-// app/dashboard/upgrade/page.tsx
+// app/dashboard/profile/upgrade/page.tsx
 
 import SubscriptionPlans from "@/components/clinic/subscription-plans";
 import type { Metadata } from "next";
