@@ -302,7 +302,7 @@ export default function ReferralCenter() {
 
                     {credit && credit.balance > 0 && (
                         <Link
-                            href="/dashboard/upgrade"
+                            href="/dashboard/profile/upgrade"
                             className="mt-5 inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
                         >
                             Use credit on a plan
