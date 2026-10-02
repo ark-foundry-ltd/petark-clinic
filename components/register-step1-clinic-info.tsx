@@ -1,6 +1,6 @@
 // src/components/register-step1-clinic-info.tsx
 
-import { Building2, Mail, Lock, Phone, User, Eye, EyeOff } from "lucide-react";
+import { Building2, Mail, Lock, Phone, User, Eye, EyeOff, Gift } from "lucide-react";
 import { FieldIcon } from "./register-field-icon";
 
 type Step1Props = {
@@ -16,6 +16,8 @@ type Step1Props = {
     setShowPassword: (v: boolean) => void;
     phoneNumber: string;
     setPhoneNumber: (v: string) => void;
+    referralCode: string;
+    setReferralCode: (v: string) => void;
 };
 
 export default function RegisterStepClinicInfo({
@@ -31,6 +33,8 @@ export default function RegisterStepClinicInfo({
     setShowPassword,
     phoneNumber,
     setPhoneNumber,
+    referralCode,
+    setReferralCode,
 }: Readonly<Step1Props>) {
     return (
         <div className="space-y-4 animate-fadeIn">
@@ -128,6 +132,30 @@ export default function RegisterStepClinicInfo({
                 </div>
             </div>
             <p className="text-xs text-sec-clr/50 -mt-2">Password must be at least 6 characters</p>
+
+            <div>
+                <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-sec-clr">Referral Code</label>
+                    <span className="text-xs text-amber-600">Optional</span>
+                </div>
+                <div className="relative">
+                    <FieldIcon icon={Gift} />
+                    <input
+                        type="text"
+                        value={referralCode}
+                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                        maxLength={9}
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-transparent transition-all duration-200 tracking-wide"
+                        placeholder="PA-ABC123"
+                    />
+                </div>
+                <p className="text-xs text-sec-clr/50 mt-1.5">
+                    Referred by another clinic? Enter their code so they get credit.
+                </p>
+            </div>
         </div>
     );
 }

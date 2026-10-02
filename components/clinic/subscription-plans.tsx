@@ -1,18 +1,20 @@
-// components/subscription/subscription-plans.tsx
+// components/clinic/subscription-plans.tsx
 
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
     getSubscriptionStatus,
     initiateSubscriptionUpgrade,
+    previewCredit,
     PLAN_PRICING,
     type SubscriptionPlan,
     type SubscriptionRecord,
     type PurchasablePlan,
     type BillingCycle,
 } from "@/lib/subscription";
-import { Check, Loader2, Zap, Layers, Rocket, Sparkles, Building2 } from "lucide-react";
+import { Check, Loader2, Zap, Layers, Rocket, Sparkles, Building2, Gift } from "lucide-react";
 
 interface PlanDefinition {
     id: SubscriptionPlan;
@@ -144,7 +146,11 @@ export default function SubscriptionPlans() {
     const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
     const [upgradingPlan, setUpgradingPlan] = useState<PurchasablePlan | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [useCredit, setUseCredit] = useState(true);
     const loading = subscription === null && !errorMessage;
+
+    const creditBalance = subscription?.creditBalance ?? 0;
+    const applyingCredit = useCredit && creditBalance > 0;
 
     useEffect(() => {
         let cancelled = false;
@@ -171,6 +177,7 @@ export default function SubscriptionPlans() {
             const { authorizationUrl } = await initiateSubscriptionUpgrade({
                 targetPlan,
                 billingCycle,
+                useCredit,
             });
             window.location.assign(authorizationUrl);
         } catch (err) {
@@ -191,6 +198,10 @@ export default function SubscriptionPlans() {
         return { price: formatNaira(pricing.annual), period: "/yr" };
     }
 
+    function listPriceFor(planId: PurchasablePlan): number {
+        return PLAN_PRICING[planId][billingCycle];
+    }
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 pry-ff">
             <div className="mb-8 text-center">
@@ -208,7 +219,7 @@ export default function SubscriptionPlans() {
             </div>
 
             {/* Billing cycle toggle */}
-            <div className="mb-10 flex flex-col items-center gap-2">
+            <div className="mb-6 flex flex-col items-center gap-2">
                 <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
                     <button
                         type="button"
@@ -240,6 +251,37 @@ export default function SubscriptionPlans() {
                 )}
             </div>
 
+            {/* Referral credit */}
+            <div className="mb-10 flex flex-col items-center gap-2">
+                {creditBalance > 0 && (
+                    <div className="flex max-w-md flex-col items-center gap-2 rounded-xl border border-acc-clr/20 bg-acc-clr/5 px-4 py-3 text-center">
+                        <p className="text-sm font-semibold text-slate-900">
+                            You have {formatNaira(creditBalance)} in referral credit
+                        </p>
+                        <p className="sec-ff text-xs leading-snug text-slate-500">
+                            Credit covers up to half of any plan payment. Whatever is left
+                            carries over to your next payment.
+                        </p>
+                        <label className="mt-1 flex cursor-pointer items-center gap-2 text-xs font-medium text-slate-700">
+                            <input
+                                type="checkbox"
+                                checked={useCredit}
+                                onChange={(e) => setUseCredit(e.target.checked)}
+                                className="h-4 w-4 rounded border-slate-300 accent-acc-clr"
+                            />
+                            Use my credit at checkout
+                        </label>
+                    </div>
+                )}
+                <Link
+                    href="/dashboard/refer-and-earn"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-acc-clr hover:underline"
+                >
+                    <Gift className="h-3.5 w-3.5" />
+                    Refer a clinic and earn {formatNaira(5000)} credit
+                </Link>
+            </div>
+
             {errorMessage && (
                 <div
                     role="alert"
@@ -255,6 +297,11 @@ export default function SubscriptionPlans() {
                     const isUpgrading = upgradingPlan === plan.id;
                     const Icon = plan.icon;
                     const { price, period } = priceFor(plan.id);
+
+                    const credit =
+                        plan.purchasable && applyingCredit
+                            ? previewCredit(listPriceFor(plan.id as PurchasablePlan), creditBalance)
+                            : null;
 
                     return (
                         <div
@@ -296,6 +343,23 @@ export default function SubscriptionPlans() {
                                     {period ?? ""}
                                 </span>
                             </div>
+
+                            {/* Same height on every card so the rows stay aligned */}
+                            {applyingCredit && (
+                                <div className="sec-ff mt-2 min-h-[2.5rem] text-xs leading-snug">
+                                    {credit && (
+                                        <>
+                                            <p className="text-green-700">
+                                                Referral credit: −{formatNaira(credit.credit)}
+                                            </p>
+                                            <p className="font-semibold text-slate-900">
+                                                You pay {formatNaira(credit.youPay)}
+                                                {period ?? ""}
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="my-5 h-px bg-slate-100" />
 

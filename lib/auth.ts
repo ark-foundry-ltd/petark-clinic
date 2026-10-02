@@ -23,6 +23,7 @@ interface RegisterData {
     licenseDocument: File;
     ownerIDCard: File;
     ownerPassport?: File | null;
+    referralCode?: string;
 }
 
 interface LoginData {
@@ -96,6 +97,13 @@ export async function registerClinic(data: RegisterData) {
 
         if (data.ownerPassport) {
             formData.append("ownerPassport", data.ownerPassport);
+        }
+
+        // Growth referral: the backend ignores empty/invalid codes, so this
+        // can never block a signup.
+        const referralCode = data.referralCode?.trim().toUpperCase();
+        if (referralCode) {
+            formData.append("referralCode", referralCode);
         }
 
         // Don't set Content-Type manually — axios/the browser needs to

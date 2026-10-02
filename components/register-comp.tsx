@@ -2,7 +2,7 @@
 
 "use client";
 import { registerClinic } from "@/lib/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
@@ -27,6 +27,9 @@ function isRegisterError(error: unknown): error is RegisterError {
     );
 }
 
+// Must match normalizeReferralCode on the backend
+const REFERRAL_CODE_PATTERN = /^PA-[A-Z0-9]{6}$/;
+
 export default function RegisterComp() {
     const [step, setStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +40,7 @@ export default function RegisterComp() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [referralCode, setReferralCode] = useState("");
 
     // Step 2: Address
     const [address, setAddress] = useState({
@@ -57,6 +61,17 @@ export default function RegisterComp() {
     const [error, setError] = useState<string>("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+
+    // Prefill the referral code from a shared link: /register?ref=PA-XXXXXX
+    // (window.location instead of useSearchParams, so the page needs no
+    // Suspense boundary)
+    useEffect(() => {
+        const ref = new URLSearchParams(window.location.search).get("ref");
+        if (ref) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setReferralCode(ref.trim().toUpperCase());
+        }
+    }, []);
 
     const handleNext = () => {
         setError("");
@@ -89,6 +104,12 @@ export default function RegisterComp() {
             }
             if (!phoneNumber.trim()) {
                 setError("Phone number is required");
+                return;
+            }
+            // Optional, but a malformed code would be silently ignored by the
+            // server, so catch typos here
+            if (referralCode.trim() && !REFERRAL_CODE_PATTERN.test(referralCode.trim().toUpperCase())) {
+                setError("That referral code doesn't look right. It should look like PA-ABC123, or leave it empty.");
                 return;
             }
         }
@@ -164,6 +185,7 @@ export default function RegisterComp() {
                 licenseDocument: licenseDocument!,
                 ownerIDCard: ownerIDCard!,
                 ownerPassport: ownerPassport ?? undefined,
+                referralCode: referralCode.trim() || undefined,
             };
 
             await registerClinic(formData);
@@ -276,6 +298,8 @@ export default function RegisterComp() {
                             setShowPassword={setShowPassword}
                             phoneNumber={phoneNumber}
                             setPhoneNumber={setPhoneNumber}
+                            referralCode={referralCode}
+                            setReferralCode={setReferralCode}
                         />
                     )}
 

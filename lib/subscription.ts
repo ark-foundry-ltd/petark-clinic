@@ -28,6 +28,8 @@ export interface SubscriptionRecord {
     paystackNextPaymentDate: string | null;
     pendingReference?: string | null;
     trial: TrialInfo | null;
+    // Referral credit (₦) available to spend on subscription payments
+    creditBalance: number;
 }
 
 // ─── Pricing (display only — mirrors backend PLAN_PRICING; the real charge
@@ -55,6 +57,24 @@ export const PLAN_PRICING: Record<PurchasablePlan, PlanPricingEntry> = {
     },
 };
 
+// ─── Referral credit (display only — mirrors MAX_CREDIT_SHARE on the backend;
+// the real amount is always computed server-side) ───────────────────────────
+// Credit can cover at most half of any single payment; whatever is left over
+// stays on the balance for the next payment.
+
+export const MAX_CREDIT_SHARE = 0.5;
+
+export function previewCredit(
+    listPrice: number,
+    balance: number
+): { credit: number; youPay: number } {
+    const credit = Math.min(
+        Math.max(balance, 0),
+        Math.floor(listPrice * MAX_CREDIT_SHARE)
+    );
+    return { credit, youPay: listPrice - credit };
+}
+
 // ─── Usage add-ons (treatments/reminders only — see planLimitMiddleware.js
 // on the backend for the actual enforcement) ───────────────────────────────
 
@@ -75,11 +95,17 @@ export const ADDON_PRICING: Record<AddonResource, AddonPricingEntry> = {
 export interface InitiateUpgradePayload {
     targetPlan: PurchasablePlan;
     billingCycle: BillingCycle;
+    // Defaults to true on the server; send false to pay the full price
+    useCredit?: boolean;
 }
 
 export interface InitiateUpgradeResult {
     authorizationUrl: string;
     reference: string;
+    // What Paystack will actually charge (₦), after credit
+    amount: number;
+    listPrice: number;
+    creditApplied: number;
 }
 
 export async function initiateSubscriptionUpgrade(
