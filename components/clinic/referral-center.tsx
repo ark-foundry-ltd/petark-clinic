@@ -16,6 +16,16 @@ import {
     type ReferralCode,
 } from "@/lib/growth-referral";
 
+// Set NEXT_PUBLIC_APP_URL (e.g. https://app.usepetark.com) in .env.local and
+// in Vercel. If it's missing, the current domain is used instead.
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+
+// Builds the absolute signup link for a referral code
+function buildReferralLink(code: string): string {
+    const origin = APP_URL || window.location.origin;
+    return `${origin}/signup?ref=${code}`;
+}
+
 const STATUS_META: Record<GrowthReferralStatus, { label: string; className: string }> = {
     signed_up: { label: "Signed up", className: "bg-slate-100 text-slate-600" },
     converted: { label: "Subscribed", className: "bg-blue-50 text-blue-700" },
@@ -63,6 +73,10 @@ export default function ReferralCenter() {
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState<"code" | "link" | null>(null);
     const loading = !code && !error;
+
+    // `code` is only set after the data loads in the browser, so using
+    // window.location inside buildReferralLink is safe here.
+    const shareLink = code ? buildReferralLink(code.code) : "";
 
     useEffect(() => {
         let cancelled = false;
@@ -132,13 +146,13 @@ export default function ReferralCenter() {
                             <div className="mt-2 flex items-center gap-2">
                                 <input
                                     readOnly
-                                    value={code?.link ?? ""}
+                                    value={shareLink}
                                     onFocus={(e) => e.currentTarget.select()}
                                     className="w-full min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr"
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => code && copy(code.link, "link")}
+                                    onClick={() => shareLink && copy(shareLink, "link")}
                                     className="flex shrink-0 items-center gap-1.5 rounded-lg bg-acc-clr px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
                                 >
                                     {copied === "link" ? (
