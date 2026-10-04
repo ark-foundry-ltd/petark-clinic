@@ -68,15 +68,6 @@ export default function CompleteVisitBtn({ visit, onComplete }: Readonly<Complet
         return Object.keys(newErrors).length === 0;
     };
 
-    const validateAI = (): boolean => {
-        if (!roughNotes.trim()) {
-            setErrors({ roughNotes: "Rough notes are required" });
-            return false;
-        }
-        setErrors({});
-        return true;
-    };
-
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
@@ -132,26 +123,6 @@ export default function CompleteVisitBtn({ visit, onComplete }: Readonly<Complet
                     <CheckCircle size={13} />
                     Complete Visit
                 </button>
-
-                {/* {isPro ? (
-                    <button
-                        onClick={() => { setMode("ai"); setIsOpen(true); }}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 text-xs text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed px-3 py-1.5 rounded-lg transition-colors shrink-0"
-                    >
-                        <Sparkles size={13} />
-                        Complete with AI
-                    </button>
-                ) : (
-                    <button
-                        onClick={() => toast.info("Upgrade to Pro to use AI SOAP formatting")}
-                        className="flex items-center gap-1.5 text-xs text-violet-600 border border-violet-200 bg-violet-50 hover:bg-violet-100 px-3 py-1.5 rounded-lg transition-colors shrink-0"
-                    >
-                        <Sparkles size={13} />
-                        Complete with AI
-                        <span className="text-[10px] bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-0.5">Pro</span>
-                    </button>
-                )} */}
             </div>
 
             {/* Modal */}
