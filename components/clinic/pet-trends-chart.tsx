@@ -9,8 +9,9 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Legend
 } from "recharts";
-import { TrendingUp, Sparkles, Lock, Loader2, Weight } from "lucide-react";
+import { TrendingUp, Loader2, Weight } from "lucide-react";
 import { getPlanInfo } from "@/lib/plan";
+import LockedFeature from "@/components/clinic/locked-feature";
 
 interface PetTrendsChartProps {
     petId: string;
@@ -24,8 +25,15 @@ const VITAL_LINES = [
 
 export default function PetTrendsChart({ petId }: Readonly<PetTrendsChartProps>) {
     const { profile } = useAuthStore();
-    const { plan } = getPlanInfo(profile);
-    const isPro = plan === "pro";
+    const { plan, status } = getPlanInfo(profile);
+
+    // Matches the backend gate: Pro or above, and the subscription is active
+    const hasPro = (plan === "pro" || plan === "enterprise") && status === "active";
+
+    // Set when the server says "locked" even though the profile said Pro
+    // (e.g. the plan expired since the profile was loaded)
+    const [serverLocked, setServerLocked] = useState(false);
+    const locked = !hasPro || serverLocked;
 
     const [vitalsTrend, setVitalsTrend] = useState<VitalsTrendPoint[]>([]);
     const [weightTrend, setWeightTrend] = useState<WeightTrendPoint[]>([]);
@@ -33,52 +41,48 @@ export default function PetTrendsChart({ petId }: Readonly<PetTrendsChartProps>)
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isPro || !petId) return;
+        if (!hasPro || !petId) return; // never call the Pro endpoint for other plans
+
+        let cancelled = false;
 
         async function fetchTrends() {
             setLoading(true);
             setError(null);
             try {
-                const data = await getPetTrends(petId);
-                setVitalsTrend(data.vitalsTrend);
-                setWeightTrend(data.weightTrend);
+                const res = await getPetTrends(petId);
+                if (cancelled) return;
+
+                if (res.locked) {
+                    setServerLocked(true);
+                    return;
+                }
+
+                setVitalsTrend(res.data.vitalsTrend);
+                setWeightTrend(res.data.weightTrend);
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to load trends");
+                if (!cancelled) {
+                    setError(err instanceof Error ? err.message : "Failed to load trends");
+                }
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         }
 
         fetchTrends();
-    }, [petId, isPro]);
 
-    // ── Free plan — upgrade prompt ────────────────────────────────
-    if (!isPro) {
+        return () => {
+            cancelled = true;
+        };
+    }, [petId, hasPro]);
+
+    // ── Locked: faded chart behind a lock, no error ───────────────
+    if (locked) {
         return (
-            <div className="bg-pry-clr rounded-xl border border-violet-100 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="w-5 h-5 text-violet-400" />
-                    <h3 className="font-semibold text-sec-clr">TPR & Vitals Trends</h3>
-                    <span className="text-[10px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-auto">
-                        Pro
-                    </span>
-                </div>
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center mb-3">
-                        <Lock className="w-5 h-5 text-violet-400" />
-                    </div>
-                    <p className="text-sm font-medium text-gray-700 mb-1">
-                        Unlock TPR & Vitals Trends
-                    </p>
-                    <p className="text-xs text-gray-400 max-w-xs mb-4">
-                        Track temperature, pulse, respiration and weight trends across visits. Upgrade to Pro to unlock.
-                    </p>
-                    <div className="flex items-center gap-1.5 text-xs text-violet-600 font-medium">
-                        <Sparkles size={13} />
-                        Available on Pro plan
-                    </div>
-                </div>
-            </div>
+            <LockedFeature
+                title="TPR & Vitals Trends"
+                description="Track temperature, pulse, respiration and weight trends across visits."
+                requiredPlan="Pro"
+            />
         );
     }
 

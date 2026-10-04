@@ -103,7 +103,6 @@ const PLANS: PlanDefinition[] = [
       "Unlimited inventory and POS",
       "Unlimited treatments",
       "Unlimited reminders (fair use)",
-      "AI SOAP formatting and discharge summaries",
       "Vitals trends",
       "Revenue and appointment analytics",
       "Cross-clinic referrals",

@@ -60,10 +60,6 @@ export interface CompleteVisitPayload {
     };
 }
 
-export interface CompleteVisitAIPayload {
-    roughNotes: string;
-}
-
 interface ApiVisitResponse {
     _id: string;
     appointmentId: string;
@@ -160,6 +156,24 @@ export interface PetTrendsResponse {
     };
 }
 
+export type PetTrends = PetTrendsResponse["data"];
+
+// What getPetTrends hands back: either the data, or "this plan doesn't include it".
+// Locked is a normal outcome, not an error.
+export type PetTrendsResult =
+    | { locked: true; requiredPlan: string }
+    | { locked: false; data: PetTrends };
+
+// What the API actually sends. Below the required plan it is a normal 200 with
+// locked: true and data: null (see softPlanGate on the backend).
+interface PetTrendsApiResponse {
+    status: string;
+    locked?: boolean;
+    requiredPlan?: string;
+    results?: number;
+    data: PetTrends | null;
+}
+
 // ─── API Functions ─────────────────────────────────────────────────────────
 
 export async function createVisit(payload: CreateVisitPayload): Promise<ApiVisitResponse> {
@@ -240,28 +254,6 @@ export async function completeVisit(
     }
 }
 
-export async function completeVisitWithAI(
-    visitId: string,
-    payload: CompleteVisitAIPayload
-): Promise<ApiVisitResponse> {
-    try {
-        const response = await api.patch<{ status: string; data: ApiVisitResponse }>(
-            `/visit/complete/${visitId}/ai`,
-            payload
-        );
-        return response.data.data;
-    } catch (error) {
-        if (axiosError.isAxiosError(error)) {
-            const meta = error.response?.data?.meta;
-            if (meta?.code === 'PLAN_UPGRADE_REQUIRED') {
-                throw { isUpgradeRequired: true, ...meta };
-            }
-            throw new Error(error.response?.data?.message || "Failed to complete visit with AI");
-        }
-        throw new Error("An unexpected error occurred");
-    }
-}
-
 export async function markVisitPaid(
     visitId: string,
     payload: MarkVisitPaidPayload
@@ -280,14 +272,26 @@ export async function markVisitPaid(
     }
 }
 
-export async function getPetTrends(petId: string): Promise<PetTrendsResponse['data']> {
+export async function getPetTrends(petId: string): Promise<PetTrendsResult> {
     try {
-        const response = await api.get<PetTrendsResponse>(`/visit/pro/trends/${petId}`);
-        return response.data.data;
+        const response = await api.get<PetTrendsApiResponse>(`/visit/pro/trends/${petId}`);
+        const body = response.data;
+
+        // Plan doesn't include trends: a locked state, not an error
+        if (body.locked) {
+            return { locked: true, requiredPlan: body.requiredPlan ?? "pro" };
+        }
+
+        if (!body.data) {
+            throw new Error("Trends are unavailable right now");
+        }
+
+        return { locked: false, data: body.data };
     } catch (error) {
         if (axiosError.isAxiosError(error)) {
             throw new Error(error.response?.data?.message || "Failed to fetch pet trends");
         }
+        if (error instanceof Error) throw error;
         throw new Error("An unexpected error occurred while fetching trends");
     }
 }
