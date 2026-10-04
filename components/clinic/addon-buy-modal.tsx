@@ -144,7 +144,7 @@ export default function AddonBuyModal({
                 </button>
 
                 <p className="sec-ff mt-3 text-center text-xs text-slate-400">
-                    {copy.scopeNote} Paid by card. Referral credit can&apos;t be used for add-ons.
+                    {copy.scopeNote} {" "} Paid by card. Referral credit can&apos;t be used for add-ons.
                 </p>
             </div>
         </div>

@@ -67,12 +67,22 @@ export async function getClinicUsage(): Promise<UsageSummary> {
             Object.entries(raw).map(([key, value]) => [key, normalize(value)])
         ) as unknown as UsageSummary;
     } catch (error) {
+        // Work out the message once, in the catch's own scope, so every path can use it
+        let message = "Failed to load usage";
+        let expected = false;
+
         if (error instanceof AxiosError) {
-            const message = error.response?.data?.message || error.message;
-            console.error("Error fetching usage:", error.response?.data || error.message);
-            throw new Error(message);
+            message = error.response?.data?.message || error.message;
+            // 403 just means "staff account, not the clinic owner": expected, not an error
+            expected = error.response?.status === 403;
+            if (!expected) {
+                console.error("Error fetching usage:", error.response?.data || error.message);
+            }
+        } else {
+            if (error instanceof Error) message = error.message;
+            console.error("Error fetching usage:", error);
         }
-        console.error("Error fetching usage:", error);
-        throw error;
+
+        throw new Error(message);
     }
 }
