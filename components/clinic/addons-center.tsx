@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Bell, Loader2, Minus, Plus, Stethoscope } from "lucide-react";
+import { Bell, Loader2, Minus, Package, Plus, Stethoscope } from "lucide-react";
 import {
     ADDON_PRICING,
     MAX_PACKS_PER_PURCHASE,
@@ -22,6 +22,8 @@ interface ResourceConfig {
     title: string;
     unit: string;
     blurb: string;
+    // How long a purchased pack lasts
+    scopeNote: string;
     icon: typeof Bell;
 }
 
@@ -31,6 +33,7 @@ const RESOURCES: ResourceConfig[] = [
         title: "Treatments",
         unit: "treatments",
         blurb: "Record more treatments this month.",
+        scopeNote: "Valid for this month only. Does not roll over.",
         icon: Stethoscope,
     },
     {
@@ -38,13 +41,23 @@ const RESOURCES: ResourceConfig[] = [
         title: "Reminders",
         unit: "reminders",
         blurb: "Send more appointment and follow-up reminders this month.",
+        scopeNote: "Valid for this month only. Does not roll over.",
         icon: Bell,
+    },
+    {
+        id: "inventorySkus",
+        title: "Inventory items",
+        unit: "inventory items",
+        blurb: "Add more products to your inventory.",
+        scopeNote: "Permanent for as long as your plan includes inventory.",
+        icon: Package,
     },
 ];
 
-const RESOURCE_TITLE: Record<AddonResource, string> = {
-    treatments: "Treatments",
-    remindersPerMonth: "Reminders",
+const RESOURCE_UNIT: Record<AddonResource, string> = {
+    treatments: "treatments",
+    remindersPerMonth: "reminders",
+    inventorySkus: "inventory items",
 };
 
 function formatNaira(amount: number): string {
@@ -66,6 +79,7 @@ export default function AddonsCenter() {
     const [packs, setPacks] = useState<Record<AddonResource, number>>({
         treatments: 1,
         remindersPerMonth: 1,
+        inventorySkus: 1,
     });
     const [buying, setBuying] = useState<AddonResource | null>(null);
     const loading = usage === null && !error;
@@ -112,17 +126,18 @@ export default function AddonsCenter() {
     }
 
     return (
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 pry-ff">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 pry-ff">
             <div className="mb-8">
                 <span className="mb-3 inline-block rounded-full bg-acc-clr/10 px-3 py-1 text-xs font-medium text-acc-clr">
                     Add-ons
                 </span>
                 <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                    Need more this month?
+                    Need more capacity?
                 </h1>
                 <p className="sec-ff mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
-                    Add 20 more treatments or reminders for {formatNaira(5000)}. Add-ons apply to
-                    the current month only and do not roll over. Buy as many as you need.
+                    Buy extra packs when you reach a limit. Treatment and reminder packs apply to
+                    the current month only and do not roll over. Inventory packs stay for as long
+                    as your plan includes inventory. Buy as many as you need.
                 </p>
             </div>
 
@@ -135,7 +150,7 @@ export default function AddonsCenter() {
                 </div>
             )}
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {RESOURCES.map((config) => {
                     const Icon = config.icon;
                     const row = usage?.[config.id];
@@ -149,10 +164,13 @@ export default function AddonsCenter() {
                     const pct = row && !row.unlimited && limit > 0 ? Math.min(100, (row.count / limit) * 100) : 0;
                     const barColor = pct >= 90 ? "bg-red-500" : pct >= 75 ? "bg-amber-500" : "bg-acc-clr";
 
+                    // Plan has no base capacity (e.g. inventory on Free): upgrade first
+                    const notIncluded = !!row && !row.unlimited && row.baseLimit === 0;
+
                     return (
                         <section
                             key={config.id}
-                            className="rounded-2xl border border-slate-100 bg-pry-clr p-5 shadow-sm sm:p-6"
+                            className="flex flex-col rounded-2xl border border-slate-100 bg-pry-clr p-5 shadow-sm sm:p-6"
                         >
                             <div className="flex items-center gap-3">
                                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-acc-clr/10 text-acc-clr">
@@ -176,6 +194,20 @@ export default function AddonsCenter() {
                                 <p className="sec-ff mt-6 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
                                     Your plan includes unlimited {config.unit}. No add-on needed.
                                 </p>
+                            ) : notIncluded ? (
+                                <div className="mt-6 flex flex-1 flex-col justify-between gap-4">
+                                    <p className="sec-ff rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                        Your current plan doesn&apos;t include {config.unit}. Upgrade
+                                        your plan to start using them, then add more here if you need
+                                        extra.
+                                    </p>
+                                    <Link
+                                        href="/dashboard/profile/upgrade"
+                                        className="flex w-full items-center justify-center rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+                                    >
+                                        View plans
+                                    </Link>
+                                </div>
                             ) : (
                                 <>
                                     <div className="mt-6">
@@ -241,6 +273,10 @@ export default function AddonsCenter() {
                                             ? "Redirecting to checkout..."
                                             : `Buy +${units} ${config.unit}`}
                                     </button>
+
+                                    <p className="sec-ff mt-3 text-center text-xs text-slate-400">
+                                        {config.scopeNote}
+                                    </p>
                                 </>
                             )}
                         </section>
@@ -270,7 +306,7 @@ export default function AddonsCenter() {
                             <li key={p.id} className="flex items-center justify-between gap-3 py-3">
                                 <div className="min-w-0">
                                     <p className="text-sm font-medium text-slate-900">
-                                        +{p.units} {RESOURCE_TITLE[p.resource]?.toLowerCase() ?? p.resource}
+                                        +{p.units} {RESOURCE_UNIT[p.resource] ?? p.resource}
                                     </p>
                                     <p className="sec-ff text-xs text-slate-500">
                                         {formatDate(p.purchasedAt)}

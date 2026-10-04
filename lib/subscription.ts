@@ -78,7 +78,7 @@ export function previewCredit(
 // ─── Usage add-ons (treatments/reminders only — see planLimitMiddleware.js
 // on the backend for the actual enforcement) ───────────────────────────────
 
-export type AddonResource = "treatments" | "remindersPerMonth";
+export type AddonResource = "treatments" | "remindersPerMonth" | "inventorySkus";
 
 interface AddonPricingEntry {
     unitsPerPurchase: number;
@@ -88,6 +88,7 @@ interface AddonPricingEntry {
 export const ADDON_PRICING: Record<AddonResource, AddonPricingEntry> = {
     treatments: { unitsPerPurchase: 20, price: 5000 },
     remindersPerMonth: { unitsPerPurchase: 20, price: 5000 },
+    inventorySkus: { unitsPerPurchase: 20, price: 5000 },
 };
 
 // ─── Initiate upgrade ───────────────────────────────────────────────────

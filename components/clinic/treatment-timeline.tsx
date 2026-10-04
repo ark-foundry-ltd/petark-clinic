@@ -19,6 +19,7 @@ import {
     ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { getPlanInfo } from "@/lib/plan";
+import UsageAddon from "./usage-addon";
 
 interface TreatmentTimelineProps {
     petId: string;
@@ -152,18 +153,31 @@ export default function TreatmentTimeline({ petId, visitId, petWeightKg, petSpec
                 </button>
             </div>
 
-            {/* Plan usage (only shown when capped, i.e. standard) */}
+            {/* Plan usage (only shown when capped). The numbers come from the
+                timeline response, so every role sees them. "Buy more" comes
+                from UsageAddon and only renders for the clinic owner. */}
             {planUsage && !planUsage.unlimited && (
-                <div className="flex items-center justify-between text-xs bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
                     <span className="text-gray-500">
                         Treatments this month:{" "}
                         <span className="font-semibold text-gray-700">
                             {planUsage.used}/{planUsage.limit}
                         </span>
                     </span>
-                    {planUsage.remaining === 0 && (
-                        <span className="text-amber-600 font-medium">Limit reached — upgrade to Pro for unlimited</span>
-                    )}
+
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        {planUsage.remaining === 0 && (
+                            <span className="text-amber-600 font-medium">
+                                Limit reached — upgrade to Pro for unlimited
+                            </span>
+                        )}
+                        <UsageAddon
+                            resource="treatments"
+                            label="Treatments this month"
+                            showPill={false}
+                            refreshKey={planUsage.used}
+                        />
+                    </div>
                 </div>
             )}
 

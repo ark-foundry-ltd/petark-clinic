@@ -18,6 +18,7 @@ import InventoryTable from "@/components/inventory/inventory-table";
 import AddItemModal from "@/components/inventory/add-item-modal";
 import UpdateItemModal from "@/components/inventory/update-item-modal";
 import InventoryAnalyticsWidget from "@/components/inventory/inventory-analytics-widget";
+import UsageAddon from "@/components/clinic/usage-addon";
 
 const PAGE_SIZE = 8;
 
@@ -74,6 +75,9 @@ export default function InventoryDashboard({
         monthlyGrowthPercent: 0 as number | null,
     });
     const [statsToken, setStatsToken] = useState(0);
+
+    // Bumped when an item is created so the usage pill refetches
+    const [usageToken, setUsageToken] = useState(0);
 
     // Debounce search so we're not firing a request on every keystroke
     const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -200,6 +204,7 @@ export default function InventoryDashboard({
                     onCreated={() => {
                         setReloadToken((t) => t + 1);
                         setStatsToken((t) => t + 1);
+                        setUsageToken((t) => t + 1);
                     }}
                 />
             )}
@@ -262,6 +267,14 @@ export default function InventoryDashboard({
                     }
                 />
             </div>
+
+            {/* Plan usage for inventory items (clinic-wide, across all locations).
+                "Buy more" appears here once 75% is used. */}
+            <UsageAddon
+                resource="inventorySkus"
+                label="Inventory items (all locations)"
+                refreshKey={usageToken}
+            />
 
             <InventoryTable
                 items={items}

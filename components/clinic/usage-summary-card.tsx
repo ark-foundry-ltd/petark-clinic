@@ -66,6 +66,7 @@ export default function UsageSummaryCard() {
             <UsageBar label="Locations" count={usage.locations.count} limit={usage.locations.limit} unlimited={usage.locations.unlimited} />
             <UsageBar label="Treatments (Month)" count={usage.treatments.count} limit={usage.treatments.limit} unlimited={usage.treatments.unlimited} />
             <UsageBar label="Reminders (Month)" count={usage.remindersPerMonth.count} limit={usage.remindersPerMonth.limit} unlimited={usage.remindersPerMonth.unlimited} />
+            <UsageBar label="Inventory SKUs" count={usage.inventorySkus.count} limit={usage.inventorySkus.limit} unlimited={usage.inventorySkus.unlimited} />
         </div>
     );
 }
