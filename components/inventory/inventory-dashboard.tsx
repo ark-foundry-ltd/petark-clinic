@@ -171,7 +171,19 @@ export default function InventoryDashboard({
 
     return (
         <div className="min-h-screen p-6 pry-ff space-y-4">
-            {!scoped && <h1 className="mb-4 text-2xl font-semibold text-slate-800">Inventory</h1>}
+            <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                {!scoped && <h1 className="text-2xl font-semibold text-slate-800">Inventory</h1>}
+
+                {/* Clinic-wide plan usage. "Buy more" appears here once 75% is used.
+                    Renders nothing until usage loads, and nothing for staff accounts,
+                    so no empty badge box is ever shown. */}
+                <UsageAddon
+                    resource="inventorySkus"
+                    label="Inventory items (all locations)"
+                    refreshKey={usageToken}
+                    className="ml-auto rounded-full border border-gray-200 bg-pry-clr px-3.5 py-1.5"
+                />
+            </div>
 
             {!scoped && (
                 <LocationBar
@@ -267,14 +279,6 @@ export default function InventoryDashboard({
                     }
                 />
             </div>
-
-            {/* Plan usage for inventory items (clinic-wide, across all locations).
-                "Buy more" appears here once 75% is used. */}
-            <UsageAddon
-                resource="inventorySkus"
-                label="Inventory items (all locations)"
-                refreshKey={usageToken}
-            />
 
             <InventoryTable
                 items={items}
