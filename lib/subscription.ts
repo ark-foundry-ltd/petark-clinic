@@ -27,6 +27,8 @@ export interface SubscriptionRecord {
     paystackSubscriptionCode: string | null;
     paystackNextPaymentDate: string | null;
     pendingReference?: string | null;
+    // true while the clinic is on the free 30-day Pro trial (not a purchase)
+    isTrial?: boolean;
     trial: TrialInfo | null;
     // Referral credit (₦) available to spend on subscription payments
     creditBalance: number;
@@ -75,8 +77,8 @@ export function previewCredit(
     return { credit, youPay: listPrice - credit };
 }
 
-// ─── Usage add-ons (treatments/reminders only — see planLimitMiddleware.js
-// on the backend for the actual enforcement) ───────────────────────────────
+// ─── Usage add-ons (treatments, reminders and inventory SKUs — see
+// planLimitMiddleware.js on the backend for the actual enforcement) ─────────
 
 export type AddonResource = "treatments" | "remindersPerMonth" | "inventorySkus";
 

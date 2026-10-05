@@ -151,6 +151,17 @@ export default function SubscriptionPlans() {
     const creditBalance = subscription?.creditBalance ?? 0;
     const applyingCredit = useCredit && creditBalance > 0;
 
+    // A trial gives Pro features but is not a purchase, so Pro must stay buyable
+    const onTrial = subscription?.isTrial === true;
+    const trialEndsLabel =
+        onTrial && subscription?.expiresAt
+            ? new Date(subscription.expiresAt).toLocaleDateString("en-NG", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+              })
+            : null;
+
     useEffect(() => {
         let cancelled = false;
 
@@ -216,6 +227,21 @@ export default function SubscriptionPlans() {
                     needs more.
                 </p>
             </div>
+
+            {/* Trial banner */}
+            {onTrial && (
+                <div className="mx-auto mb-6 max-w-md rounded-xl border border-violet-100 bg-violet-50 px-4 py-3 text-center">
+                    <p className="text-sm font-semibold text-violet-800">
+                        You&apos;re on a free Pro trial
+                    </p>
+                    <p className="sec-ff mt-0.5 text-xs text-violet-700">
+                        {trialEndsLabel
+                            ? `It ends on ${trialEndsLabel}, then your clinic moves to Free.`
+                            : "When it ends, your clinic moves to Free."}{" "}
+                        Subscribe to any plan to keep your features.
+                    </p>
+                </div>
+            )}
 
             {/* Billing cycle toggle */}
             <div className="mb-6 flex flex-col items-center gap-2">
@@ -292,7 +318,9 @@ export default function SubscriptionPlans() {
 
             <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
                 {PLANS.map((plan) => {
-                    const isCurrent = subscription?.plan === plan.id;
+                    // During a trial the clinic has Pro features but hasn't bought anything,
+                    // so no card is "current" and Pro stays purchasable.
+                    const isCurrent = subscription?.plan === plan.id && !onTrial;
                     const isUpgrading = upgradingPlan === plan.id;
                     const Icon = plan.icon;
                     const { price, period } = priceFor(plan.id);
@@ -411,8 +439,8 @@ export default function SubscriptionPlans() {
                                         )}
                                         {isUpgrading
                                             ? "Redirecting to checkout..."
-                                            : plan.id === "free"
-                                              ? "Get started"
+                                            : plan.id === "pro" && onTrial
+                                              ? "Subscribe to Pro"
                                               : `Choose ${plan.name}`}
                                     </button>
                                 ) : (
