@@ -165,7 +165,7 @@ export default function PatientRegistrationFlow({
             <div className="space-y-3">
                 <button
                     onClick={resetToSearch}
-                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-sec-clr transition-colors"
+                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-sec-clr transition-colors sec-ff"
                 >
                     <ArrowLeft size={15} /> Back to search
                 </button>
@@ -187,7 +187,7 @@ export default function PatientRegistrationFlow({
             <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 pry-ff space-y-5">
                 <button
                     onClick={resetToSearch}
-                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-sec-clr transition-colors"
+                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-sec-clr transition-colors sec-ff"
                 >
                     <ArrowLeft size={15} /> Back to search
                 </button>

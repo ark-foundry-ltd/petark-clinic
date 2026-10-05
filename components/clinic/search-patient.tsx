@@ -13,7 +13,8 @@ import PatientDetailsModal from "@/components/clinic/patient-details-modal";
 
 interface SearchPatientProps {
     onProceedToVisit: (patient: ClinicPatientRecord) => void;
-    onRegisterAsNew: (prefill: { name?: string; phone?: string }) => void;
+    // Optional: omit for roles without REGISTER_PATIENT (hides all register buttons)
+    onRegisterAsNew?: (prefill: { name?: string; phone?: string }) => void;
 }
 
 export default function SearchPatient({
@@ -76,6 +77,7 @@ export default function SearchPatient({
     };
 
     const handleRegisterAsNewClick = () => {
+        if (!onRegisterAsNew) return;
         const isPhoneLike = /^\+?\d[\d\s-]{5,}$/.test(query.trim());
         onRegisterAsNew(
             isPhoneLike ? { phone: query.trim() } : { name: query.trim() }
@@ -85,6 +87,8 @@ export default function SearchPatient({
     const handleProceedToVisit = (row: ClinicPatientRecord) => {
         onProceedToVisit(row);
     };
+
+    const canRegister = Boolean(onRegisterAsNew);
 
     return (
         <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 pry-ff">
@@ -142,17 +146,23 @@ export default function SearchPatient({
                     </h3>
                     <p className="text-sm text-gray-500 max-w-sm mb-4">
                         {isSearchMode
-                            ? "We couldn't find a match for that registration number, name, or phone. Try a different search, or register them as a new patient."
-                            : "Once you register a patient, they'll show up here."}
+                            ? canRegister
+                                ? "We couldn't find a match for that registration number, name, or phone. Try a different search, or register them as a new patient."
+                                : "We couldn't find a match for that registration number, name, or phone. Try a different search."
+                            : canRegister
+                                ? "Once you register a patient, they'll show up here."
+                                : "Registered patients will show up here."}
                     </p>
-                    <button
-                        type="button"
-                        onClick={handleRegisterAsNewClick}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-sec-clr text-sm font-medium hover:bg-gray-200 transition"
-                    >
-                        <UserPlus className="w-4 h-4" />
-                        Register as New Patient
-                    </button>
+                    {canRegister && (
+                        <button
+                            type="button"
+                            onClick={handleRegisterAsNewClick}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 text-sec-clr text-sm font-medium hover:bg-gray-200 transition"
+                        >
+                            <UserPlus className="w-4 h-4" />
+                            Register as New Patient
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -227,15 +237,15 @@ export default function SearchPatient({
                 </>
             )}
             {detailsId && (
-    <PatientDetailsModal
-        clinicPatientId={detailsId}
-        onClose={() => setDetailsId(null)}
-        onStartVisit={(patient) => {
-            setDetailsId(null);
-            handleProceedToVisit(patient);
-        }}
-    />
-)}
+                <PatientDetailsModal
+                    clinicPatientId={detailsId}
+                    onClose={() => setDetailsId(null)}
+                    onStartVisit={(patient) => {
+                        setDetailsId(null);
+                        handleProceedToVisit(patient);
+                    }}
+                />
+            )}
         </div>
     );
 }

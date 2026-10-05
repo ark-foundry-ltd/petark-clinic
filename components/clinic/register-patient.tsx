@@ -17,7 +17,7 @@ import HealthProfileFields from "./health-profile-fields";
 const SPECIES_OPTIONS = [
     "Dog", "Cat", "Rabbit", "Bird", "Hamster", "Horse",
     "Snake", "Sheep", "Goat", "Cow", "Chicken", "Ferret",
-    "Pig", "Turtle", "Lizard", "Fish", "Monkey", "Guinea Pig", "Hamster", "Chipmunk", "Other"
+    "Pig", "Turtle", "Lizard", "Fish", "Monkey", "Guinea Pig", "Chipmunk", "Other"
 ];
 
 interface RegisterPatientProps {
