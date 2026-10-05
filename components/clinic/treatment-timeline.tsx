@@ -17,6 +17,11 @@ import {
     Syringe, Plus, Lock, Sparkles,
     Loader2, AlertTriangle, Clock,
     ChevronLeft, ChevronRight,
+    Zap,
+    Layers,
+    Rocket,
+    Crown,
+    LucideIcon,
 } from "lucide-react";
 import { getPlanInfo } from "@/lib/plan";
 import UsageAddon from "./usage-addon";
@@ -26,6 +31,50 @@ interface TreatmentTimelineProps {
     visitId?: string;
     petWeightKg?: number;
     petSpecies?: string;
+}
+
+type PlanKey = "free" | "starter" | "standard" | "pro" | "enterprise";
+
+const PLAN_STYLES: Record<PlanKey, { label: string; icon: LucideIcon; className: string }> = {
+    free: {
+        label: "Free",
+        icon: Zap,
+        className: "bg-gray-100 text-gray-600 ring-1 ring-inset ring-gray-200",
+    },
+    starter: {
+        label: "Starter",
+        icon: Layers,
+        className: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
+    },
+    standard: {
+        label: "Standard",
+        icon: Rocket,
+        className: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
+    },
+    pro: {
+        label: "Pro",
+        icon: Sparkles,
+        className: "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white shadow-sm shadow-violet-200",
+    },
+    enterprise: {
+        label: "Enterprise",
+        icon: Crown,
+        className: "bg-gradient-to-r from-slate-900 to-slate-700 text-amber-300 shadow-sm ring-1 ring-amber-400/40",
+    },
+};
+
+function SubscriptionBadge({ plan }: Readonly<{ plan?: string }>) {
+    const key = (plan && plan in PLAN_STYLES ? plan : "free") as PlanKey;
+    const { label, icon: Icon, className } = PLAN_STYLES[key];
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1 shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide ${className}`}
+        >
+            <Icon className="h-3 w-3" />
+            {label}
+        </span>
+    );
 }
 
 export default function TreatmentTimeline({ petId, visitId, petWeightKg, petSpecies }: Readonly<TreatmentTimelineProps>) {
@@ -140,9 +189,7 @@ export default function TreatmentTimeline({ petId, visitId, petWeightKg, petSpec
             <div className="flex items-center gap-2">
                 <Syringe className="w-5 h-5 text-violet-500" />
                 <h3 className="font-semibold text-sec-clr">Vaccination & Medication Timeline</h3>
-                <span className="text-[10px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full ml-auto capitalize">
-                    {plan} ✦
-                </span>
+                <SubscriptionBadge plan={plan} />
                 <button
                     onClick={() => setShowAdd(true)}
                     disabled={planUsage ? !planUsage.unlimited && planUsage.remaining === 0 : false}

@@ -10,12 +10,12 @@ export default function ProfilePreferences() {
             description: "Manage your personal information",
             href: "/dashboard/profile/settings"
         },
-        {
-            label: "Account Settings",
-            icon: <CreditCard className="w-6 h-6" />,
-            description: "Payment methods and billing",
-            href: "/dashboard/profile/account"
-        },
+        // {
+        //     label: "Account Settings",
+        //     icon: <CreditCard className="w-6 h-6" />,
+        //     description: "Payment methods and billing",
+        //     href: "/dashboard/profile/account"
+        // },
         {
             label: "Staffs",
             icon: <Users className="w-6 h-6" />,
