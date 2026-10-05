@@ -54,11 +54,19 @@ interface LabResultResponse {
     data: LabResult;
 }
 
+// Below the required plan the server answers 200 { locked: true, data: null }
+// (see softPlanGate on the backend). That's a normal outcome, not an error.
 interface LabResultsListResponse {
     status: string;
-    results: number;
-    data: LabResult[];
+    locked?: boolean;
+    requiredPlan?: string;
+    results?: number;
+    data: LabResult[] | null;
 }
+
+export type LabResultsOutcome =
+    | { locked: true; requiredPlan: string }
+    | { locked: false; data: LabResult[] };
 
 export interface AddLabResultPayload {
     visitId: string;
@@ -102,14 +110,26 @@ export async function addLabResult(payload: AddLabResultPayload): Promise<LabRes
     }
 }
 
-export async function getVisitLabResults(visitId: string): Promise<LabResult[]> {
+export async function getVisitLabResults(visitId: string): Promise<LabResultsOutcome> {
     try {
         const response = await api.get<LabResultsListResponse>(`/lab-results/visit/${visitId}`);
-        return response.data.data;
+        const body = response.data;
+
+        // Plan doesn't include lab results: a locked state, not an error
+        if (body.locked) {
+            return { locked: true, requiredPlan: body.requiredPlan ?? "standard" };
+        }
+
+        if (!body.data) {
+            throw new Error("Lab results are unavailable right now");
+        }
+
+        return { locked: false, data: body.data };
     } catch (error) {
         if (axiosError.isAxiosError(error)) {
             throw new Error(error.response?.data?.message || "Failed to fetch lab results");
         }
+        if (error instanceof Error) throw error;
         throw new Error("An unexpected error occurred while fetching lab results");
     }
 }

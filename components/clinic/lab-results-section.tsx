@@ -11,6 +11,9 @@ import {
     type LabResult, type LabTestType, type LabFinding,
 } from "@/lib/lab-results";
 import DeleteLabResultBtn from "@/components/clinic/delete-lab-result-btn";
+import LockedFeature from "@/components/clinic/locked-feature";
+import { useAuthStore } from "@/store/useStore";
+import { getPlanInfo } from "@/lib/plan";
 
 interface LabResultsSectionProps {
     visitId: string;
@@ -33,6 +36,18 @@ const STATUS_STYLES: Record<LabResult["status"], string> = {
 };
 
 export default function LabResultsSection({ visitId, petId }: Readonly<LabResultsSectionProps>) {
+    const { profile } = useAuthStore();
+    const { plan, status } = getPlanInfo(profile);
+
+    // Matches the backend gate: Standard or above, and the subscription is active
+    const hasStandard =
+        ["standard", "pro", "enterprise"].includes(plan ?? "") && status === "active";
+
+    // Set when the server says "locked" even though the profile said Standard+
+    // (e.g. the plan expired since the profile was loaded)
+    const [serverLocked, setServerLocked] = useState(false);
+    const locked = !hasStandard || serverLocked;
+
     const [labs, setLabs] = useState<LabResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [showOrderForm, setShowOrderForm] = useState(false);
@@ -40,8 +55,14 @@ export default function LabResultsSection({ visitId, petId }: Readonly<LabResult
 
     async function refresh() {
         try {
-            const data = await getVisitLabResults(visitId);
-            setLabs(data);
+            const res = await getVisitLabResults(visitId);
+
+            if (res.locked) {
+                setServerLocked(true);
+                return;
+            }
+
+            setLabs(res.data);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to load lab results");
         } finally {
@@ -50,9 +71,22 @@ export default function LabResultsSection({ visitId, petId }: Readonly<LabResult
     }
 
     useEffect(() => {
+        if (!hasStandard) return; // Free/Starter never call the endpoint
         refresh();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [visitId]);
+    }, [visitId, hasStandard]);
+
+    // ── Locked: faded list behind a lock, no error, no "Order test" button ──
+    if (locked) {
+        return (
+            <LockedFeature
+                title="Lab Results"
+                description="Order tests and record results alongside each visit."
+                requiredPlan="Standard"
+                preview="list"
+            />
+        );
+    }
 
     return (
         <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 shadow-sm space-y-4">
