@@ -26,6 +26,18 @@ export interface StockByLocation {
     isLow: boolean;
 }
 
+// One delivery/lot of a batch-tracked item at one location.
+// Identity = item + location + expiry date; the lot number is for reference only.
+export interface InventoryBatch {
+    _id: string;
+    locationId: string;
+    batchNumber: string | null;
+    expiryDate: string | null; // null = no expiry recorded
+    quantityRemaining: number;
+    costPrice?: number | null; // absent for roles without cost access
+    receivedDate?: string | null;
+}
+
 export interface InventoryItemRecord {
     _id: string;
     clinicId: string;
@@ -39,7 +51,12 @@ export interface InventoryItemRecord {
     isLowStock: boolean;
     reorderThreshold: number | null;
     requiresBatchTracking: boolean;
+    // Item-level expiry — only used by items that do NOT track batches
     expiryDate: string | null;
+    // List endpoint: closest batch expiry for batch-tracked items, the item's own expiry otherwise
+    nearestExpiry?: string | null;
+    // Detail endpoint: batches with stock left (batch-tracked items only)
+    batches?: InventoryBatch[];
     expiryReminderSent?: boolean;
     isActive: boolean;
     images: InventoryImage[];
@@ -62,7 +79,11 @@ export interface CreateInventoryItemPayload {
     sellingPrice: number;
     reorderThreshold?: number;
     requiresBatchTracking?: boolean;
+    // Non-batch items: the item's own expiry.
+    // Batch-tracked items: the expiry of the opening batch (optional, YYYY-MM-DD).
     expiryDate?: string;
+    // Batch-tracked items only: optional lot number for the opening batch
+    batchNumber?: string;
 }
 
 export async function createInventoryItem(
@@ -89,6 +110,9 @@ export async function createInventoryItem(
 export interface AddItemToLocationPayload {
     locationId: string;
     initialStock: number;
+    // Batch-tracked items only (optional): expiry + lot number of the opening batch
+    expiryDate?: string; // YYYY-MM-DD
+    batchNumber?: string;
 }
 
 export async function addItemToLocation(
@@ -295,6 +319,12 @@ export interface AdjustStockPayload {
     type: StockAdjustmentType;
     note?: string;
     unitCost?: number;
+    // Batch-tracked items, stock coming in (optional): goes into the batch with this expiry
+    expiryDate?: string; // YYYY-MM-DD
+    batchNumber?: string;
+    // Batch-tracked items: add to / deduct from one specific batch.
+    // Omit on decreases to deduct earliest-expiry-first automatically.
+    batchId?: string;
 }
 
 export async function adjustStock(

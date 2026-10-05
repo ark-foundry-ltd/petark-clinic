@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, Pencil, Loader2 } from "lucide-react";
 import type { InventoryItemRecord } from "@/lib/inventory";
 import { CATEGORY_LABELS } from "@/components/inventory/filter-bar";
+import ExpiryBadge from "@/components/inventory/expiry-badge";
 
 interface InventoryTableProps {
     items: InventoryItemRecord[];
@@ -26,12 +27,12 @@ export default function InventoryTable({
     canManage = true,
 }: Readonly<InventoryTableProps>) {
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-    const colCount = canManage ? 7 : 6;
+    const colCount = canManage ? 8 : 7;
 
     return (
         <div className="overflow-hidden rounded-xl border border-slate-100 bg-pry-clr shadow-sm">
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
+                <table className="w-full min-w-[820px] text-left text-sm">
                     <thead>
                         <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
                             <th className="px-4 py-3 font-medium whitespace-nowrap">Thumbnail</th>
@@ -39,6 +40,7 @@ export default function InventoryTable({
                             <th className="px-4 py-3 font-medium whitespace-nowrap">Category</th>
                             <th className="px-4 py-3 font-medium whitespace-nowrap">Unit</th>
                             <th className="px-4 py-3 font-medium whitespace-nowrap">Current Stock</th>
+                            <th className="px-4 py-3 font-medium whitespace-nowrap">Expiry</th>
                             <th className="px-4 py-3 font-medium whitespace-nowrap">Selling Price</th>
                             {canManage && <th className="px-4 py-3 font-medium whitespace-nowrap">Actions</th>}
                         </tr>
@@ -119,6 +121,15 @@ export default function InventoryTable({
                                                     style={{ width: `${stockPct}%` }}
                                                 />
                                             </div>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            {/* Batch-tracked items always show a badge (even "No expiry set");
+                                                plain items only show one if they have a date */}
+                                            {item.requiresBatchTracking || item.nearestExpiry ? (
+                                                <ExpiryBadge expiry={item.nearestExpiry} />
+                                            ) : (
+                                                <span className="text-slate-300">—</span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 font-medium text-slate-700 whitespace-nowrap">
                                             ₦{item.sellingPrice.toFixed(2)}
