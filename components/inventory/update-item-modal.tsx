@@ -29,6 +29,7 @@ interface FormState {
     sellingPrice: string;
     reorderThreshold: string;
     requiresBatchTracking: boolean;
+    expiryDate: string; // item-level expiry (YYYY-MM-DD) — only for items that don't track batches
     isActive: boolean;
     newImages: File[];
     removeImagePublicIds: string[];
@@ -37,6 +38,9 @@ interface FormState {
 const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).filter(
     ([value]) => value !== "all"
 ) as [InventoryItemRecord["category"], string][];
+
+// Item expiry dates are stored at UTC midnight, so the first 10 chars are the date
+const toDateInput = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "");
 
 function toFormState(item: InventoryItemRecord): FormState {
     return {
@@ -50,6 +54,7 @@ function toFormState(item: InventoryItemRecord): FormState {
                 ? ""
                 : String(item.reorderThreshold),
         requiresBatchTracking: item.requiresBatchTracking,
+        expiryDate: toDateInput(item.expiryDate),
         isActive: item.isActive,
         newImages: [],
         removeImagePublicIds: [],
@@ -69,10 +74,12 @@ export default function UpdateItemModal({
         item ? toFormState(item) : {
             name: "", category: "", unit: "", costPrice: "",
             sellingPrice: "", reorderThreshold: "", requiresBatchTracking: false,
-            isActive: true, newImages: [], removeImagePublicIds: [],
+            expiryDate: "", isActive: true, newImages: [], removeImagePublicIds: [],
         }
     );
     const [stockDisplay, setStockDisplay] = useState(item?.currentStock ?? 0);
+    // Flips to true once "Start Stocking Here" succeeds, so the panel switches to normal adjustments
+    const [hasStock, setHasStock] = useState(item?.hasStockAtLocation ?? true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -117,9 +124,17 @@ export default function UpdateItemModal({
         update("newImages", files);
     }
 
-    function handleStockAdjusted(newCurrentStock: number) {
+    function handleStockAdjusted(newCurrentStock: number, nearestExpiry?: string | null) {
         setStockDisplay(newCurrentStock);
-        onStockAdjusted({ ...selectedItem, currentStock: newCurrentStock, updatedAt: new Date().toISOString() });
+        setHasStock(true);
+        onStockAdjusted({
+            ...selectedItem,
+            currentStock: newCurrentStock,
+            hasStockAtLocation: true,
+            // only batch-tracked items report this; leave plain items' value alone
+            ...(nearestExpiry !== undefined ? { nearestExpiry } : {}),
+            updatedAt: new Date().toISOString(),
+        });
     }
 
     async function handleSubmit(e: { preventDefault: () => void }) {
@@ -175,6 +190,16 @@ export default function UpdateItemModal({
             payload.requiresBatchTracking = form.requiresBatchTracking;
         }
         if (form.isActive !== selectedItem.isActive) payload.isActive = form.isActive;
+
+        // Item-level expiry only applies to items that don't track batches.
+        // Switching an item to batch tracking clears any leftover item-level date.
+        const currentExpiry = toDateInput(selectedItem.expiryDate);
+        if (form.requiresBatchTracking) {
+            if (currentExpiry) payload.expiryDate = null;
+        } else if (form.expiryDate !== currentExpiry) {
+            payload.expiryDate = form.expiryDate || null; // blank = clear it
+        }
+
         if (form.newImages.length) payload.newImages = form.newImages;
         if (form.removeImagePublicIds.length) payload.removeImagePublicIds = form.removeImagePublicIds;
 
@@ -292,7 +317,8 @@ export default function UpdateItemModal({
                                     locationId={locationId}
                                     currentStock={stockDisplay}
                                     unit={form.unit || selectedItem.unit}
-                                    hasStockAtLocation={selectedItem.hasStockAtLocation}
+                                    hasStockAtLocation={hasStock}
+                                    requiresBatchTracking={selectedItem.requiresBatchTracking}
                                     disabled={submitting}
                                     onAdjusted={handleStockAdjusted}
                                 />
@@ -365,7 +391,33 @@ export default function UpdateItemModal({
                                     />
                                     <span>Track by batch / expiry</span>
                                 </label>
-                                <HelpTooltip label="What is track by batch / expiry?" text="Turn this on for items with expiry dates, like meds and vaccines." />
+                                <HelpTooltip label="What is track by batch / expiry?" text="Turn this on for items with expiry dates, like meds and vaccines. This can only be changed while the item has no stock." />
+                            </div>
+
+                            {/* Expiry: one date for plain items; per-batch (see Adjust stock above) for batch-tracked ones */}
+                            <div className="sm:col-span-2">
+                                {form.requiresBatchTracking ? (
+                                    <p className="text-xs text-slate-400">
+                                        Expiry is tracked per batch. Enter it when you restock, and each batch&apos;s expiry shows under &quot;Adjust stock&quot; above.
+                                    </p>
+                                ) : (
+                                    <>
+                                        <label htmlFor="item-expiry" className="mb-1 block text-xs font-medium text-slate-500">
+                                            Expiry date <span className="text-slate-300">(optional)</span>
+                                        </label>
+                                        <input
+                                            id="item-expiry"
+                                            type="date"
+                                            value={form.expiryDate}
+                                            onChange={(e) => update("expiryDate", e.target.value)}
+                                            disabled={submitting}
+                                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60 sm:w-1/2"
+                                        />
+                                        <p className="mt-1 text-[11px] text-slate-400">
+                                            We&apos;ll alert you before it expires. Clear the date if it doesn&apos;t expire.
+                                        </p>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-1.5 sm:col-span-2">

@@ -11,6 +11,7 @@ import {
 } from "@/lib/inventory";
 import { CATEGORY_LABELS } from "@/components/inventory/filter-bar";
 import HelpTooltip from "@/components/inventory/help-tooltip";
+import BatchFields from "@/components/inventory/batch-fields";
 
 interface AddItemModalProps {
     open: boolean;
@@ -33,6 +34,8 @@ interface FormState {
     sellingPrice: string;
     reorderThreshold: string;
     requiresBatchTracking: boolean;
+    expiryDate: string;   // YYYY-MM-DD — the item's expiry, or the opening batch's expiry
+    batchNumber: string;  // batch-tracked items only
 }
 
 const EMPTY_FORM: FormState = {
@@ -45,6 +48,8 @@ const EMPTY_FORM: FormState = {
     sellingPrice: "",
     reorderThreshold: "",
     requiresBatchTracking: false,
+    expiryDate: "",
+    batchNumber: "",
 };
 
 export default function AddItemModal({
@@ -58,6 +63,9 @@ export default function AddItemModal({
     const [error, setError] = useState<string | null>(null);
 
     if (!open) return null;
+
+    // Local date as YYYY-MM-DD, used as the earliest selectable expiry
+    const today = new Date().toLocaleDateString("en-CA");
 
     function update<K extends keyof FormState>(key: K, value: FormState[K]) {
         setForm((f) => ({ ...f, [key]: value }));
@@ -96,6 +104,11 @@ export default function AddItemModal({
             return;
         }
 
+        if (form.expiryDate && form.expiryDate < today) {
+            setError("Expiry date can't be in the past.");
+            return;
+        }
+
         const payload: CreateInventoryItemPayload = {
             name: form.name.trim(),
             category: form.category,
@@ -109,6 +122,11 @@ export default function AddItemModal({
         if (form.costPrice !== "") payload.costPrice = Number(form.costPrice);
         if (form.reorderThreshold !== "") {
             payload.reorderThreshold = Number(form.reorderThreshold);
+        }
+        // Blank expiry is fine — it's optional. Only send it when entered.
+        if (form.expiryDate) payload.expiryDate = form.expiryDate;
+        if (form.requiresBatchTracking && form.batchNumber.trim()) {
+            payload.batchNumber = form.batchNumber.trim();
         }
 
         setSubmitting(true);
@@ -334,6 +352,38 @@ export default function AddItemModal({
                                     text="Turn this on for items with expiry dates, like meds and vaccines. Stock is tracked in separate batches, and the earliest-expiring batch is used first. Leave it off for a simple running count (bandages, gloves, etc.)."
                                 />
                             </div>
+
+                            {/* Expiry — one date for the whole item, or the opening batch's date + lot number */}
+                            {form.requiresBatchTracking ? (
+                                <div className="sm:col-span-2">
+                                    <BatchFields
+                                        expiryDate={form.expiryDate}
+                                        batchNumber={form.batchNumber}
+                                        onExpiryDateChange={(v) => update("expiryDate", v)}
+                                        onBatchNumberChange={(v) => update("batchNumber", v)}
+                                        disabled={submitting}
+                                        hint="Applies to the stock you're adding now. Add other batches later by restocking."
+                                    />
+                                </div>
+                            ) : (
+                                <div className="sm:col-span-2">
+                                    <label htmlFor="item-expiry" className="mb-1 block text-xs font-medium text-slate-500">
+                                        Expiry date <span className="text-slate-300">(optional)</span>
+                                    </label>
+                                    <input
+                                        id="item-expiry"
+                                        type="date"
+                                        min={today}
+                                        value={form.expiryDate}
+                                        onChange={(e) => update("expiryDate", e.target.value)}
+                                        disabled={submitting}
+                                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-acc-clr disabled:opacity-60 sm:w-1/2"
+                                    />
+                                    <p className="mt-1 text-[11px] text-slate-400">
+                                        We&apos;ll alert you before it expires. Leave blank if it doesn&apos;t expire.
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 

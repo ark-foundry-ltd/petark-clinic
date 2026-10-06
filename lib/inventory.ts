@@ -244,7 +244,13 @@ export async function updateInventoryItem(
             const formData = new FormData();
 
             for (const [key, value] of Object.entries(fields)) {
-                if (value === undefined || value === null) continue;
+                if (value === undefined) continue;
+                if (value === null) {
+                    // null means "clear this field" — only meaningful for expiryDate;
+                    // an empty string tells the server to store null
+                    if (key === 'expiryDate') formData.append(key, '');
+                    continue;
+                }
 
                 if ((NUMERIC_FIELDS as readonly string[]).includes(key)) {
                     const numValue = Number(value);
@@ -375,6 +381,34 @@ export async function getInventoryStats(locationId?: string): Promise<InventoryS
         } else {
             console.error("Error fetching inventory stats:", error);
         }
+        throw error;
+    }
+}
+
+// ─── Edit a batch's expiry date / lot number ────────────────────────────
+
+export interface UpdateBatchPayload {
+    expiryDate?: string | null; // YYYY-MM-DD; null clears it
+    batchNumber?: string | null;
+}
+
+// If another batch at the same location already has the new expiry date,
+// this batch's stock is merged into it (merged: true).
+export async function updateBatch(
+    itemId: string,
+    batchId: string,
+    payload: UpdateBatchPayload
+): Promise<{ batch: InventoryBatch; merged: boolean }> {
+    try {
+        const response = await api.patch(`/inventory/${itemId}/batches/${batchId}`, payload);
+        return { batch: response.data.data, merged: !!response.data.merged };
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            const message = error.response?.data?.message || error.message;
+            console.error("Error updating batch:", error.response?.data || error.message);
+            throw new Error(message);
+        }
+        console.error("Error updating batch:", error);
         throw error;
     }
 }
