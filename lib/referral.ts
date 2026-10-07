@@ -95,14 +95,21 @@ export interface SharedRecordVisit {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-// serviceProvided / animalsHandled are stored as free-text strings on the
-// clinic doc. Split on commas, semicolons and newlines so they can be shown
-// as chips and used as dropdown options.
-export function parseList(value?: string | null): string[] {
-    return (value ?? "")
-        .split(/[,;\n]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
+// serviceProvided / animalsHandled can be a string ("a, b") or an array
+// (["a", "b"]) depending on how the clinic profile saved them. Handle both.
+export function parseList(value?: string | string[] | null): string[] {
+    if (Array.isArray(value)) {
+        return value
+            .map((s) => (typeof s === "string" ? s.trim() : ""))
+            .filter(Boolean);
+    }
+    if (typeof value === "string") {
+        return value
+            .split(/[,;\n]/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+    }
+    return [];
 }
 
 // True when the API rejected the request because the clinic's plan doesn't
@@ -285,8 +292,8 @@ export interface ClinicSearchResult {
     startingTime?: string;
     closingTime?: string;
     daysOpen?: string[];
-    serviceProvided?: string;
-    animalsHandled?: string;
+    services?: string[];
+    animalsHandled?: string | string[];
 }
 
 export interface SearchClinicsResult {
