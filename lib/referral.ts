@@ -25,6 +25,9 @@ export interface ReferralRecord {
     toClinicId: string;
     referredBy: string;
     reason: string;
+    // The service the referring clinic picked from the receiving clinic's list.
+    // null for referrals created before this field existed.
+    serviceRequested?: string | null;
     clinicalSummary: string;
     sharedRecords: string[];
     status: ReferralStatus;
@@ -90,12 +93,31 @@ export interface SharedRecordVisit {
     completedAt: string | null;
 }
 
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+// serviceProvided / animalsHandled are stored as free-text strings on the
+// clinic doc. Split on commas, semicolons and newlines so they can be shown
+// as chips and used as dropdown options.
+export function parseList(value?: string | null): string[] {
+    return (value ?? "")
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+}
+
+// True when the API rejected the request because the clinic's plan doesn't
+// include this feature (403 from requireReferralInboxPlan).
+export function isPlanLockedError(error: unknown): boolean {
+    return error instanceof AxiosError && error.response?.status === 403;
+}
+
 // ─── Create: referring clinic sends a pet to another clinic ───────────────
 
 export interface CreateReferralPayload {
     petId: string;
     toClinicId: string;
     reason: string;
+    serviceRequested?: string;
     clinicalSummary?: string;
     sharedRecords?: string[];
 }
@@ -139,7 +161,6 @@ export interface AcceptReferralResult {
     // clinic — acceptReferral skips creating a duplicate registration and
     // reuses the existing clinicPatients record in that case.
     alreadyPatient: boolean;
-
 }
 
 export async function acceptReferral(
@@ -200,13 +221,17 @@ export async function listReferrals(
         const response = await api.get("/referrals", { params });
         return response.data;
     } catch (error) {
-        if (error instanceof AxiosError) {
-            console.error(
-                "Error fetching referrals:",
-                error.response?.data || error.message
-            );
-        } else {
-            console.error("Error fetching referrals:", error);
+        // 403 on inbound = plan doesn't include receiving referrals. That's an
+        // expected state the UI handles, so don't log it as an error.
+        if (!isPlanLockedError(error)) {
+            if (error instanceof AxiosError) {
+                console.error(
+                    "Error fetching referrals:",
+                    error.response?.data || error.message
+                );
+            } else {
+                console.error("Error fetching referrals:", error);
+            }
         }
         throw error;
     }
@@ -238,7 +263,8 @@ export async function getSharedRecords(
 
 // ─── Clinics: search other clinics on the platform (referral target picker) ─
 // Backed by searchClinics in referralController.js — kept in this file since
-// its only consumer is the referral flow.
+// its only consumer is the referral flow. The backend only returns clinics
+// on a plan that can receive referrals.
 
 // Matches CLINIC_PUBLIC_PROJECTION in referralController.js exactly —
 // no password, tokens, or pushSubscription ever come back here.

@@ -19,7 +19,7 @@ export default function ClinicalOverview() {
     const plan = clinicProfile?.subscription?.plan;
     const status = clinicProfile?.subscription?.status;
     const isActive = status === "active";
-    const isProOrAbove = (plan === "pro" || plan === "enterprise") && isActive;
+    const isStandardAbove = (plan === "standard" || plan === "pro" || plan === "enterprise") && isActive;
     // Was isStandardOrAbove — Inventory & POS is actually a Starter+ feature
     // per the pricing table (backend already gates it at requirePlanForAny('starter')).
     const isStarterOrAbove =
@@ -113,7 +113,7 @@ export default function ClinicalOverview() {
                     </button>
                 )}
 
-                {isProOrAbove ? (
+                {isStandardAbove ? (
                     <Link
                         href="/dashboard/clinical/referrals"
                         className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
