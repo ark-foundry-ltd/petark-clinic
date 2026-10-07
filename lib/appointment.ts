@@ -164,12 +164,16 @@ export interface RescheduleResult {
   status: string;
 }
 
+export type RescheduleResponse =
+  | { locked: false; result: RescheduleResult }
+  | { locked: true; requiredPlan: string; currentPlan: string };
+
 export async function rescheduleAppointment(
     appointmentId: string,
-    date: string, // YYYY-MM-DD
-    time: string,  // "10:30 AM"
+    date: string,
+    time: string,
     reason: string
-): Promise<RescheduleResult> {
+): Promise<RescheduleResponse> {
     const token = localStorage.getItem("token") || "";
 
     const response = await api.patch(
@@ -183,7 +187,11 @@ export async function rescheduleAppointment(
         }
     );
 
-    return response.data.data as RescheduleResult;
+    const body = response.data;
+    if (body.locked) {
+        return { locked: true, requiredPlan: body.requiredPlan, currentPlan: body.currentPlan };
+    }
+    return { locked: false, result: body.data as RescheduleResult };
 }
 
 export interface ClinicAvailabilitySlot {

@@ -358,12 +358,16 @@ export default function SubscriptionPlans() {
                             <h2 className="text-lg font-semibold text-slate-900">
                                 {plan.name}
                             </h2>
-                            <p className="sec-ff mt-1 min-h-[2.5rem] text-xs leading-snug text-slate-500">
+                            <p className="sec-ff mt-1 min-h-10 text-xs leading-snug text-slate-500">
                                 {plan.tagline}
                             </p>
 
                             <div className="mt-5 flex h-9 items-baseline gap-1">
-                                <span className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                                <span
+                                    className={`text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl ${
+                                        credit ? "line-through decoration-red-600 decoration-[3px]" : ""
+                                    }`}
+                                >
                                     {price}
                                 </span>
                                 <span className="text-sm font-medium text-slate-400">
@@ -373,7 +377,7 @@ export default function SubscriptionPlans() {
 
                             {/* Same height on every card so the rows stay aligned */}
                             {applyingCredit && (
-                                <div className="sec-ff mt-2 min-h-[2.5rem] text-xs leading-snug">
+                                <div className="sec-ff mt-2 min-h-10 text-xs leading-snug">
                                     {credit && (
                                         <>
                                             <p className="text-green-700">

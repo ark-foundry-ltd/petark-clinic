@@ -22,6 +22,7 @@ import {
     CheckCircle2,
 } from "lucide-react";
 import { getAppointmentById, type Appointment } from "@/lib/appointment";
+import { getMe, getPlanInfo } from "@/lib/user";
 import { getVisit, type Visit } from "@/lib/visit";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import LabResultsSection from "@/components/clinic/lab-results-section";
@@ -91,6 +92,7 @@ export default function AppointmentDetails({
     const [visit, setVisit] = useState<Visit | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [rescheduleLocked, setRescheduleLocked] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -100,11 +102,17 @@ export default function AppointmentDetails({
             setLoading(true);
             setError(null);
             try {
-                const [apptData, visitsData] = await Promise.all([
+                const [apptData, visitsData, me] = await Promise.all([
                     getAppointmentById(appointmentId),
                     getVisit(),
+                    getMe().catch(() => null), // don't break if page fails
                 ]);
                 setAppointment(apptData);
+
+                if (me) {
+                    const { plan, status } = getPlanInfo(me);
+                    setRescheduleLocked(plan === "free" || status !== "active");
+                }
 
                 const existingVisit = visitsData.find(v => v.appointmentId === appointmentId);
                 setVisit(existingVisit || null);
@@ -118,6 +126,7 @@ export default function AppointmentDetails({
 
         fetchData();
     }, [appointmentId]);
+    
 
     if (loading) {
         return (
@@ -471,6 +480,7 @@ export default function AppointmentDetails({
                                         );
                                         setVisit(null);
                                     }}
+                                    locked={rescheduleLocked}
                                 />
                             )}
                         </div>

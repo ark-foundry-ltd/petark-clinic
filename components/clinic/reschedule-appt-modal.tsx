@@ -1,13 +1,15 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { X, Calendar, Clock, Loader2, AlertCircle, ChevronDown, PawPrint } from "lucide-react";
+import { X, Calendar, Clock, Loader2, AlertCircle, ChevronDown, PawPrint, Lock } from "lucide-react";
 import { toast } from "sonner";
 import {
     getClinicAvailability,
     rescheduleAppointment,
     type ClinicAvailabilitySlot,
 } from "@/lib/appointment";
+
 
 /* ── helpers ── */
 function to12Hour(time24: string): string {
@@ -45,6 +47,7 @@ interface RescheduleAppointmentModalProps {
     appointmentId: string;
     clinicId: string;
     currentDate: string; // ISO
+    locked?: boolean;
     pet: {
         name: string;
         breed?: string;
@@ -52,7 +55,7 @@ interface RescheduleAppointmentModalProps {
         photo?: string;
     };
     ownerName?: string;
-    onRescheduled: (result: { date: string; status: string }) => void;
+    onRescheduled: (response: { date: string; status: string }) => void;
 }
 
 export default function RescheduleAppointmentModal({
@@ -62,7 +65,8 @@ export default function RescheduleAppointmentModal({
     pet,
     ownerName,
     onRescheduled,
-}: RescheduleAppointmentModalProps) {
+    locked,
+}: Readonly<RescheduleAppointmentModalProps>) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState("");
     const [selectedTime24, setSelectedTime24] = useState("");
@@ -73,6 +77,14 @@ export default function RescheduleAppointmentModal({
     const [submitting, setSubmitting] = useState(false);
 
     const minDate = todayDateStr();
+
+    const router = useRouter();
+
+    const goToUpgrade = () => {
+        toast.error("Rescheduling is available on paid plans.", {
+            action: { label: "Upgrade", onClick: () => router.push("/dashboard/profile/upgrade") },
+        });
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -118,14 +130,20 @@ export default function RescheduleAppointmentModal({
         setSubmitting(true);
         try {
             const time12 = to12Hour(selectedTime24);
-            const result = await rescheduleAppointment(
+            const response = await rescheduleAppointment(
                 appointmentId,
                 selectedDate,
                 time12,
                 reason
             );
+            if (response.locked) {
+                setIsOpen(false);
+                goToUpgrade();
+                return;
+            }
+
             toast.success(`Appointment rescheduled to ${time12}`);
-            onRescheduled({ date: result.date, status: result.status });
+            onRescheduled({ date: response.result.date, status: response.result.status });
             setIsOpen(false);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
@@ -145,10 +163,15 @@ export default function RescheduleAppointmentModal({
     return (
         <>
             <button
-                onClick={() => setIsOpen(true)}
-                className="w-full bg-acc-clr text-pry-clr py-2.5 px-4 rounded-xl font-medium hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                onClick={() => (locked ? goToUpgrade() : setIsOpen(true))}
+                aria-disabled={locked}
+                className={`w-full py-2.5 px-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                    locked
+                    ? "bg-gray-100 text-gray-400 border border-gray-200"
+                    : "bg-acc-clr text-pry-clr hover:bg-emerald-500"
+                }`}
             >
-                <AlertCircle size={16} />
+                {locked ? <Lock size={16} /> : <AlertCircle size={16} />}
                 Reschedule
             </button>
 

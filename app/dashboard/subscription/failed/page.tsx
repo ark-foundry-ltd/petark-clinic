@@ -28,7 +28,7 @@ function SubscriptionFailedContent() {
             </p>
             <div className="flex gap-3">
                 <Link
-                    href="/dashboard/upgrade"
+                    href="/dashboard/profile/upgrade"
                     className="rounded-lg bg-acc-clr px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 pry-ff"
                 >
                     Try Again

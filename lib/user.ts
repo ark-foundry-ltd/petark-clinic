@@ -130,6 +130,22 @@ export async function getMe(): Promise<MeResponse> {
     }
 }
 
+export function getPlanInfo(me: MeResponse): {
+    plan: Subscription["plan"];
+    status: Subscription["status"];
+} {
+    if (isClinicResponse(me)) {
+        return {
+            plan: me.clinic.subscription.plan,
+            status: me.clinic.subscription.status,
+        };
+    }
+    return {
+        plan: me.profile.clinicPlan,
+        status: me.profile.clinicPlanStatus,
+    };
+}
+
 export function getServiceById(services: ClinicService[], serviceId: string): ClinicService | undefined {
     return services.find((service) => service._id === serviceId);
 }
