@@ -8,8 +8,9 @@ import { toast } from "sonner";
 import { type ClinicService } from "@/lib/user";
 import { getClinicPatientById } from "@/lib/clinic-patient";
 import type { ClinicPatientRecord } from "@/lib/clinic-patient";
-import { createVisit, type CreateVisitPayload } from "@/lib/visit";
+import { createVisit, type CreateVisitPayload, type CustomVitalValue } from "@/lib/visit";
 import { useAuthStore } from "@/store/useStore";
+import CustomVitalsFields from "@/components/clinic/custom-vitals-fields";
 
 interface Vitals {
     weight: number | null;
@@ -57,6 +58,7 @@ export default function CreateVisitWalkInCard({
     const [loadError, setLoadError] = useState<string | null>(null);
 
     const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
+    const [customVitals, setCustomVitals] = useState<Record<string, CustomVitalValue>>({});
     const [chiefComplaint, setChiefComplaint] = useState("");
     const [servicesProvided, setServicesProvided] = useState<string[]>([]);
     const [submitting, setSubmitting] = useState(false);
@@ -98,6 +100,10 @@ export default function CreateVisitWalkInCard({
         }
     }
 
+    function handleCustomVitalChange(fieldId: string, value: CustomVitalValue) {
+        setCustomVitals((prev) => ({ ...prev, [fieldId]: value }));
+    }
+
     function handleVitalBlur(field: NumericVitalField) {
         const val = vitals[field];
         if (val !== null && val < 0) {
@@ -124,7 +130,12 @@ export default function CreateVisitWalkInCard({
         const payload: CreateVisitPayload = {
             clinicPatientId: patient._id,
             ...(servicesProvided.length > 0 ? { servicesProvided } : {}),
-            vitals,
+            vitals: {
+                ...vitals,
+                custom: Object.fromEntries(
+                    Object.entries(customVitals).filter(([, v]) => v !== null && v !== "")
+                ),
+            },
             ...(chiefComplaint.trim() ? { chiefComplaint: chiefComplaint.trim() } : {}),
         };
 
@@ -259,6 +270,9 @@ export default function CreateVisitWalkInCard({
                         ))}
                     </div>
                 </div>
+
+                {/* Clinic-defined custom vitals */}
+                <CustomVitalsFields values={customVitals} onChange={handleCustomVitalChange} />
             </section>
 
             <section className="space-y-2">

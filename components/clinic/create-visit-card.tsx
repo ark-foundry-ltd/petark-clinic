@@ -7,8 +7,9 @@ import { Loader2, ArrowLeft, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { type ClinicService } from "@/lib/user";
 import { getAppointmentById, type Appointment } from "@/lib/appointment";
-import { createVisit, type CreateVisitPayload } from "@/lib/visit";
+import { createVisit, type CreateVisitPayload, type CustomVitalValue } from "@/lib/visit";
 import { useAuthStore } from "@/store/useStore";
+import CustomVitalsFields from "@/components/clinic/custom-vitals-fields";
 
 interface Vitals {
     weight: number | null;
@@ -60,6 +61,7 @@ export default function CreateVisitCard({
     const [loadingAppt, setLoadingAppt] = useState(true);
 
     const [vitals, setVitals] = useState<Vitals>(EMPTY_VITALS);
+    const [customVitals, setCustomVitals] = useState<Record<string, CustomVitalValue>>({});
     const [chiefComplaint, setChiefComplaint] = useState("");
     const [servicesProvided, setServicesProvided] = useState<string[]>([]);
     const [submitting, setSubmitting] = useState(false);
@@ -99,6 +101,10 @@ export default function CreateVisitCard({
         }
     }
 
+    function handleCustomVitalChange(fieldId: string, value: CustomVitalValue) {
+        setCustomVitals((prev) => ({ ...prev, [fieldId]: value }));
+    }
+
     function handleVitalBlur(field: NumericVitalField) {
         const val = vitals[field];
         if (val !== null && val < 0) {
@@ -130,7 +136,12 @@ export default function CreateVisitCard({
         const payload: CreateVisitPayload = {
             appointmentId: appointment._id,
             ...(servicesProvided.length > 0 ? { servicesProvided } : {}),
-            vitals,
+            vitals: {
+                ...vitals,
+                custom: Object.fromEntries(
+                    Object.entries(customVitals).filter(([, v]) => v !== null && v !== "")
+                ),
+            },
             ...(chiefComplaint.trim() ? { chiefComplaint: chiefComplaint.trim() } : {}),
         };
 
@@ -339,6 +350,9 @@ export default function CreateVisitCard({
                         ))}
                     </div>
                 </div>
+
+                {/* Clinic-defined custom vitals */}
+                <CustomVitalsFields values={customVitals} onChange={handleCustomVitalChange} />
             </section>
 
             {/* Chief Complaint */}

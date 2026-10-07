@@ -4,8 +4,9 @@
 
 import { useState } from "react";
 import { updateVisitVitals } from "@/lib/visit";
-import type { Visit } from "@/lib/visit";
+import type { Visit, CustomVitalValue } from "@/lib/visit";
 import { AlertCircle, Loader2, X, Check } from "lucide-react";
+import CustomVitalsFields from "@/components/clinic/custom-vitals-fields";
 
 interface UpdateVitalsProps {
     visit: Visit;
@@ -41,11 +42,20 @@ const inputCls =
 
 export default function UpdateVitals({ visit, onSaved, onCancel }: Readonly<UpdateVitalsProps>) {
     const [form, setForm] = useState<FormState>(() => initForm(visit));
+    // Older visits have no `custom`, so fall back to an empty object.
+    // Values for archived fields stay in here too, so saving never wipes them.
+    const [customVitals, setCustomVitals] = useState<Record<string, CustomVitalValue>>(
+        () => ({ ...(visit.vitals?.custom ?? {}) })
+    );
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     function handleChange(field: keyof FormState, value: string) {
         setForm((prev) => ({ ...prev, [field]: value }));
+    }
+
+    function handleCustomVitalChange(fieldId: string, value: CustomVitalValue) {
+        setCustomVitals((prev) => ({ ...prev, [fieldId]: value }));
     }
 
     async function handleSave() {
@@ -60,6 +70,10 @@ export default function UpdateVitals({ visit, onSaved, onCancel }: Readonly<Upda
                     respiration: form.respiration ? parseFloat(form.respiration) : null,
                     appetite: form.appetite || null,
                     activity: form.activity || null,
+                    // The backend replaces the whole `custom` object, so cleared values drop out here
+                    custom: Object.fromEntries(
+                        Object.entries(customVitals).filter(([, v]) => v !== null && v !== "")
+                    ),
                 },
             });
             onSaved({ ...visit, ...updated });
@@ -157,6 +171,11 @@ export default function UpdateVitals({ visit, onSaved, onCancel }: Readonly<Upda
                             className={inputCls}
                         />
                     </div>
+                </div>
+
+                {/* Clinic-defined custom vitals */}
+                <div className="mt-5 pt-4 border-t border-gray-100">
+                    <CustomVitalsFields values={customVitals} onChange={handleCustomVitalChange} />
                 </div>
             </div>
 

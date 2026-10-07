@@ -2,6 +2,7 @@
 
 import api from "./api";
 import axiosError from "axios";
+import type { CustomVitalValue } from "./visit";
 
 export interface VisitRecordPet {
     _id: string;
@@ -28,6 +29,8 @@ export interface VisitRecordVitals {
     respiration: number | null;
     appetite: "normal" | "reduced" | "increased" | "absent" | null;
     activity: "active" | "lethargic" | "hyperactive" | "normal" | null;
+    // Keyed by custom field _id. Older visits have none, so read as `custom ?? {}`
+    custom?: Record<string, CustomVitalValue>;
 }
 
 export interface VisitRecordSOAP {

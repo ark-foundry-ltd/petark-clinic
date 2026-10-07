@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getVisit, getAdministeredByDisplay } from "@/lib/visit";
-import type { Visit } from "@/lib/visit";
+import { getVisit, getAdministeredByDisplay, getCustomVitalFields } from "@/lib/visit";
+import type { Visit, CustomVitalField } from "@/lib/visit";
 import { getUser, type ClinicService } from "@/lib/user";
 import UpdateVitals from "@/components/clinic/update-vitals";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
@@ -83,6 +83,7 @@ function RecordDetailsSkeleton() {
 export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>) {
     const [visit, setVisit] = useState<Visit | null>(null);
     const [clinicServices, setClinicServices] = useState<ClinicService[]>([]);
+    const [customFields, setCustomFields] = useState<CustomVitalField[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -93,9 +94,12 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
             setLoading(true);
             setError(null);
             try {
-                const [visits, clinic] = await Promise.all([
+                const [visits, clinic, fields] = await Promise.all([
                     getVisit(),
                     getUser(),
+                    // Includes archived fields on purpose, so old visits keep their labels.
+                    // Don't let a failure here break the whole page.
+                    getCustomVitalFields().catch(() => [] as CustomVitalField[]),
                 ]);
 
                 const foundVisit = visits.find((v) => v._id === visitId);
@@ -108,6 +112,8 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                 if (clinic?.servicesProvided) {
                     setClinicServices(clinic.servicesProvided);
                 }
+
+                setCustomFields(fields);
             } catch (err) {
                 setError("Failed to load visit record details");
                 console.error("Error fetching data:", err);
@@ -184,6 +190,12 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
     }
 
     const vitals = visit.vitals;
+
+    // Custom vitals that actually have a value on this visit, matched to their labels.
+    // Older visits have no `custom`, so this is simply empty for them.
+    const customEntries = customFields
+        .map((field) => ({ field, value: vitals?.custom?.[field._id] }))
+        .filter(({ value }) => value !== undefined && value !== null && value !== "");
 
     return (
         <div className="space-y-6">
@@ -341,6 +353,34 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                             <span className="text-sm font-normal text-gray-400">/min</span>
                         </p>
                         <p className="text-xs text-gray-400 mt-1">Breaths per minute</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Clinic-defined custom vitals */}
+            {customEntries.length > 0 && (
+                <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Activity className="w-5 h-5 text-gray-400" />
+                        <h3 className="font-semibold text-sec-clr">Additional Vitals</h3>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                        {customEntries.map(({ field, value }) => (
+                            <div key={field._id}>
+                                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                                    {field.label}
+                                </p>
+                                <p className="text-sm font-medium text-gray-700">
+                                    {value}
+                                    {field.unit && (
+                                        <span className="text-xs font-normal text-gray-400">
+                                            {" "}
+                                            {field.unit}
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}

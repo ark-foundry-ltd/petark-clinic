@@ -4,6 +4,16 @@ import api from "./api";
 import axiosError from "axios";
 import { type ClinicService } from "./user";
 
+export type CustomVitalValue = number | string | null;
+
+export interface CustomVitalField {
+    _id: string;
+    label: string;
+    unit: string;
+    type: "number" | "text";
+    archived?: boolean;
+}
+
 interface Vitals {
     weight: number | null;
     temp: number | null;
@@ -11,6 +21,8 @@ interface Vitals {
     respiration: number | null;
     appetite: "normal" | "reduced" | "increased" | "absent" | null;
     activity: "active" | "lethargic" | "hyperactive" | "normal" | null;
+    // Older visits have no `custom`, so always read it as `vitals.custom ?? {}`
+    custom?: Record<string, CustomVitalValue>;
 }
 
 interface Billing {
@@ -118,11 +130,10 @@ export interface UpdateVisitVitalsPayload {
     vitals?: Partial<Vitals>;
 }
 
+// The backend returns the visit directly as `data` (not `data.visit`)
 interface UpdateVisitVitalsResponse {
     status: string;
-    data: {
-        visit: ApiVisitResponse;
-    };
+    data: ApiVisitResponse;
 }
 
 export interface MarkVisitPaidPayload {
@@ -197,7 +208,7 @@ export async function updateVisitVitals(
             `/visit/vitals/${visitId}`,
             payload
         );
-        return response.data.data.visit;
+        return response.data.data;
     } catch (error) {
         if (axiosError.isAxiosError(error)) {
             throw new Error(error.response?.data?.message || "Failed to update visit");
@@ -221,6 +232,52 @@ export async function getVisit(): Promise<Visit[]> {
             throw new Error(error.response?.data?.message || "Failed to fetch visit");
         }
         throw new Error("An unexpected error occurred while fetching visit");
+    }
+}
+
+// ─── Custom vital fields ───────────────────────────────────────────────────
+
+export async function getCustomVitalFields(): Promise<CustomVitalField[]> {
+    try {
+        const response = await api.get<{ status: string; data: { fields: CustomVitalField[] } }>(
+            "/visit/vitals-fields"
+        );
+        return response.data.data.fields;
+    } catch (error) {
+        if (axiosError.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || "Failed to load custom vital fields");
+        }
+        throw new Error("An unexpected error occurred while loading custom vital fields");
+    }
+}
+
+export async function addCustomVitalField(payload: {
+    label: string;
+    unit?: string;
+    type: "number" | "text";
+}): Promise<CustomVitalField> {
+    try {
+        const response = await api.post<{ status: string; data: { field: CustomVitalField } }>(
+            "/visit/vitals-fields",
+            payload
+        );
+        return response.data.data.field;
+    } catch (error) {
+        if (axiosError.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || "Failed to add custom field");
+        }
+        throw new Error("An unexpected error occurred while adding the custom field");
+    }
+}
+
+export async function archiveCustomVitalField(fieldId: string): Promise<void> {
+    try {
+        await api.delete(`/visit/vitals-fields/${fieldId}`);
+    } catch (error) {
+        if (axiosError.isAxiosError(error)) {
+            throw new Error(error.response?.data?.message || "Failed to remove custom field");
+        }
+        throw new Error("An unexpected error occurred while removing the custom field");
     }
 }
 
