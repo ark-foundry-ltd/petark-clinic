@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Calendar, PawPrint, Package, ArrowLeftRight, BarChart3, ShoppingCart, Receipt, Lock, MapPin, ChevronRight, Folder } from "lucide-react";
+import { Calendar, PawPrint, Package, ArrowLeftRight, BarChart3, ShoppingCart, Receipt, Lock, MapPin, ChevronRight, Folder, Banknote } from "lucide-react";
 import { useAuthStore } from "@/store/useStore";
 import { listLocations, type Location } from "@/lib/location";
 
@@ -18,9 +18,11 @@ const OVERVIEW_CARDS = [
   { name: "Sales History", href: "/staff-dashboard/sales-history", icon: Receipt, need: ["view_sales_history"], desc: "Browse past transactions" },
   { name: "Referrals", href: "/staff-dashboard/referrals", icon: ArrowLeftRight, need: ["view_referrals"], desc: "Track incoming and outgoing referrals" },
   { name: "Reports", href: "/staff-dashboard/reports", icon: BarChart3, need: ["view_reports"], desc: "Sales and inventory reports" },
+  { name: "Payments", href: "/staff-dashboard/payments", icon: Banknote, need: ["generate_invoice", "confirm_payment"], desc: "Manage and process payments" },
 ];
 
 const LOCATION_RELEVANT_PERMISSIONS = [
+  "generate_invoice",
   "access_pos",
   "view_inventory",
   "manage_inventory",
