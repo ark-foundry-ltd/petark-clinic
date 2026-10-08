@@ -18,6 +18,14 @@ export interface TrialInfo {
     convertedAt: string | null;
 }
 
+// Present only while auto-renewal is ON and at least one renewal payment has failed.
+export interface RenewalInfo {
+    failedAttempts: number;
+    maxAttempts: number;
+    nextAttemptAt: string | null;
+    lastFailureReason: string | null;
+}
+
 export interface SubscriptionRecord {
     plan: SubscriptionPlan;
     status: SubscriptionStatus;
@@ -29,10 +37,21 @@ export interface SubscriptionRecord {
     pendingReference?: string | null;
     // true while the clinic is on the free 30-day Pro trial (not a purchase)
     isTrial?: boolean;
+    // Whether the subscription renews automatically through Paystack.
+    // The authorization code itself never reaches the browser.
+    autoRenew: boolean;
+    renewal: RenewalInfo | null;
     trial: TrialInfo | null;
     // Referral credit (₦) available to spend on subscription payments
     creditBalance: number;
 }
+
+// ─── Auto-renewal consent ───────────────────────────────────────────────────
+// Shown next to the (initially unticked) checkbox at checkout. If you change this
+// wording, bump AUTO_RENEW_CONSENT_VERSION in services/subscriptionBilling.js.
+
+export const AUTO_RENEW_CONSENT_TEXT =
+    "Enable automatic renewal. Your subscription will automatically renew at the end of each billing period. Payment details are securely handled by Paystack. You can turn off auto-renewal at any time.";
 
 // ─── Pricing (display only — mirrors backend PLAN_PRICING; the real charge
 // is always resolved server-side in initiateSubscriptionUpgrade) ───────────
@@ -100,6 +119,10 @@ export interface InitiateUpgradePayload {
     billingCycle: BillingCycle;
     // Defaults to true on the server; send false to pay the full price
     useCredit?: boolean;
+    // true  = the clinic ticked the consent box (enables auto-renewal, card payments only)
+    // false = unticked (turns auto-renewal off if it was on)
+    // omit  = leave the current setting unchanged
+    autoRenew?: boolean;
 }
 
 export interface InitiateUpgradeResult {
@@ -149,6 +172,27 @@ export async function getSubscriptionStatus(): Promise<SubscriptionRecord> {
             );
         } else {
             console.error("Error fetching subscription status:", error);
+        }
+        throw error;
+    }
+}
+
+// ─── Turn auto-renewal off ─────────────────────────────────────────────
+// There is intentionally no "turn on" call: enabling needs a fresh card
+// authorization, which only happens through checkout with the consent box ticked.
+
+export async function disableAutoRenew(): Promise<{ autoRenew: false }> {
+    try {
+        const response = await api.post("/subscription/auto-renew/disable");
+        return response.data.data;
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            console.error(
+                "Error disabling auto-renewal:",
+                error.response?.data || error.message
+            );
+        } else {
+            console.error("Error disabling auto-renewal:", error);
         }
         throw error;
     }

@@ -2,18 +2,19 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-    getSubscriptionStatus,
     initiateSubscriptionUpgrade,
     previewCredit,
     PLAN_PRICING,
+    AUTO_RENEW_CONSENT_TEXT,
     type SubscriptionPlan,
-    type SubscriptionRecord,
     type PurchasablePlan,
     type BillingCycle,
 } from "@/lib/subscription";
+import { useSubscription } from "@/hooks/use-subscription";
+import AutoRenewalCard from "@/components/clinic/auto-renewal-card";
 import { Check, Loader2, Zap, Layers, Rocket, Sparkles, Building2, Gift } from "lucide-react";
 
 interface PlanDefinition {
@@ -141,11 +142,18 @@ function formatNaira(amount: number): string {
 }
 
 export default function SubscriptionPlans() {
-    const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
+    const { subscription, error: loadError, refresh } = useSubscription();
     const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
     const [upgradingPlan, setUpgradingPlan] = useState<PurchasablePlan | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [useCredit, setUseCredit] = useState(true);
+
+    // Auto-renewal consent. Starts at the clinic's current setting (see effect below);
+    // it is never pre-ticked for a clinic that hasn't opted in.
+    const [autoRenew, setAutoRenew] = useState(false);
+    const autoRenewSeeded = useRef(false);
+    const checkoutRef = useRef<HTMLDivElement>(null);
+
     const loading = subscription === null && !errorMessage;
 
     const creditBalance = subscription?.creditBalance ?? 0;
@@ -162,23 +170,18 @@ export default function SubscriptionPlans() {
               })
             : null;
 
+    // Show the load error through the existing errorMessage alert
     useEffect(() => {
-        let cancelled = false;
+        if (loadError) setErrorMessage(loadError);
+    }, [loadError]);
 
-        getSubscriptionStatus()
-            .then((data) => {
-                if (cancelled) return;
-                setSubscription(data);
-            })
-            .catch(() => {
-                if (cancelled) return;
-                setErrorMessage("We couldn't load your current plan. Please refresh the page.");
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    // Seed the checkbox once from the saved setting
+    useEffect(() => {
+        if (subscription && !autoRenewSeeded.current) {
+            autoRenewSeeded.current = true;
+            setAutoRenew(subscription.autoRenew);
+        }
+    }, [subscription]);
 
     async function handleUpgrade(targetPlan: PurchasablePlan) {
         setErrorMessage(null);
@@ -188,6 +191,7 @@ export default function SubscriptionPlans() {
                 targetPlan,
                 billingCycle,
                 useCredit,
+                autoRenew,
             });
             window.location.assign(authorizationUrl);
         } catch (err) {
@@ -315,6 +319,36 @@ export default function SubscriptionPlans() {
                     {errorMessage}
                 </div>
             )}
+
+            {/* Auto-renewal ON/OFF control (paid, live subscriptions only; renders nothing otherwise) */}
+            {subscription && !onTrial && (
+                <AutoRenewalCard
+                    subscription={subscription}
+                    onTurnedOff={() => {
+                        setAutoRenew(false);
+                        refresh();
+                    }}
+                    onRequestEnable={() => {
+                        setAutoRenew(true);
+                        checkoutRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }}
+                />
+            )}
+
+            {/* Checkout consent for automatic renewal */}
+            <div ref={checkoutRef} className="mx-auto mb-8 max-w-xl">
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <input
+                        type="checkbox"
+                        checked={autoRenew}
+                        onChange={(e) => setAutoRenew(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-acc-clr"
+                    />
+                    <span className="sec-ff text-xs leading-relaxed text-slate-600">
+                        {AUTO_RENEW_CONSENT_TEXT}
+                    </span>
+                </label>
+            </div>
 
             <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
                 {PLANS.map((plan) => {
