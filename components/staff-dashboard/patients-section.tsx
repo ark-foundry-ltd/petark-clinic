@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import SearchPatient from "@/components/clinic/search-patient";
 import PatientRegistrationFlow from "@/components/clinic/patient-registration-flow";
 import type { ClinicPatientRecord } from "@/lib/clinic-patient";
@@ -31,6 +31,10 @@ export default function PatientsSection() {
         router.push(`/staff-dashboard/clinical/records/create-visit?patientId=${patient._id}`);
     }
 
+    function getPatientHref(patient: ClinicPatientRecord) {
+        return `/staff-dashboard/patients/${patient._id}`;
+    }
+
     function handleRegisterAsNew(prefillData: { name?: string; phone?: string }) {
         setPrefill(prefillData);
         setMode("register");
@@ -44,13 +48,6 @@ export default function PatientsSection() {
     if (mode === "register" && canRegister) {
         return (
             <div className="space-y-3">
-                {/* <button
-                    type="button"
-                    onClick={() => setMode("search")}
-                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-sec-clr transition-colors"
-                >
-                    <ArrowLeft size={15} /> Back to search
-                </button> */}
                 <PatientRegistrationFlow
                     registrationFee={registrationFee}
                     registrationEnabled={registrationEnabled}
@@ -64,23 +61,24 @@ export default function PatientsSection() {
     }
 
     return (
-    <div className="space-y-3">
-        <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900 pry-ff">Patients</h2>
-            {canRegister && (
-                <button
-                    type="button"
-                    onClick={() => handleRegisterAsNew({})}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-acc-clr text-pry-clr rounded-lg text-xs font-medium hover:opacity-90 transition sec-ff"
-                >
-                    <UserPlus size={14} /> Register patient
-                </button>
-            )}
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-900 pry-ff">Patients</h2>
+                {canRegister && (
+                    <button
+                        type="button"
+                        onClick={() => handleRegisterAsNew({})}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-acc-clr text-pry-clr rounded-lg text-xs font-medium hover:opacity-90 transition sec-ff"
+                    >
+                        <UserPlus size={14} /> Register patient
+                    </button>
+                )}
+            </div>
+            <SearchPatient
+                onProceedToVisit={handleProceedToVisit}
+                getPatientHref={getPatientHref}
+                onRegisterAsNew={canRegister ? handleRegisterAsNew : undefined}
+            />
         </div>
-        <SearchPatient
-            onProceedToVisit={handleProceedToVisit}
-            onRegisterAsNew={canRegister ? handleRegisterAsNew : undefined}
-        />
-    </div>
-);
+    );
 }

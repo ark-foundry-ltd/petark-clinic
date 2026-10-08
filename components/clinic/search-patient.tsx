@@ -2,32 +2,36 @@
 
 /* This component shows all registered patients by default,
 * and lets staff search/filter by registration number, name, or phone number.
+* Clicking a patient opens the dedicated Patient Details page.
 */
 
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { searchClinicPatients, getAllPatients, ClinicPatientRecord } from "@/lib/clinic-patient";
 import { Search, Loader2, PawPrint, UserPlus } from "lucide-react";
-import PatientDetailsModal from "@/components/clinic/patient-details-modal";
 
 interface SearchPatientProps {
     onProceedToVisit: (patient: ClinicPatientRecord) => void;
+    // Where a patient row links to (differs between clinic and staff dashboards)
+    getPatientHref: (patient: ClinicPatientRecord) => string;
     // Optional: omit for roles without REGISTER_PATIENT (hides all register buttons)
     onRegisterAsNew?: (prefill: { name?: string; phone?: string }) => void;
 }
 
 export default function SearchPatient({
     onProceedToVisit,
+    getPatientHref,
     onRegisterAsNew,
 }: Readonly<SearchPatientProps>) {
+    const router = useRouter();
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [results, setResults] = useState<ClinicPatientRecord[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [detailsId, setDetailsId] = useState<string | null>(null);
 
     const loadAllPatients = async () => {
         setLoading(true);
@@ -58,7 +62,6 @@ export default function SearchPatient({
         }
         setLoading(true);
         setError(null);
-        setSelectedId(null);
         setIsSearchMode(true);
         try {
             const { data } = await searchClinicPatients(query.trim());
@@ -82,10 +85,6 @@ export default function SearchPatient({
         onRegisterAsNew(
             isPhoneLike ? { phone: query.trim() } : { name: query.trim() }
         );
-    };
-
-    const handleProceedToVisit = (row: ClinicPatientRecord) => {
-        onProceedToVisit(row);
     };
 
     const canRegister = Boolean(onRegisterAsNew);
@@ -194,19 +193,23 @@ export default function SearchPatient({
                                 {results.map((r) => (
                                     <tr
                                         key={r._id}
-                                        onClick={() => setSelectedId(r._id)}
-                                        className={`border-b border-gray-50 cursor-pointer transition ${
-                                            selectedId === r._id ? "bg-green-50" : "hover:bg-gray-50"
-                                        }`}
+                                        onClick={() => router.push(getPatientHref(r))}
+                                        className="border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition"
                                     >
                                         <td className="py-2 pr-4">
                                             <span className="px-2 py-0.5 rounded-full bg-gray-100 text-xs font-semibold text-sec-clr">
                                                 {r.registrationNo}
                                             </span>
                                         </td>
-                                        <td className="py-2 pr-4 font-medium text-sec-clr flex items-center gap-2">
-                                            <PawPrint className="w-4 h-4 text-acc-clr" />
-                                            {r.pet?.name}
+                                        <td className="py-2 pr-4 font-medium text-sec-clr">
+                                            <Link
+                                                href={getPatientHref(r)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="flex items-center gap-2 hover:underline"
+                                            >
+                                                <PawPrint className="w-4 h-4 text-acc-clr" />
+                                                {r.pet?.name}
+                                            </Link>
                                         </td>
                                         <td className="py-2 pr-4 text-gray-600">{r.pet?.species}</td>
                                         <td className="py-2 pr-4 text-gray-600">{r.pet?.breed || "-"}</td>
@@ -222,7 +225,7 @@ export default function SearchPatient({
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleProceedToVisit(r);
+                                                    onProceedToVisit(r);
                                                 }}
                                                 className="px-3 py-1.5 rounded-lg bg-acc-clr text-pry-clr text-xs font-medium hover:opacity-90 transition ml-auto whitespace-nowrap"
                                             >
@@ -235,16 +238,6 @@ export default function SearchPatient({
                         </table>
                     </div>
                 </>
-            )}
-            {detailsId && (
-                <PatientDetailsModal
-                    clinicPatientId={detailsId}
-                    onClose={() => setDetailsId(null)}
-                    onStartVisit={(patient) => {
-                        setDetailsId(null);
-                        handleProceedToVisit(patient);
-                    }}
-                />
             )}
         </div>
     );

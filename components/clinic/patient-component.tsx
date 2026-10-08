@@ -17,12 +17,14 @@ interface PatientComponentProps {
     registrationFee: number;
     registrationEnabled: boolean;
     onProceedToVisit: (patient: ClinicPatientRecord) => void;
+    getPatientHref: (patient: ClinicPatientRecord) => string;
 }
 
 export default function PatientComponent({
     registrationFee,
     registrationEnabled,
     onProceedToVisit,
+    getPatientHref,
 }: Readonly<PatientComponentProps>) {
     const [tab, setTab] = useState<Tab>("existing");
     const [prefill, setPrefill] = useState<{ name?: string; phone?: string }>({});
@@ -69,6 +71,7 @@ export default function PatientComponent({
             {tab === "existing" ? (
                 <SearchPatient
                     onProceedToVisit={onProceedToVisit}
+                    getPatientHref={getPatientHref}
                     onRegisterAsNew={handleRegisterAsNew}
                 />
             ) : (

@@ -134,6 +134,24 @@ export async function getVisitLabResults(visitId: string): Promise<LabResultsOut
     }
 }
 
+export async function getPetLabResults(petId: string): Promise<LabResultsOutcome> {
+    try {
+        const response = await api.get<LabResultsListResponse>(`/lab-results/pet/${petId}`);
+        const body = response.data;
+
+        if (body.locked) {
+            return { locked: true, requiredPlan: body.requiredPlan ?? "standard" };
+        }
+        if (!body.data) {
+            throw new Error("Lab results are unavailable right now");
+        }
+        return { locked: false, data: body.data };
+    } catch (error) {
+        console.error("Error fetching patient lab results:", error);
+        throw error;
+    }
+}
+
 export interface UpdateLabResultPayload {
     testName?: string;
     summary?: string;

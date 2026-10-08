@@ -68,6 +68,7 @@ export interface ClinicPatientRecord {
     owner?: PatientOwner;
     // Optional: patients registered before this feature have no healthProfile
     healthProfile?: HealthProfile;
+    registeredAt?: string;
 }
 
 // ─── Register: existing pet (petId), known owner + new pet (ownerId), ─────

@@ -31,9 +31,14 @@ export default function PatientPageClient() {
         fetchProfile();
     }, []);
 
+    // NOTE: changed from /create-visit/${id} to the flat ?patientId= route
+    // so it matches the staff dashboard. Revert if your clinic route really is dynamic.
     const handleProceedToVisit = (patient: ClinicPatientRecord) => {
-        router.push(`/dashboard/clinical/records/create-visit/${patient._id}`);
+        router.push(`/dashboard/clinical/records/create-visit?patientId=${patient._id}`);
     };
+
+    const getPatientHref = (patient: ClinicPatientRecord) =>
+        `/dashboard/clinical/patients/${patient._id}`;
 
     if (loading) {
         return (
@@ -56,6 +61,7 @@ export default function PatientPageClient() {
             registrationFee={profile.registration?.fee ?? 0}
             registrationEnabled={profile.registration?.enabled ?? false}
             onProceedToVisit={handleProceedToVisit}
+            getPatientHref={getPatientHref}
         />
     );
 }
