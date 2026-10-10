@@ -1,6 +1,7 @@
 // lib/subscription.ts
 import api from "@/lib/api";
 import { AxiosError } from "axios";
+import type { Plan } from "@/lib/plan";
 
 // ─── Shared Types ──────────────────────────────────────────────────────────
 

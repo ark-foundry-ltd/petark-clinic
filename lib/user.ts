@@ -2,6 +2,7 @@
 
 import api from "@/lib/api";
 import { AxiosError } from "axios";
+import type { Plan } from "@/lib/plan";
 
 interface Address {
     street: string;
@@ -33,7 +34,7 @@ export interface ClinicService {
 }
 
 export interface Subscription {
-    plan: 'free' | 'starter' | 'pro' | 'standard' | 'enterprise';
+        plan: Plan;
     status: 'active' | 'inactive' | 'cancelled';
     startedAt: string | null;
     expiresAt: string | null;
@@ -80,7 +81,7 @@ export interface StaffProfile {
     isEmailVerified: boolean;
     createdAt: string;
     clinicName: string;
-    clinicPlan: 'free' | 'starter' | 'pro' | 'standard' | 'enterprise';
+    clinicPlan: Plan;
     clinicPlanStatus: 'active' | 'inactive' | 'cancelled';
     clinicRegistrationFee: number;     
     clinicRegistrationEnabled: boolean;
