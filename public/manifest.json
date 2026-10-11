@@ -2,7 +2,7 @@
   "name": "PetArk",
   "short_name": "PetArk",
   "description": "Veterinary clinic management",
-  "start_url": "/",
+  "start_url": "/login",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#22c55e",

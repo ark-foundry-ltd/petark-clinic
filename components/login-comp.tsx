@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useStore";
+import Link from "next/link";
 
 interface LoginError {
     status: number;
@@ -79,6 +80,9 @@ export default function LoginComp() {
     return (
         <div className="w-full max-w-sm md:max-w-md p-8 space-y-6 bg-pry-clr rounded-lg shadow-md">
             <div className="text-center">
+                <Link href="/">
+                    <img src="/petark_logo.png" alt="PetArk Logo" className="mx-auto h-12 w-auto" />
+                </Link>
                 <h1 className="text-2xl font-bold text-sec-clr pry-ff">PetArk Login</h1>
                 <p className="mt-2 text-sec-clr pry-ff">Sign in to your account</p>
             </div>
