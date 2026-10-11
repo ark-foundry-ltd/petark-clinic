@@ -167,7 +167,7 @@ export default function Pricing() {
           const amount = billing === "monthly" ? p.monthly : p.yearly;
           return (
             <div key={p.id} className={`relative flex flex-col rounded-2xl border bg-white p-6 ${p.popular ? "border-2 border-green-500 shadow-lg shadow-green-100" : "border-slate-200"}`}>
-              {p.popular && <span className="absolute -top-3 left-6 rounded-full bg-green-500 px-3 py-0.5 text-[11px] font-bold text-white">Most Popular</span>}
+              {p.popular && <span className="absolute -top-3 left-6 rounded-full bg-green-500 px-3 py-0.5 text-[11px] font-bold text-white sec-ff">Most Popular</span>}
               <h3 className="sec-ff font-bold text-slate-800">{p.name}</h3>
               <p className="mt-4">
                 <span className="sec-ff text-3xl font-extrabold text-slate-900">{free ? "₦0" : naira(amount)}</span>
