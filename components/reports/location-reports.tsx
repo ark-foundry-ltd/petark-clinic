@@ -131,7 +131,7 @@ async function handleExport() {
     return (
         <div>
             {/* Date range controls */}
-            <div className="mb-6 flex flex-wrap items-end gap-3 pry-ff">
+            <div className="mb-6 flex flex-wrap items-end gap-3 pry-ff bg-pry-clr p-3 rounded-2xl border border-slate-100">
                 <div>
                     <label htmlFor="report-from" className="mb-1 block text-xs font-medium text-slate-500">
                         From
@@ -173,7 +173,7 @@ async function handleExport() {
             </div>
 
             {/* Export controls */}
-<div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+<div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-pry-clr p-3">
     <span className="text-xs font-medium text-slate-500 sec-ff">Export:</span>
 
         {!clinicOnly && (

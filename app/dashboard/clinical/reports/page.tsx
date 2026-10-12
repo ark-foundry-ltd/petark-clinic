@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ClinicReportsPage() {
     return (
-        <div className="w-full pry-ff">
+        <div className="w-full pry-ff p-4">
             <div className="mb-6">
                 <h1 className="text-xl font-bold text-sec-clr">Reports</h1>
                 <p className="text-sm text-gray-500">Download your clinic operations report.</p>
