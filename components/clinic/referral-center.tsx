@@ -116,11 +116,11 @@ export default function ReferralCenter() {
                     Refer &amp; Earn
                 </span>
                 <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-                    Earn {formatNaira(5000)} for every clinic you bring to PetArk
+                    Earn {formatNaira(2500)} for every clinic you bring to PetArk
                 </h1>
                 <p className="sec-ff mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
                     Share your link. When a clinic signs up with it and subscribes to a paid
-                    plan, {formatNaira(5000)} is added to your credit balance. Credit covers up
+                    plan, {formatNaira(2500)} is added to your credit balance. Credit covers up
                     to half of any subscription payment, and what is left carries over to your
                     next payment.
                 </p>

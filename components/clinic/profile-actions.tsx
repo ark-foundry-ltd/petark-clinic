@@ -70,7 +70,7 @@ export default function ProfileActions() {
             </div>
             <div>
               <h3 className="font-semibold text-sec-clr">Refer a Clinic</h3>
-              <p className="text-sm text-gray-500">Earn ₦5,000 PetArk credit</p>
+              <p className="text-sm text-gray-500">Earn ₦2,500 PetArk credit</p>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-acc-clr group-hover:translate-x-1 transition-all duration-200" />

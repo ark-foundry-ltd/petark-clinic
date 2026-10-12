@@ -439,7 +439,7 @@ export default function SubscriptionPlans() {
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-acc-clr hover:underline"
                 >
                     <Gift className="h-3.5 w-3.5" />
-                    Refer a clinic and earn {formatNaira(5000)} credit
+                    Refer a clinic and earn {formatNaira(2500)} credit
                 </Link>
             </div>
 
