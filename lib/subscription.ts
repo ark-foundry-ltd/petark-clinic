@@ -73,7 +73,7 @@ export const PLAN_PRICING: Record<PurchasablePlan, PlanPricingEntry> = {
     },
     // CMS-only prices are placeholders: keep them identical to the backend planPricing.js
     cms_starter: {
-        monthly: 1000, // change later after testing live to amount
+        monthly: 11000,
         annual: 110000,
     },
     standard: {
