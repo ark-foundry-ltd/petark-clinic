@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { inviteStaff, getStaffRoleMeta, type StaffRole } from "@/lib/staff";
 import { listLocations, type Location } from "@/lib/location";
 import { listCustomRoles, type CustomRole } from "@/lib/custom-roles";
+import { useAuthStore } from "@/store/useStore";
+import { getFeatures, getPlanInfo } from "@/lib/plan";
+import type { User } from "@/lib/user";
 
 const BUILT_IN_ROLES: { value: StaffRole; label: string }[] = [
   { value: "vet", label: "Vet Assistant" },
@@ -40,6 +43,15 @@ export default function InviteStaffModal({
   onClose,
   onSuccess,
 }: Readonly<InviteStaffModalProps>) {
+  // CMS-only plans (and Free) have no inventory/POS, so no Sales role and no
+  // location assignment — the backend rejects both.
+  const profile = useAuthStore((s) => s.profile) as User | null;
+  const { plan } = getPlanInfo(profile);
+  const hasIms = getFeatures(plan).ims;
+  const roleOptions = hasIms
+    ? BUILT_IN_ROLES
+    : BUILT_IN_ROLES.filter((r) => r.value !== "sales");
+
   const [fullname, setFullname] = useState("");
   const [email, setEmail] = useState("");
   const [selection, setSelection] = useState<RoleSelection>({ kind: "builtin", role: "vet" });
@@ -95,6 +107,12 @@ export default function InviteStaffModal({
   }, []);
 
   useEffect(() => {
+    // No locations API on plans without IMS (it answers 402), so don't call it.
+    if (!hasIms) {
+      setLocations([]);
+      setLocationsLoading(false);
+      return;
+    }
     let cancelled = false;
     listLocations()
       .then((data) => {
@@ -109,15 +127,18 @@ export default function InviteStaffModal({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hasIms]);
 
   const selectedCustomRole =
     selection.kind === "custom"
       ? customRoles.find((r) => r._id === selection.customRoleId)
       : null;
 
-  const needsLocation =
-    selection.kind === "builtin"
+  // Mirrors the backend: with no IMS there is no location-scoped data, so no
+  // role needs a location assignment.
+  const needsLocation = !hasIms
+    ? false
+    : selection.kind === "builtin"
       ? metaLoaded
         ? (roleLocationMeta[selection.role] ?? true)
         : false
@@ -234,7 +255,7 @@ export default function InviteStaffModal({
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-acc-clr/30 focus:border-acc-clr transition-colors sec-ff bg-white"
             >
               <optgroup label="Standard roles">
-                {BUILT_IN_ROLES.map((r) => (
+                {roleOptions.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
@@ -250,6 +271,11 @@ export default function InviteStaffModal({
                 </optgroup>
               )}
             </select>
+            {!hasIms && (
+              <p className="mt-1.5 text-xs text-gray-400 sec-ff">
+                The Sales role comes with plans that include Inventory &amp; POS.
+              </p>
+            )}
           </div>
 
           {needsLocation && (

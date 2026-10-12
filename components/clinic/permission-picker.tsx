@@ -1,6 +1,10 @@
 // components/clinic/permission-picker.tsx
 "use client";
 
+import { useAuthStore } from "@/store/useStore";
+import { getFeatures, getPlanInfo } from "@/lib/plan";
+import type { User } from "@/lib/user";
+
 export interface PermissionGroup {
   label: string;
   permissions: { value: string; label: string }[];
@@ -81,6 +85,16 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   },
 ];
 
+// Permissions that only make sense with Inventory & POS (not on CMS-only plans).
+// generate_invoice and confirm_payment stay: visit payments belong to the clinic side.
+const IMS_ONLY_PERMISSIONS = new Set([
+  "access_pos",
+  "view_sales_history",
+  "manage_inventory",
+  "view_inventory",
+  "view_inventory_cost",
+]);
+
 interface PermissionPickerProps {
   selected: string[];
   onChange: (permissions: string[]) => void;
@@ -92,6 +106,17 @@ export default function PermissionPicker({
   onChange,
   disabled = false,
 }: Readonly<PermissionPickerProps>) {
+  const profile = useAuthStore((s) => s.profile) as User | null;
+  const { plan } = getPlanInfo(profile);
+  const hasIms = getFeatures(plan).ims;
+
+  const groups = hasIms
+    ? PERMISSION_GROUPS
+    : PERMISSION_GROUPS.map((group) => ({
+        ...group,
+        permissions: group.permissions.filter((p) => !IMS_ONLY_PERMISSIONS.has(p.value)),
+      })).filter((group) => group.permissions.length > 0);
+
   function toggle(value: string) {
     if (disabled) return;
     onChange(
@@ -103,7 +128,7 @@ export default function PermissionPicker({
 
   return (
     <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
-      {PERMISSION_GROUPS.map((group) => (
+      {groups.map((group) => (
         <div key={group.label}>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 sec-ff">
             {group.label}

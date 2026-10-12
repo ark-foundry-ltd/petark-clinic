@@ -44,7 +44,7 @@ export interface AnalyticsOverview {
     locked?: boolean; // true only for free
     range?: AnalyticsRange;
     snapshot?: AnalyticsSnapshot;
-    revenueTrend?: TrendPoint[];
+    revenueTrend?: TrendPoint[] | null; // null on CMS-only plans (no POS sales data)
     appointmentTrend?: AppointmentTrend;
     patientGrowthTrend?: TrendPoint[];
     staffPerformance?: StaffPerformance;

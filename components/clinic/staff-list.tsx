@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Search, MoreVertical, ShieldOff, ShieldCheck, UserCog } from "lucide-react";
+import { Search, MoreVertical, ShieldOff, ShieldCheck, UserCog, UserX } from "lucide-react";
 import {
   type Staff,
   type StaffRole,
@@ -141,7 +141,8 @@ export default function StaffList({
       {/* Empty state */}
       {filtered.length === 0 && (
         <div className="text-center py-16 border border-gray-100 rounded-2xl">
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-sm sec-ff">
+            <UserX className="w-6 h-6 mx-auto mb-2" />
             {searchQuery ? "No staff match your search" : "No staff members yet"}
           </p>
         </div>

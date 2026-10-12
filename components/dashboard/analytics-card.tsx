@@ -88,7 +88,9 @@ export default function AnalyticsCard() {
                         <p className="text-sm text-gray-500 sec-ff mt-0.5">
                             {isFullTier
                                 ? "Track your clinic's performance, trends and activity."
-                                : `Your ${tierLabel} plan includes revenue and appointment trends.`}
+                                : data.revenueTrend
+                                  ? `Your ${tierLabel} plan includes revenue and appointment trends.`
+                                  : `Your ${tierLabel} plan includes appointment trends.`}
                         </p>
                         {latestRevenue !== undefined && (
                             <p className="text-xs text-gray-400 mt-1">

@@ -151,12 +151,6 @@ export default function StaffsClient() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => router.push("/dashboard/profile/role")}
-              className="text-sm font-medium border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors pry-ff"
-            >
-              View Roles
-            </button>
           </div>
 
           {/* Tabs */}

@@ -21,9 +21,11 @@ import {
     Layers,
     Rocket,
     Crown,
+    Stethoscope,
+    HeartPulse,
     LucideIcon,
 } from "lucide-react";
-import { getPlanInfo } from "@/lib/plan";
+import { getPlanInfo, type Plan } from "@/lib/plan";
 import UsageAddon from "./usage-addon";
 
 interface TreatmentTimelineProps {
@@ -33,7 +35,7 @@ interface TreatmentTimelineProps {
     petSpecies?: string;
 }
 
-type PlanKey = "free" | "starter" | "standard" | "pro" | "enterprise";
+type PlanKey = Plan;
 
 const PLAN_STYLES: Record<PlanKey, { label: string; icon: LucideIcon; className: string }> = {
     free: {
@@ -46,10 +48,20 @@ const PLAN_STYLES: Record<PlanKey, { label: string; icon: LucideIcon; className:
         icon: Layers,
         className: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200",
     },
+    cms_starter: {
+        label: "CMS Starter",
+        icon: Stethoscope,
+        className: "bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-200",
+    },
     standard: {
         label: "Standard",
         icon: Rocket,
         className: "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200",
+    },
+    cms_standard: {
+        label: "CMS Standard",
+        icon: HeartPulse,
+        className: "bg-cyan-50 text-cyan-700 ring-1 ring-inset ring-cyan-200",
     },
     pro: {
         label: "Pro",
