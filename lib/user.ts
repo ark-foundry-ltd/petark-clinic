@@ -34,7 +34,7 @@ export interface ClinicService {
 }
 
 export interface Subscription {
-        plan: Plan;
+    plan: Plan;
     status: 'active' | 'inactive' | 'cancelled';
     startedAt: string | null;
     expiresAt: string | null;
@@ -83,9 +83,9 @@ export interface StaffProfile {
     clinicName: string;
     clinicPlan: Plan;
     clinicPlanStatus: 'active' | 'inactive' | 'cancelled';
-    clinicRegistrationFee: number;     
+    clinicRegistrationFee: number;
     clinicRegistrationEnabled: boolean;
-    clinicServicesProvided: ClinicService[]; 
+    clinicServicesProvided: ClinicService[];
 }
 
 export type MeResponse =

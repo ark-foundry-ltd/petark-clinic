@@ -15,7 +15,21 @@ import {
 } from "@/lib/subscription";
 import { useSubscription } from "@/hooks/use-subscription";
 import AutoRenewalCard from "@/components/clinic/auto-renewal-card";
-import { Check, Loader2, Zap, Layers, Rocket, Sparkles, Building2, Gift } from "lucide-react";
+import {
+    Check,
+    X,
+    Loader2,
+    Zap,
+    Layers,
+    Rocket,
+    Sparkles,
+    Building2,
+    Gift,
+    Stethoscope,
+    HeartPulse,
+} from "lucide-react";
+
+type Track = "full" | "cms";
 
 interface PlanDefinition {
     id: SubscriptionPlan;
@@ -23,8 +37,12 @@ interface PlanDefinition {
     icon: typeof Zap;
     tagline: string;
     features: string[];
+    // Shown struck-out so clinics see exactly what the CMS-only plans leave out
+    notIncluded?: string[];
     purchasable: boolean;
     highlighted?: boolean;
+    // Which side of the switch shows this card
+    track: "both" | Track;
 }
 
 const PLANS: PlanDefinition[] = [
@@ -45,6 +63,7 @@ const PLANS: PlanDefinition[] = [
       "Self-service help center and setup guides",
     ],
     purchasable: false,
+    track: "both",
   },
   {
     id: "starter",
@@ -67,6 +86,29 @@ const PLANS: PlanDefinition[] = [
       "Everything in Free",
     ],
     purchasable: true,
+    track: "full",
+  },
+  {
+    id: "cms_starter",
+    name: "CMS Starter",
+    icon: Stethoscope,
+    tagline: "Clinic management only, for small clinics that don't need inventory or POS",
+    features: [
+      "Up to 3 staff accounts",
+      "Up to 3 custom roles",
+      "Primary clinic location",
+      "Unlimited patients",
+      "80 treatments per month",
+      "80 reminders per month",
+      "Treatment and visit summaries",
+      "Basic clinic report",
+      "Email support during business hours",
+      "Onboarding checklist and Excel/CSV import template",
+      "Everything in Free",
+    ],
+    notIncluded: ["Inventory and point of sale (POS)", "Sales and inventory reports"],
+    purchasable: true,
+    track: "cms",
   },
   {
     id: "standard",
@@ -83,6 +125,7 @@ const PLANS: PlanDefinition[] = [
       "160 reminders per month",
       "Lab results",
       "Drug dosage calculator",
+      "Receive referrals from other clinics",
       "Priority support",
       "Guided onboarding session",
       "Assisted Excel/CSV data migration",
@@ -90,6 +133,36 @@ const PLANS: PlanDefinition[] = [
     ],
     purchasable: true,
     highlighted: true,
+    track: "full",
+  },
+  {
+    id: "cms_standard",
+    name: "CMS Standard",
+    icon: HeartPulse,
+    tagline: "Clinic management only, with more capacity and referrals for growing clinics",
+    features: [
+      "Up to 8 staff accounts",
+      "Up to 8 custom roles",
+      "Primary clinic location",
+      "Unlimited patients",
+      "160 treatments per month",
+      "160 reminders per month",
+      "Lab results",
+      "Drug dosage calculator",
+      "Receive referrals from other clinics",
+      "Priority support",
+      "Guided onboarding session",
+      "Assisted Excel/CSV data migration",
+      "Everything in CMS Starter",
+    ],
+    notIncluded: [
+      "Inventory and point of sale (POS)",
+      "Sales and inventory reports",
+      "Additional branches",
+    ],
+    purchasable: true,
+    highlighted: true,
+    track: "cms",
   },
   {
     id: "pro",
@@ -113,6 +186,7 @@ const PLANS: PlanDefinition[] = [
       "Everything in Standard",
     ],
     purchasable: true,
+    track: "both",
   },
 //   {
 //     id: "enterprise",
@@ -134,8 +208,16 @@ const PLANS: PlanDefinition[] = [
 //       "Custom enterprise solutions",
 //     ],
 //     purchasable: false,
+//     track: "both",
 //   },
 ];
+
+// CMS-only plan -> the full-platform plan that adds inventory & POS.
+// Moving up is a normal purchase of that plan at its full price.
+const IMS_SIBLING: Partial<Record<SubscriptionPlan, SubscriptionPlan>> = {
+    starter: "cms_starter",
+    standard: "cms_standard",
+};
 
 function formatNaira(amount: number): string {
     return `₦${amount.toLocaleString("en-NG")}`;
@@ -144,6 +226,7 @@ function formatNaira(amount: number): string {
 export default function SubscriptionPlans() {
     const { subscription, error: loadError, refresh } = useSubscription();
     const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+    const [track, setTrack] = useState<Track>("full");
     const [upgradingPlan, setUpgradingPlan] = useState<PurchasablePlan | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [useCredit, setUseCredit] = useState(true);
@@ -161,6 +244,7 @@ export default function SubscriptionPlans() {
 
     // A trial gives Pro features but is not a purchase, so Pro must stay buyable
     const onTrial = subscription?.isTrial === true;
+    const isCmsClinic = !onTrial && !!subscription?.plan?.startsWith("cms_");
     const trialEndsLabel =
         onTrial && subscription?.expiresAt
             ? new Date(subscription.expiresAt).toLocaleDateString("en-NG", {
@@ -175,11 +259,12 @@ export default function SubscriptionPlans() {
         if (loadError) setErrorMessage(loadError);
     }, [loadError]);
 
-    // Seed the checkbox once from the saved setting
+    // Seed the checkbox and the plan switch once from the saved subscription
     useEffect(() => {
         if (subscription && !autoRenewSeeded.current) {
             autoRenewSeeded.current = true;
             setAutoRenew(subscription.autoRenew);
+            if (subscription.plan.startsWith("cms_") && !subscription.isTrial) setTrack("cms");
         }
     }, [subscription]);
 
@@ -216,6 +301,8 @@ export default function SubscriptionPlans() {
         return PLAN_PRICING[planId][billingCycle];
     }
 
+    const visiblePlans = PLANS.filter((p) => p.track === "both" || p.track === track);
+
     return (
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 pry-ff">
             <div className="mb-8 text-center">
@@ -246,6 +333,51 @@ export default function SubscriptionPlans() {
                     </p>
                 </div>
             )}
+
+            {/* Plan type switch: with or without inventory */}
+            <div className="mb-6 flex flex-col items-center gap-2">
+                <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
+                    <button
+                        type="button"
+                        onClick={() => setTrack("full")}
+                        className={`rounded-full px-5 py-2 text-sm font-medium transition sm:px-4 sm:py-1.5 ${
+                            track === "full"
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        }`}
+                    >
+                        Full platform
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setTrack("cms")}
+                        className={`rounded-full px-5 py-2 text-sm font-medium transition sm:px-4 sm:py-1.5 ${
+                            track === "cms"
+                                ? "bg-white text-slate-900 shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        }`}
+                    >
+                        Standalone CMS
+                    </button>
+                </div>
+                <p className="sec-ff max-w-md text-center text-xs text-slate-500">
+                    {track === "full"
+                        ? "Clinic management plus inventory and point of sale."
+                        : "Clinic management only. No inventory, POS or extra branches."}
+                </p>
+                {isCmsClinic && track === "cms" && (
+                    <p className="sec-ff text-center text-xs text-slate-500">
+                        Need inventory and POS?{" "}
+                        <button
+                            type="button"
+                            onClick={() => setTrack("full")}
+                            className="font-medium text-acc-clr hover:underline"
+                        >
+                            See Full platform plans
+                        </button>
+                    </p>
+                )}
+            </div>
 
             {/* Billing cycle toggle */}
             <div className="mb-6 flex flex-col items-center gap-2">
@@ -351,13 +483,17 @@ export default function SubscriptionPlans() {
             </div>
 
             <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">
-                {PLANS.map((plan) => {
+                {visiblePlans.map((plan) => {
                     // During a trial the clinic has Pro features but hasn't bought anything,
                     // so no card is "current" and Pro stays purchasable.
                     const isCurrent = subscription?.plan === plan.id && !onTrial;
                     const isUpgrading = upgradingPlan === plan.id;
                     const Icon = plan.icon;
                     const { price, period } = priceFor(plan.id);
+
+                    // A CMS clinic looking at its IMS sibling: this purchase adds inventory & POS
+                    const addsInventory =
+                        !onTrial && IMS_SIBLING[plan.id] === subscription?.plan;
 
                     const credit =
                         plan.purchasable && applyingCredit
@@ -446,6 +582,17 @@ export default function SubscriptionPlans() {
                                         <span className="leading-snug">{feature}</span>
                                     </li>
                                 ))}
+                                {plan.notIncluded?.map((feature) => (
+                                    <li
+                                        key={feature}
+                                        className="flex items-start gap-2.5 text-sm text-slate-400"
+                                    >
+                                        <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-300">
+                                            <X className="h-3 w-3" strokeWidth={3} />
+                                        </span>
+                                        <span className="leading-snug">{feature}</span>
+                                    </li>
+                                ))}
                             </ul>
 
                             <div className="mt-6">
@@ -477,9 +624,11 @@ export default function SubscriptionPlans() {
                                         )}
                                         {isUpgrading
                                             ? "Redirecting to checkout..."
-                                            : plan.id === "pro" && onTrial
-                                              ? "Subscribe to Pro"
-                                              : `Choose ${plan.name}`}
+                                            : addsInventory
+                                              ? `Add inventory with ${plan.name}`
+                                              : plan.id === "pro" && onTrial
+                                                ? "Subscribe to Pro"
+                                                : `Choose ${plan.name}`}
                                     </button>
                                 ) : (
                                     <button

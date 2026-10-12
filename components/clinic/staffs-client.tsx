@@ -10,6 +10,7 @@ import { Staff, getStaff } from "@/lib/staff";
 import { type CustomRole, listCustomRoles } from "@/lib/custom-roles";
 import { useAuthStore } from "@/store/useStore";
 import type { User } from "@/lib/user";
+import { planAtLeast } from "@/lib/plan";
 import StaffList from "@/components/clinic/staff-list";
 import InviteStaffModal from "@/components/clinic/invite-staff-modal";
 import CustomRolesList from "@/components/clinic/custom-roles-list";
@@ -34,10 +35,10 @@ export default function StaffsClient() {
 
   const profile = useAuthStore((s) => s.profile) as User | null;
   const plan = profile?.subscription?.plan;
-  // Matches the backend's requirePlanForAny('starter') gate on custom roles —
-  // every paid tier (Starter, Standard, Pro, Enterprise) has access, only Free doesn't.
-  const hasCustomRolesAccess =
-    plan === "starter" || plan === "standard" || plan === "pro" || plan === "enterprise";
+  // Matches the backend's requirePlanForAny('starter') gate on custom roles.
+  // Every paid tier has access (CMS plans rank like their Starter/Standard sibling),
+  // only Free doesn't.
+  const hasCustomRolesAccess = planAtLeast(plan, "starter");
 
   useEffect(() => {
     let cancelled = false;
@@ -213,7 +214,7 @@ export default function StaffsClient() {
                     Custom Roles requires a paid plan
                   </p>
                   <p className="text-sm text-gray-400 sec-ff mt-1">
-                    Upgrade to Starter or above to build named roles with custom permission sets.
+                    Upgrade to any paid plan to build named roles with custom permission sets.
                   </p>
                 </div>
                 <button

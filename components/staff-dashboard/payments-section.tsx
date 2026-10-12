@@ -13,6 +13,7 @@ import {
   type PaymentMethod,
   type PendingVisitPayment,
 } from "@/lib/visit-payment";
+import { getFeatures, getPlanInfo } from "@/lib/plan";
 
 // Anyone holding at least one of these sees the section.
 // Each action inside is still gated by its own permission.
@@ -64,7 +65,11 @@ function PaymentsPlaceholder() {
 // ─── Body ───────────────────────────────────────────────────────────────────
 function PaymentsBody() {
   const can = useCan();
-  const canPos = can("access_pos");
+  const profile = useAuthStore((s) => s.profile);
+  const { plan } = getPlanInfo(profile as Parameters<typeof getPlanInfo>[0]);
+  // POS is part of IMS: hidden on CMS-only plans even for roles holding access_pos
+  const canPos = can("access_pos") && getFeatures(plan).ims;
+
   const canList = can(...LIST_PERMISSIONS);
   const canConfirm = can("generate_invoice", "confirm_payment");
 
@@ -93,7 +98,7 @@ function PaymentsBody() {
     load();
   }, [load]);
 
-  let subtitle = "Ring up sales from the POS";
+  let subtitle = canPos ? "Ring up sales from the POS" : "Payments";
   if (canList) {
     if (loading) subtitle = "Loading…";
     else if (count === 0) subtitle = "No visits waiting for payment";

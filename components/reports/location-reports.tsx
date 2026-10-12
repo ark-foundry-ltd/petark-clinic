@@ -30,7 +30,8 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 interface LocationReportsProps {
-    locationId: string;
+    locationId?: string;
+    clinicOnly?: boolean;
 }
 
 function todayISO(): string {
@@ -42,19 +43,19 @@ function startOfMonthISO(): string {
     return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
 }
 
-export default function LocationReports({ locationId }: Readonly<LocationReportsProps>) {
+export default function LocationReports({ locationId, clinicOnly = false }: Readonly<LocationReportsProps>) {
     const [from, setFrom] = useState(startOfMonthISO());
     const [to, setTo] = useState(todayISO());
     const [appliedRange, setAppliedRange] = useState({ from, to });
 
     const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
     const [inventoryReport, setInventoryReport] = useState<InventoryReport | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!clinicOnly);
     const [loadError, setLoadError] = useState<string | null>(null);
 
-    const [selectedExportTypes, setSelectedExportTypes] = useState<ReportType[]>(["sales"]);
-const [exportFormat, setExportFormat] = useState<ExportFormat>("xlsx");
-const [exporting, setExporting] = useState(false);
+    const [selectedExportTypes, setSelectedExportTypes] = useState<ReportType[]>(clinicOnly ? ["clinic"] : ["sales"]);
+    const [exportFormat, setExportFormat] = useState<ExportFormat>("xlsx");
+    const [exporting, setExporting] = useState(false);
 
 function toggleExportType(type: ReportType) {
     setSelectedExportTypes((current) =>
@@ -84,6 +85,7 @@ async function handleExport() {
 }
 
     useEffect(() => {
+        if (clinicOnly) return;
         let cancelled = false;
         setLoading(true);
         setLoadError(null);
@@ -108,7 +110,7 @@ async function handleExport() {
         return () => {
             cancelled = true;
         };
-    }, [appliedRange, locationId]);
+    }, [appliedRange, locationId, clinicOnly]);
 
     function applyRange() {
         if (new Date(from) > new Date(to)) {
@@ -174,24 +176,28 @@ async function handleExport() {
 <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
     <span className="text-xs font-medium text-slate-500 sec-ff">Export:</span>
 
-    <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
-        <input
-            type="checkbox"
-            checked={selectedExportTypes.includes("sales")}
-            onChange={() => toggleExportType("sales")}
-            className="rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
-        />
-        Sales
-    </label>
-    <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
-        <input
-            type="checkbox"
-            checked={selectedExportTypes.includes("inventory")}
-            onChange={() => toggleExportType("inventory")}
-            className="rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
-        />
-        Inventory
-    </label>
+        {!clinicOnly && (
+        <>
+            <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
+                <input
+                    type="checkbox"
+                    checked={selectedExportTypes.includes("sales")}
+                    onChange={() => toggleExportType("sales")}
+                    className="rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
+                />
+                Sales
+            </label>
+            <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
+                <input
+                    type="checkbox"
+                    checked={selectedExportTypes.includes("inventory")}
+                    onChange={() => toggleExportType("inventory")}
+                    className="rounded border-slate-300 text-acc-clr focus:ring-acc-clr"
+                />
+                Inventory
+            </label>
+        </>
+    )}
     <label className="flex items-center gap-1.5 text-sm text-slate-600 pry-ff">
         <input
             type="checkbox"
@@ -220,8 +226,15 @@ async function handleExport() {
         {exporting ? <Loader2Icon className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
         Download
     </button>
-</div>
+            </div>
+            
 
+            {clinicOnly && (
+                <p className="mb-6 text-sm text-slate-500 sec-ff">
+                    Your plan includes the Clinic Operations report: appointments, visits and new patients.
+                    Sales and inventory reports come with plans that include Inventory &amp; POS.
+                </p>
+            )}
             {loading ? (
                 <div className="flex justify-center py-16">
                     <Loader2Icon className="h-6 w-6 animate-spin text-acc-clr" />

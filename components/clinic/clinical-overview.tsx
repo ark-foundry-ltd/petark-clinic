@@ -4,11 +4,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PawPrint, ClipboardList, Package, ArrowLeftRight, Lock, MapPin } from "lucide-react";
+import { PawPrint, ClipboardList, Package, ArrowLeftRight, Lock, MapPin, Plus, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useStore";
 import ActivityFeed from "@/components/clinic/activity-feed";
 import { User } from "@/lib/user";
+import { getFeatures, planAtLeast } from "@/lib/plan";
 
 export default function ClinicalOverview() {
     const router = useRouter();
@@ -19,11 +20,12 @@ export default function ClinicalOverview() {
     const plan = clinicProfile?.subscription?.plan;
     const status = clinicProfile?.subscription?.status;
     const isActive = status === "active";
-    const isStandardAbove = (plan === "standard" || plan === "pro" || plan === "enterprise") && isActive;
-    // Was isStandardOrAbove — Inventory & POS is actually a Starter+ feature
-    // per the pricing table (backend already gates it at requirePlanForAny('starter')).
-    const isStarterOrAbove =
-        (plan === "starter" || plan === "standard" || plan === "pro" || plan === "enterprise") && isActive;
+    const isStandardAbove = planAtLeast(plan, "standard") && isActive;
+
+    // Inventory & POS (and the Locations pages that hold it) depend on the plan's
+    // `ims` feature, not on rank: CMS-only plans rank like Starter/Standard but have no IMS.
+    const hasIms = getFeatures(plan).ims && isActive;
+    const isCmsOnly = !!plan?.startsWith("cms_") && isActive;
 
     const handleLockedClick = (feature: string, requiredPlan: string) => {
         toast.error(`${feature} is a ${requiredPlan} feature`, {
@@ -40,7 +42,9 @@ export default function ClinicalOverview() {
             <div className="mb-6">
                 <h1 className="text-xl font-bold text-sec-clr">Clinical</h1>
                 <p className="text-sm text-gray-500">
-                    Manage patients, visit records, and inventory.
+                    {isCmsOnly
+                        ? "Manage patients and visit records."
+                        : "Manage patients, visit records, and inventory."}
                 </p>
             </div>
 
@@ -74,7 +78,7 @@ export default function ClinicalOverview() {
                     <p className="text-xs text-gray-400">Browse past visits</p>
                 </Link>
 
-                {isStarterOrAbove ? (
+                {hasIms ? (
                     <Link
                         href="/dashboard/clinical/locations"
                         className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
@@ -90,6 +94,27 @@ export default function ClinicalOverview() {
                             Manage Inventory and Stock Alerts
                         </p>
                     </Link>
+                ) : isCmsOnly ? (
+                    <button
+                        type="button"
+                        onClick={() => router.push("/dashboard/profile/upgrade")}
+                        className="relative text-left bg-pry-clr border border-dashed border-acc-clr/40 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition pry-ff"
+                    >
+                        <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold bg-acc-clr text-white px-2 py-0.5 rounded-full">
+                            <Plus className="w-2.5 h-2.5" />
+                            Upgrade
+                        </span>
+                        <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
+                            <Package className="w-5 h-5 text-acc-clr" />
+                        </div>
+                        <h3 className="font-semibold text-sec-clr mb-1">Inventory &amp; POS</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                            Track drugs, supplies and stock levels, and sell at the counter
+                        </p>
+                        <p className="text-xs text-acc-clr font-medium flex items-center gap-1">
+                            Not in your plan. Upgrade to add inventory
+                        </p>
+                    </button>
                 ) : (
                     <button
                         type="button"
@@ -113,6 +138,22 @@ export default function ClinicalOverview() {
                     </button>
                 )}
 
+                {isCmsOnly && (
+                    <Link
+                        href="/dashboard/clinical/reports"
+                        className="bg-pry-clr border border-gray-100 rounded-xl p-5 hover:shadow-md hover:-translate-y-0.5 transition"
+                    >
+                        <div className="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center mb-3">
+                            <BarChart3 className="w-5 h-5 text-acc-clr" />
+                        </div>
+                        <h3 className="font-semibold text-sec-clr mb-1">Reports</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                            Appointments, visits and new patients for any date range
+                        </p>
+                        <p className="text-xs text-gray-400">Download your clinic report</p>
+                    </Link>
+                )}
+                
                 {isStandardAbove ? (
                     <Link
                         href="/dashboard/clinical/referrals"
@@ -132,12 +173,12 @@ export default function ClinicalOverview() {
                 ) : (
                     <button
                         type="button"
-                        onClick={() => handleLockedClick("Referrals", "Pro")}
+                        onClick={() => handleLockedClick("Referrals", "Standard")}
                         className="relative text-left bg-gray-50 border border-gray-100 rounded-xl p-5 cursor-not-allowed opacity-75 pry-ff"
                     >
-                        <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold bg-purple-800 text-white px-2 py-0.5 rounded-full">
+                        <span className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-semibold bg-blue-800 text-white px-2 py-0.5 rounded-full">
                             <Lock className="w-2.5 h-2.5" />
-                            Pro
+                            Standard
                         </span>
                         <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                             <ArrowLeftRight className="w-5 h-5 text-gray-400" />

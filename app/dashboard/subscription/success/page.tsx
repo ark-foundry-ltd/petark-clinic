@@ -15,7 +15,9 @@ import { CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 const PLAN_LABELS: Record<string, string> = {
     free: "Free",
     starter: "Starter",
+    cms_starter: "CMS Starter",
     standard: "Standard",
+    cms_standard: "CMS Standard",
     pro: "Pro",
     enterprise: "Enterprise",
 };

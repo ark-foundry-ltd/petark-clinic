@@ -5,8 +5,23 @@ import { useClinicLocations } from "@/hooks/useClinicLocations";
 import LocationBar from "@/components/inventory/location-bar";
 import LocationReports from "@/components/reports/location-reports";
 import { Loader2 } from "lucide-react";
+import { useAuthStore } from "@/store/useStore";
+import { getPlanInfo } from "@/lib/plan";
 
 export default function ReportsSection() {
+    const profile = useAuthStore((s) => s.profile);
+    const { plan } = getPlanInfo(profile as Parameters<typeof getPlanInfo>[0]);
+
+    // CMS-only plans have no locations and no sales/inventory data. They get the
+    // clinic operations report only, and must not call /locations (it returns 402).
+    if (plan?.startsWith("cms_")) {
+        return <LocationReports clinicOnly />;
+    }
+
+    return <ImsReports />;
+}
+
+function ImsReports() {
     const {
         activeLocations,
         activeLocationId,

@@ -1,17 +1,17 @@
 // lib/subscription.ts
 import api from "@/lib/api";
 import { AxiosError } from "axios";
-import type { Plan } from "@/lib/plan";
+import type { Plan, PlanFeatures } from "@/lib/plan";
 
 // ─── Shared Types ──────────────────────────────────────────────────────────
 
-export type SubscriptionPlan = "free" | "starter" | "standard" | "pro" | "enterprise";
+export type SubscriptionPlan = Plan;
 export type SubscriptionStatus = "active" | "inactive" | "cancelled";
 export type BillingCycle = "monthly" | "annual";
 
 // Plans actually purchasable through initiateSubscriptionUpgrade —
 // enterprise is "coming soon" and isn't in PLAN_PRICING on the backend yet.
-export type PurchasablePlan = "starter" | "standard" | "pro";
+export type PurchasablePlan = "starter" | "cms_starter" | "standard" | "cms_standard" | "pro";
 
 export interface TrialInfo {
     startedAt: string | null;
@@ -29,6 +29,8 @@ export interface RenewalInfo {
 
 export interface SubscriptionRecord {
     plan: SubscriptionPlan;
+    // What the plan includes, sent by the backend (ims = inventory/POS, locations)
+    features?: PlanFeatures;
     status: SubscriptionStatus;
     billingCycle: BillingCycle | null;
     startedAt: string | null;
@@ -69,9 +71,18 @@ export const PLAN_PRICING: Record<PurchasablePlan, PlanPricingEntry> = {
         monthly: 15000,
         annual: 150000,
     },
+    // CMS-only prices are placeholders: keep them identical to the backend planPricing.js
+    cms_starter: {
+        monthly: 11000,
+        annual: 110000,
+    },
     standard: {
         monthly: 30000,
         annual: 300000,
+    },
+    cms_standard: {
+        monthly: 21000,
+        annual: 210000,
     },
     pro: {
         monthly: 40000,

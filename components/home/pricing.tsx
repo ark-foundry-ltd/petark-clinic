@@ -21,8 +21,8 @@ const plans: Record<Category, Plan[]> = {
     { id: "pro", name: "Pro", tagline: "For busy, multi-branch clinics that need advanced tools and no limits", cta: "Choose Pro", monthly: 40000, yearly: 400000 },
   ],
   cms: [
-    { id: "cms_starter", name: "CMS Starter", tagline: "Clinic management only, for small clinics that don't need inventory or POS", cta: "Choose CMS Starter", monthly: 12000, yearly: 120000 },
-    { id: "cms_standard", name: "CMS Standard", tagline: "Clinic management only, with more capacity and referrals for growing clinics", cta: "Choose CMS Standard", monthly: 22000, yearly: 220000, popular: true },
+    { id: "cms_starter", name: "CMS Starter", tagline: "Clinic management only, for small clinics that don't need inventory or POS", cta: "Choose CMS Starter", monthly: 11000, yearly: 110000 },
+    { id: "cms_standard", name: "CMS Standard", tagline: "Clinic management only, with more capacity and referrals for growing clinics", cta: "Choose CMS Standard", monthly: 21000, yearly: 210000, popular: true },
   ],
 };
 

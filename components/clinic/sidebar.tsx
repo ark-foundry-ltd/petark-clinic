@@ -20,7 +20,7 @@ import {
 import { useSidebar } from "@/context/sidebar-context";
 import { useAuthStore } from "@/store/useStore";
 import { logoutClinic } from "@/lib/auth";
-import { getPlanInfo } from "@/lib/plan";
+import { getPlanInfo, PLAN_LABELS, type Plan } from "@/lib/plan";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -50,48 +50,29 @@ function isRouteActive(pathname: string, href: string, exact: boolean = false) {
 }
 
 // ─── Plan Badge ───────────────────────────────────────────────────────────────
-function PlanBadge({ plan, status }: { plan?: string; status?: string }) {
-  const isActive = status === "active";
+const BADGE_STYLES: Record<string, string> = {
+  enterprise: "bg-amber-800 text-white",
+  pro: "bg-violet-600 text-white",
+  standard: "bg-blue-600 text-white",
+  cms_standard: "bg-teal-600 text-white",
+  starter: "bg-green-600 text-white",
+  cms_starter: "bg-emerald-600 text-white",
+};
 
-  if (plan === "enterprise" && isActive) {
+function PlanBadge({ plan, status }: Readonly<{ plan?: string; status?: string }>) {
+  const style = plan && status === "active" ? BADGE_STYLES[plan] : undefined;
+
+  if (!style) {
     return (
-      <span className="text-[9px] font-semibold bg-slate-800 text-white px-1.5 py-0.5 rounded-full shrink-0">
-        Enterprise
-      </span>
-    );
-  }
-  if (plan === "pro" && isActive) {
-    return (
-      <span className="text-[9px] font-semibold bg-violet-600 text-white px-1.5 py-0.5 rounded-full shrink-0">
-        ✦ Pro
-      </span>
-    );
-  }
-  if (plan === "starter" && isActive) {
-    return (
-      <span className="text-[9px] font-semibold bg-green-600 text-white px-1.5 py-0.5 rounded-full shrink-0">
-        Starter
-      </span>
-    );
-  }
-  if (plan === "standard" && isActive) {
-    return (
-      <span className="text-[9px] font-semibold bg-blue-600 text-white px-1.5 py-0.5 rounded-full shrink-0">
-        Standard
+      <span className="text-[9px] font-semibold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">
+        Free
       </span>
     );
   }
 
-  if (plan === "enterprise" && isActive) {
-    return (
-      <span className="text-[9px] font-semibold bg-amber-600 text-white px-1.5 py-0.5 rounded-full shrink-0">
-        Enterprise
-      </span>
-    );
-  }
   return (
-    <span className="text-[9px] font-semibold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">
-      Free
+    <span className={`text-[9px] font-semibold ${style} px-1.5 py-0.5 rounded-full shrink-0`}>
+      {plan === "pro" ? "✦ Pro" : PLAN_LABELS[plan as Plan]}
     </span>
   );
 }
