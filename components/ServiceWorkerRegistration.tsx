@@ -1,5 +1,9 @@
+// components/ServiceWorkerRegistration.tsx
 'use client';
 import { useEffect } from 'react';
+import { initInstallPromptCapture } from '@/hooks/useInstallPrompt';
+
+initInstallPromptCapture();
 
 export function ServiceWorkerRegistration() {
   useEffect(() => {

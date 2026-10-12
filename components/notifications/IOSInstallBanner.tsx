@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import { isIOS, isStandalone } from '@/lib/platform';
+import Image from 'next/image';
 
 export function IOSInstallBanner() {
   const [show, setShow] = useState(false);
@@ -27,8 +28,13 @@ export function IOSInstallBanner() {
           <X className="w-4 h-4" />
         </button>
 
-        <div className="p-2 bg-acc-clr rounded-lg text-pry-clr shrink-0">
-          <Download className="w-6 h-6" />
+        <div className="p-2 bg-bg-clr rounded-lg text-pry-clr shrink-0">
+          <Image
+              src="/petark_logo.png"
+              alt="PetArk Logo"
+              width={24}
+              height={24}
+          /> 
         </div>
 
         <div className="flex-1 min-w-0 pr-6">

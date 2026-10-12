@@ -90,29 +90,30 @@ export default function RegisterStepClinicInfo({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-sec-clr mb-1.5">
-                        Password <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                        <FieldIcon icon={Lock} />
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-transparent transition-all duration-200"
-                            placeholder="••••••••"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                        >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                    </div>
-                </div>
+<div>
+    <label className="block text-sm font-medium text-sec-clr mb-1.5">
+        Password <span className="text-red-500">*</span>
+    </label>
+    <div className="relative">
+        <FieldIcon icon={Lock} />
+        <input
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-transparent transition-all duration-200"
+            placeholder="••••••••"
+        />
+        <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+        >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+    </div>
+    <p className="text-xs text-sec-clr/50 mt-1.5">Password must be at least 6 characters</p>
+</div>
 
                 <div>
                     <label className="block text-sm font-medium text-sec-clr mb-1.5">
@@ -131,7 +132,6 @@ export default function RegisterStepClinicInfo({
                     </div>
                 </div>
             </div>
-            <p className="text-xs text-sec-clr/50 -mt-2">Password must be at least 6 characters</p>
 
             <div>
                 <div className="flex items-center justify-between mb-1.5">

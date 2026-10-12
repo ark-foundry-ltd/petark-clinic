@@ -8,6 +8,8 @@ import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
 import { MobileTopBar, MobileBottomNav, Sidebar } from "@/components/clinic/sidebar";
 import { NotificationPermissionBanner } from "@/components/notifications/NotificationPermissionBanner";
 import { Loader2 } from "lucide-react";
+import { IOSInstallBanner } from "@/components/notifications/IOSInstallBanner";
+import { InstallBanner } from "@/components/notifications/InstallBanner";
 
 function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   const { isMobile } = useSidebar();
@@ -18,6 +20,8 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
         <MobileTopBar />
         <main className="relative flex-1 min-w-0 overflow-y-auto pb-16">
           <div className="absolute top-0 inset-x-0 z-20 p-4">
+            <IOSInstallBanner />
+            <InstallBanner />
             <NotificationPermissionBanner />
           </div>
           {children}
@@ -33,6 +37,8 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
       <main className="relative flex-1 min-w-0 overflow-y-auto">
         <div className="absolute top-0 inset-x-0 z-20 p-4">
           <NotificationPermissionBanner />
+          <IOSInstallBanner />
+          <InstallBanner />
         </div>
         {children}
       </main>
