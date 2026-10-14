@@ -2,6 +2,7 @@
 
 import api from "./api";
 import axiosError from "axios";
+import type { ReminderInput, SkippedReminder } from "./reminders";
 
 export type DateRange = "today" | "7days" | "1month" | "last_month" | "all";
 
@@ -137,15 +138,20 @@ export async function getAppointmentById(appointmentId: string): Promise<Appoint
     }
 }
 
-// update appointment status
+// Update appointment status.
+// When confirming, `reminders` lets the clinic choose when the owner is reminded
+// (replaces any reminders not yet sent). Ignored for other statuses.
+// Note: the backend answers with { appointmentId, status, reminders? } under `data`,
+// not a full appointment, so callers shouldn't rely on the returned object.
 export async function updateAppointmentStatus(
     appointmentId: string,
-    status: Appointment["status"]
+    status: Appointment["status"],
+    reminders?: ReminderInput[]
 ): Promise<Appointment> {
     try {
         const response = await api.patch<{ status: string; data: { appointment: Appointment } }>(
             `/appointment/${appointmentId}/status`,
-            { status }
+            { status, ...(reminders ? { reminders } : {}) }
         );
         return response.data.data.appointment;
     } catch (error) {
@@ -158,10 +164,16 @@ export async function updateAppointmentStatus(
     }
 }
 
+export interface RemindersSummary {
+    created: number;
+    skipped: SkippedReminder[];
+}
+
 export interface RescheduleResult {
   appointmentId: string;
   date: string;
   status: string;
+  reminders?: RemindersSummary;
 }
 
 export type RescheduleResponse =
@@ -172,13 +184,14 @@ export async function rescheduleAppointment(
     appointmentId: string,
     date: string,
     time: string,
-    reason: string
+    reason: string,
+    reminders?: ReminderInput[]
 ): Promise<RescheduleResponse> {
     const token = localStorage.getItem("token") || "";
 
     const response = await api.patch(
         `${process.env.NEXT_PUBLIC_API_URL}/appointment/${appointmentId}/reschedule`,
-        { date, time, reason },
+        { date, time, reason, ...(reminders ? { reminders } : {}) },
         {
             headers: {
                 "Content-Type": "application/json",
@@ -194,21 +207,27 @@ export async function rescheduleAppointment(
     return { locked: false, result: body.data as RescheduleResult };
 }
 
-export interface ClinicAvailabilitySlot {
-  time: string;
-  available: boolean;
+// One day of the clinic's calendar. There are no fixed slots: any time between
+// opensAt and closesAt can be booked, except times already taken.
+export interface ClinicDayAvailability {
+  isOpen: boolean;
+  day?: string;
+  opensAt: string | null;  // "HH:mm"
+  closesAt: string | null; // "HH:mm" (appointments must START before this)
+  bookedTimes: string[];   // "HH:mm" of appointments already booked that day
+  message?: string;
 }
 
 export async function getClinicAvailability(
-  clinicId: string,
+  _clinicId: string,
   date: string
-): Promise<ClinicAvailabilitySlot[]> {
+): Promise<ClinicDayAvailability> {
   try {
-    const response = await api.get<{ status: string; data: { slots: ClinicAvailabilitySlot[] } }>(
-      `/appointment/clinic/${clinicId}/availability`,
-      { params: { date } }
+    const response = await api.get<{ status: string; data: ClinicDayAvailability }>(
+        "/appointment/clinic/availability",
+        { params: { date } }
     );
-    return response.data.data.slots;
+    return response.data.data;
   } catch (error) {
     if (axiosError.isAxiosError(error)) {
       console.error("Error fetching clinic availability:", error.response?.data || error.message);
@@ -217,4 +236,29 @@ export async function getClinicAvailability(
     }
     throw error;
   }
+}
+
+export interface BookForOwnerInput {
+  petId: string;
+  date: string;  // YYYY-MM-DD (clinic-local)
+  time: string;  // "hh:mm AM/PM"
+  notes?: string;
+  reminders?: ReminderInput[];
+}
+
+export interface BookForOwnerResult {
+  appointmentId: string;
+  date: string;
+  status: string;
+  pet: { _id: string; name: string };
+  reminders: RemindersSummary;
+}
+
+// A clinic books on behalf of an owner (booked as confirmed straight away)
+export async function bookAppointmentForOwner(input: BookForOwnerInput): Promise<BookForOwnerResult> {
+  const response = await api.post<{ status: string; data: BookForOwnerResult }>(
+    "/appointment/clinic/book",
+    input
+  );
+  return response.data.data;
 }

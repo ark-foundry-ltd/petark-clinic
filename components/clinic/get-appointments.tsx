@@ -9,6 +9,7 @@ import { getVisit } from "@/lib/visit";
 import { useAppointmentsContext } from "@/context/appointments-context";
 import { useAuthStore } from "@/store/useStore";
 import VisitBtn from "@/components/clinic/visit-btn";
+import BookAppointmentModal from "@/components/clinic/book-appointment-modal"; // NEW
 import { CalendarDays, Clock, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, CheckCheck, CalendarX, AlarmClockOff } from "lucide-react";
 import AppointmentAnalyticsWidget from "@/components/appointments/appointment-analytics-widget";
 
@@ -69,11 +70,14 @@ export default function GetAppointments({
     const [page, setPage] = useState(1);
     const [range, setRange] = useState<DateRange>("all");
     const [visitStatusMap, setVisitStatusMap] = useState<Map<string, "in-progress" | "completed">>(new Map());
+    const [refreshKey, setRefreshKey] = useState(0); // NEW: bump to reload the list
 
     const { setAppointments: setCtxAppointments } = useAppointmentsContext();
 
     const permissions = useAuthStore((s) => s.permissions);
     const canViewVisitStatus = permissions.includes("all_permissions") || permissions.includes("view_pet_history");
+    // NEW: only staff who can manage appointments see the Book button
+    const canBook = permissions.includes("all_permissions") || permissions.includes("manage_appointments");
 
     useEffect(() => {
         let cancelled = false;
@@ -108,7 +112,7 @@ export default function GetAppointments({
 
         load();
         return () => { cancelled = true; };
-    }, [page, range, setCtxAppointments, canViewVisitStatus]);
+    }, [page, range, setCtxAppointments, canViewVisitStatus, refreshKey]); // NEW: refreshKey
 
     function handleRangeChange(next: DateRange) {
         setPage(1);
@@ -117,6 +121,12 @@ export default function GetAppointments({
 
     function handleRowClick(appointmentId: string) {
         router.push(`${basePath}/${appointmentId}`);
+    }
+
+    // NEW: after a clinic books for an owner, go back to page 1 and reload
+    function handleBooked() {
+        setPage(1);
+        setRefreshKey((k) => k + 1);
     }
 
     const { appointments, total, totalPages } = data;
@@ -137,24 +147,29 @@ export default function GetAppointments({
                     )}
                 </div>
 
-                <div className="relative w-fit">
-                    <select
-                        value={range}
-                        onChange={(e) => handleRangeChange(e.target.value as DateRange)}
-                        className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:border-acc-clr focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-acc-clr transition-all cursor-pointer"
-                    >
-                        {DATE_RANGES.map(({ label, value }) => (
-                            <option
-                                key={value}
-                                value={value}
-                                className="text-gray-700"
-                                style={value === range ? { color: "var(--acc-clr, #2563eb)", fontWeight: "500" } : {}}
-                            >
-                                {label}
-                            </option>
-                        ))}
-                    </select>
-                    <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-acc-clr" />
+                {/* NEW: Book button next to the range filter */}
+                <div className="flex items-center gap-3">
+                    {canBook && <BookAppointmentModal onBooked={handleBooked} />}
+
+                    <div className="relative w-fit">
+                        <select
+                            value={range}
+                            onChange={(e) => handleRangeChange(e.target.value as DateRange)}
+                            className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:border-acc-clr focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-acc-clr transition-all cursor-pointer"
+                        >
+                            {DATE_RANGES.map(({ label, value }) => (
+                                <option
+                                    key={value}
+                                    value={value}
+                                    className="text-gray-700"
+                                    style={value === range ? { color: "var(--acc-clr, #2563eb)", fontWeight: "500" } : {}}
+                                >
+                                    {label}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-acc-clr" />
+                    </div>
                 </div>
             </div>
 

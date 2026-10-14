@@ -1,14 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X, Calendar, Clock, Loader2, AlertCircle, ChevronDown, PawPrint, Lock } from "lucide-react";
 import { toast } from "sonner";
 import {
     getClinicAvailability,
     rescheduleAppointment,
-    type ClinicAvailabilitySlot,
+    type ClinicDayAvailability,
 } from "@/lib/appointment";
+import ReminderPicker, {
+    defaultReminderRows,
+    toReminderInputs,
+    validateReminderRows,
+    type ReminderRow,
+} from "@/components/reminders/reminder-picker";
 
 
 /* ── helpers ── */
@@ -70,10 +76,11 @@ export default function RescheduleAppointmentModal({
     const [isOpen, setIsOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState("");
     const [selectedTime24, setSelectedTime24] = useState("");
-    const [slots, setSlots] = useState<ClinicAvailabilitySlot[]>([]);
-    const [slotsLoading, setSlotsLoading] = useState(false);
-    const [slotsError, setSlotsError] = useState<string | null>(null);
+    const [availability, setAvailability] = useState<ClinicDayAvailability | null>(null);
+    const [availLoading, setAvailLoading] = useState(false);
+    const [availError, setAvailError] = useState<string | null>(null);
     const [reason, setReason] = useState(REASON_OPTIONS[0]);
+    const [reminderRows, setReminderRows] = useState<ReminderRow[]>([]);
     const [submitting, setSubmitting] = useState(false);
 
     const minDate = todayDateStr();
@@ -91,42 +98,79 @@ export default function RescheduleAppointmentModal({
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedDate("");
             setSelectedTime24("");
-            setSlots([]);
-            setSlotsError(null);
+            setAvailability(null);
+            setAvailError(null);
             setReason(REASON_OPTIONS[0]);
+            setReminderRows(defaultReminderRows());
         }
     }, [isOpen]);
 
     useEffect(() => {
         if (!selectedDate) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setSlots([]);
+            setAvailability(null);
             return;
         }
         setSelectedTime24("");
-        setSlotsError(null);
+        setAvailError(null);
+
+        let cancelled = false;
         (async () => {
-            setSlotsLoading(true);
+            setAvailLoading(true);
             try {
                 const data = await getClinicAvailability(clinicId, selectedDate);
-                setSlots(data);
+                if (!cancelled) setAvailability(data);
             } catch {
-                setSlotsError("Couldn't load available times.");
-                setSlots([]);
+                if (!cancelled) {
+                    setAvailError("Couldn't load the clinic's hours for that day.");
+                    setAvailability(null);
+                }
             } finally {
-                setSlotsLoading(false);
+                if (!cancelled) setAvailLoading(false);
             }
         })();
+        return () => { cancelled = true; };
     }, [selectedDate, clinicId]);
 
-    const morningSlots = slots.filter((s) => parseInt(s.time.split(":")[0], 10) < 12);
-    const afternoonSlots = slots.filter((s) => parseInt(s.time.split(":")[0], 10) >= 12);
+    // Why the chosen time can't be booked (the server checks again; this just saves a round trip)
+    const timeProblem = useMemo(() => {
+        if (!selectedDate || !selectedTime24 || !availability || !availability.isOpen) return null;
+
+        const { opensAt, closesAt, bookedTimes } = availability;
+        if ((opensAt && selectedTime24 < opensAt) || (closesAt && selectedTime24 >= closesAt)) {
+            return `Appointments run from ${opensAt ? to12Hour(opensAt) : "—"} to ${closesAt ? to12Hour(closesAt) : "—"}.`;
+        }
+        if (new Date(`${selectedDate}T${selectedTime24}`).getTime() < Date.now()) {
+            return "That time has already passed.";
+        }
+        if (bookedTimes.includes(selectedTime24)) {
+            return "Another appointment is already booked at that time.";
+        }
+        return null;
+    }, [selectedDate, selectedTime24, availability]);
+
+    // The new appointment time, used to preview when each "before" reminder will go out
+    const newAppointmentISO = useMemo(() => {
+        if (!selectedDate || !selectedTime24 || timeProblem) return null;
+        const d = new Date(`${selectedDate}T${selectedTime24}`);
+        return Number.isNaN(d.getTime()) ? null : d.toISOString();
+    }, [selectedDate, selectedTime24, timeProblem]);
 
     const handleSubmit = async () => {
         if (!selectedDate || !selectedTime24) {
             toast.error("Select a new date and time");
             return;
         }
+        if (timeProblem) {
+            toast.error(timeProblem);
+            return;
+        }
+        const reminderProblem = validateReminderRows(reminderRows, !!newAppointmentISO);
+        if (reminderProblem) {
+            toast.error(reminderProblem);
+            return;
+        }
+
         setSubmitting(true);
         try {
             const time12 = to12Hour(selectedTime24);
@@ -134,7 +178,8 @@ export default function RescheduleAppointmentModal({
                 appointmentId,
                 selectedDate,
                 time12,
-                reason
+                reason,
+                toReminderInputs(reminderRows)
             );
             if (response.locked) {
                 setIsOpen(false);
@@ -142,7 +187,16 @@ export default function RescheduleAppointmentModal({
                 return;
             }
 
-            toast.success(`Appointment rescheduled to ${time12}`);
+            const created = response.result.reminders?.created ?? 0;
+            const skipped = response.result.reminders?.skipped ?? [];
+
+            toast.success(
+                `Appointment rescheduled to ${time12}${created ? ` · ${created} reminder${created !== 1 ? "s" : ""} set` : ""}`
+            );
+            if (skipped.length > 0) {
+                toast.message(`${skipped.length} reminder${skipped.length !== 1 ? "s" : ""} skipped: ${skipped[0].reason}`);
+            }
+
             onRescheduled({ date: response.result.date, status: response.result.status });
             setIsOpen(false);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -159,6 +213,8 @@ export default function RescheduleAppointmentModal({
             setSubmitting(false);
         }
     };
+
+    const closed = !!availability && !availability.isOpen;
 
     return (
         <>
@@ -177,9 +233,9 @@ export default function RescheduleAppointmentModal({
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-0 sm:px-4">
-                    <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-lg max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-lg max-h-[90vh] overflow-y-auto">
                         {/* Header */}
-                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
                             <h2 className="text-lg font-bold text-sec-clr sec-ff">
                                 Reschedule Appointment
                             </h2>
@@ -243,51 +299,47 @@ export default function RescheduleAppointmentModal({
                                         New Time
                                     </label>
                                     <div className="relative">
-                                        <select
+                                        <input
+                                            type="time"
                                             value={selectedTime24}
+                                            min={availability?.opensAt ?? undefined}
+                                            max={availability?.closesAt ?? undefined}
                                             onChange={(e) => setSelectedTime24(e.target.value)}
-                                            disabled={!selectedDate || slotsLoading || slots.length === 0}
-                                            className="w-full appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-8 py-2.5 text-sm text-sec-clr focus:outline-none focus:border-acc-clr focus:bg-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                                        >
-                                            <option value="">
-                                                {!selectedDate
-                                                    ? "Select date first"
-                                                    : slotsLoading
-                                                      ? "Loading..."
-                                                      : slots.length === 0
-                                                        ? "No slots"
-                                                        : "Select slot"}
-                                            </option>
-                                            {morningSlots.length > 0 && (
-                                                <optgroup label="Morning">
-                                                    {morningSlots.map((s) => (
-                                                        <option key={s.time} value={s.time} disabled={!s.available}>
-                                                            {to12Hour(s.time)}{!s.available ? " — booked" : ""}
-                                                        </option>
-                                                    ))}
-                                                </optgroup>
-                                            )}
-                                            {afternoonSlots.length > 0 && (
-                                                <optgroup label="Afternoon">
-                                                    {afternoonSlots.map((s) => (
-                                                        <option key={s.time} value={s.time} disabled={!s.available}>
-                                                            {to12Hour(s.time)}{!s.available ? " — booked" : ""}
-                                                        </option>
-                                                    ))}
-                                                </optgroup>
-                                            )}
-                                        </select>
-                                        {slotsLoading ? (
-                                            <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 animate-spin pointer-events-none" />
-                                        ) : (
-                                            <Clock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                                            disabled={!selectedDate || availLoading || !availability?.isOpen}
+                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-sec-clr focus:outline-none focus:border-acc-clr focus:bg-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed [color-scheme:light]"
+                                        />
+                                        {availLoading && (
+                                            <Loader2 className="absolute right-9 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 animate-spin pointer-events-none" />
                                         )}
                                     </div>
                                 </div>
                             </div>
-                            {slotsError && (
-                                <p className="text-xs text-red-500 -mt-3">{slotsError}</p>
+
+                            {/* What the clinic's day looks like */}
+                            {!selectedDate && (
+                                <p className="text-xs text-gray-400 -mt-3">Pick a date to see the clinic&apos;s hours.</p>
                             )}
+                            {availError && <p className="text-xs text-red-500 -mt-3">{availError}</p>}
+                            {closed && (
+                                <p className="text-xs text-red-500 -mt-3">
+                                    {availability?.message ?? "The clinic is closed on this day."} Choose another date.
+                                </p>
+                            )}
+                            {availability?.isOpen && (
+                                <div className="-mt-3 space-y-1">
+                                    <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                        <Clock size={12} className="text-gray-400" />
+                                        Open {availability.opensAt ? to12Hour(availability.opensAt) : "—"} –{" "}
+                                        {availability.closesAt ? to12Hour(availability.closesAt) : "—"}
+                                    </p>
+                                    {availability.bookedTimes.length > 0 && (
+                                        <p className="text-xs text-gray-400">
+                                            Already booked: {availability.bookedTimes.map(to12Hour).join(", ")}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                            {timeProblem && <p className="text-xs text-red-500 -mt-3">{timeProblem}</p>}
 
                             {/* Reason for change */}
                             <div>
@@ -310,6 +362,19 @@ export default function RescheduleAppointmentModal({
                                 </div>
                             </div>
 
+                            {/* Reminders for the new time */}
+                            <div>
+                                <label className="text-xs font-bold text-sec-clr sec-ff mb-1.5 block">
+                                    Reminders for the new time
+                                </label>
+                                <ReminderPicker
+                                    value={reminderRows}
+                                    onChange={setReminderRows}
+                                    referenceDate={newAppointmentISO}
+                                    referenceLabel="appointment"
+                                    disabled={submitting}
+                                />
+                            </div>
                         </div>
 
                         {/* Footer */}
@@ -323,7 +388,7 @@ export default function RescheduleAppointmentModal({
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                disabled={!selectedDate || !selectedTime24 || submitting}
+                                disabled={!selectedDate || !selectedTime24 || !!timeProblem || submitting}
                                 className="flex-1 bg-acc-clr hover:bg-emerald-500 text-white py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {submitting ? (

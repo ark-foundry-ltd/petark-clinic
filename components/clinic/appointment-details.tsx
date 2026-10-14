@@ -29,6 +29,7 @@ import LabResultsSection from "@/components/clinic/lab-results-section";
 import MarkVisitPaidBtn from "@/components/clinic/mark-visit-paid-btn";
 import Link from "next/link";
 import RescheduleAppointmentModal from "@/components/clinic/reschedule-appt-modal";
+import ReminderList from "@/components/reminders/reminder-list";
 
 const STATUS_STYLES: Record<Appointment["status"], string> = {
     pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
@@ -317,6 +318,16 @@ export default function AppointmentDetails({
                                 )}
                             </div>
                         </div>
+
+                        {/* Reminders */}
+<ReminderList
+    key={`${appointment._id}-${appointment.date ?? ""}-${appointment.status}`}
+    sourceType="appointment"
+    sourceId={appointment._id}
+    referenceDate={appointment.date || appointment.appointmentDate}
+    canAdd={appointment.status === "pending" || appointment.status === "confirmed"}
+    locked={rescheduleLocked}
+/>
 
                         {/* Start Clinical — confirmed, no visit yet */}
                         {isConfirmed && !visit && (
