@@ -232,7 +232,7 @@ export default function RescheduleAppointmentModal({
             </button>
 
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-0 sm:px-4">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-0 sm:px-4 pb-14">
                     <div className="bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-lg max-h-[90vh] overflow-y-auto">
                         {/* Header */}
                         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
