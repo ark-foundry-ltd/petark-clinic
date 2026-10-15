@@ -137,41 +137,44 @@ export default function GetAppointments({
         <main>
             <section className="space-y-4 w-full pry-ff">
             {/* Header with filter */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-lg font-semibold text-sec-clr pry-ff">Appointments</h2>
-                    {!loading && !error && (
-                        <p className="text-sm text-gray-500 mt-0.5">
-                            {total} appointment{total !== 1 ? "s" : ""}
-                        </p>
-                    )}
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-w-0">
+        <h2 className="text-lg font-semibold text-sec-clr pry-ff">Appointments</h2>
+        {!loading && !error && (
+            <p className="text-sm text-gray-500 mt-0.5">
+                {total} appointment{total !== 1 ? "s" : ""}
+            </p>
+        )}
+    </div>
 
-                {/* NEW: Book button next to the range filter */}
-                <div className="flex items-center gap-3">
-                    {canBook && <BookAppointmentModal onBooked={handleBooked} />}
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        {canBook && <BookAppointmentModal onBooked={handleBooked} />}
 
-                    <div className="relative w-fit">
-                        <select
-                            value={range}
-                            onChange={(e) => handleRangeChange(e.target.value as DateRange)}
-                            className="appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:border-acc-clr focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-acc-clr transition-all cursor-pointer"
-                        >
-                            {DATE_RANGES.map(({ label, value }) => (
-                                <option
-                                    key={value}
-                                    value={value}
-                                    className="text-gray-700"
-                                    style={value === range ? { color: "var(--acc-clr, #2563eb)", fontWeight: "500" } : {}}
-                                >
-                                    {label}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-acc-clr" />
-                    </div>
-                </div>
-            </div>
+        <div className="relative w-full sm:w-fit">
+            <select
+                value={range}
+                onChange={(e) => handleRangeChange(e.target.value as DateRange)}
+                className="w-full sm:w-auto appearance-none pl-3 pr-8 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:border-acc-clr focus:outline-none focus:ring-2 focus:ring-acc-clr focus:border-acc-clr transition-all cursor-pointer"
+            >
+                {DATE_RANGES.map(({ label, value }) => (
+                    <option
+                        key={value}
+                        value={value}
+                        className="text-gray-700"
+                        style={value === range ? { color: "var(--acc-clr, #2563eb)", fontWeight: "500" } : {}}
+                    >
+                        {label}
+                    </option>
+                ))}
+            </select>
+
+            <ChevronDown
+                size={12}
+                className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-acc-clr"
+            />
+        </div>
+    </div>
+</div>
 
             {/* Error */}
             {error && (
