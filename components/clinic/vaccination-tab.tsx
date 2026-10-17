@@ -25,12 +25,13 @@ type ModalState =
 interface Props {
     clinicPatientId?: string; // pass either the clinic patient record…
     petId?: string; // …or just the pet (e.g. from the appointment page)
+    visitId?: string; // on a visit page: doses recorded here are linked to that visit
     canRemind: boolean; // false on the Free plan (records still work, reminders don't)
     canManage?: boolean; // add / edit / delete
 }
 
 // Drop <VaccinationTab clinicPatientId={...} /> or <VaccinationTab petId={...} /> in, plus canRemind
-export default function VaccinationTab({ clinicPatientId, petId, canRemind, canManage = true }: Props) {
+export default function VaccinationTab({ clinicPatientId, petId, visitId, canRemind, canManage = true }: Props) {
     const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -119,6 +120,7 @@ export default function VaccinationTab({ clinicPatientId, petId, canRemind, canM
             {modal?.type === "add" && patient && (
                 <AddVaccination
                     patient={patient}
+                    visitId={visitId}
                     canRemind={canRemind}
                     onClose={() => setModal(null)}
                     onSaved={handleSaved}

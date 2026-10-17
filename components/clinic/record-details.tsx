@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getVisit, getAdministeredByDisplay, getCustomVitalFields } from "@/lib/visit";
 import type { Visit, CustomVitalField } from "@/lib/visit";
-import { getUser, type ClinicService } from "@/lib/user";
+import { getUser, getMe, getPlanInfo, type ClinicService } from "@/lib/user";
 import UpdateVitals from "@/components/clinic/update-vitals";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import ReferralBtn from "@/components/clinic/referral-btn";
@@ -11,6 +11,8 @@ import LabResultsSection from "@/components/clinic/lab-results-section";
 import PetTrendsChart from "@/components/clinic/pet-trends-chart";
 import TreatmentTimeline from "@/components/clinic/treatment-timeline";
 import MarkVisitPaidBtn from "@/components/clinic/mark-visit-paid-btn";
+import VaccinationTab from "@/components/clinic/vaccination-tab";
+import ReminderList from "@/components/reminders/reminder-list";
 import {
     AlertCircle,
     Stethoscope,
@@ -87,6 +89,7 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [remindersLocked, setRemindersLocked] = useState(false);
 
     useEffect(() => {
         async function fetchData() {
@@ -94,12 +97,13 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
             setLoading(true);
             setError(null);
             try {
-                const [visits, clinic, fields] = await Promise.all([
+                const [visits, clinic, fields, me] = await Promise.all([
                     getVisit(),
                     getUser(),
                     // Includes archived fields on purpose, so old visits keep their labels.
                     // Don't let a failure here break the whole page.
                     getCustomVitalFields().catch(() => [] as CustomVitalField[]),
+                    getMe().catch(() => null), // don't break the page if this fails
                 ]);
 
                 const foundVisit = visits.find((v) => v._id === visitId);
@@ -114,6 +118,12 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                 }
 
                 setCustomFields(fields);
+
+                // Same Free-plan / inactive-subscription check the appointment page uses
+                if (me) {
+                    const { plan, status } = getPlanInfo(me);
+                    setRemindersLocked(plan === "free" || status !== "active");
+                }
             } catch (err) {
                 setError("Failed to load visit record details");
                 console.error("Error fetching data:", err);
@@ -568,9 +578,30 @@ export default function RecordDetails({ visitId }: Readonly<RecordDetailsProps>)
                 </div>
             )}
 
+            {/* Follow-up reminders — a walk-in visit has no date to count back from, so exact times only */}
+            <ReminderList
+                key={visit._id}
+                sourceType="visit"
+                sourceId={visit._id}
+                referenceLabel="visit"
+                presets={false}
+                locked={remindersLocked}
+            />
+
             {/* TPR & Weight Trends — Pro */}
             {visit.petId && (
                 <PetTrendsChart petId={visit.petId} />
+            )}
+
+            {/* Vaccinations — doses recorded here are linked to this visit */}
+            {visit.petId && (
+                <div className="bg-pry-clr rounded-xl border border-gray-100 p-6 shadow-sm">
+                    <VaccinationTab
+                        petId={visit.petId}
+                        visitId={visit._id}
+                        canRemind={!remindersLocked}
+                    />
+                </div>
             )}
 
             {visit.petId && (

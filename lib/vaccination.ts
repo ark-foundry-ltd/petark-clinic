@@ -2,19 +2,12 @@
 
 import axios from "axios";
 import api from "./api";
-import type { ReminderChannel } from "./reminders";
+import type { ReminderChannel, ReminderInput, SkippedReminder } from "./reminders";
 
 // Where the backend mounts vaccinationRoute (api baseURL already ends in /api/v1)
 const VACCINATIONS_BASE = "/vaccinations";
 const TZ = "Africa/Lagos";
 const DAY_MS = 86_400_000;
-
-export const MAX_REMINDERS = 5;
-export const MAX_MESSAGE_LENGTH = 320;
-export const REMINDER_CHANNELS: ReminderChannel[] = ["push", "sms", "email"];
-export const DEFAULT_REMINDER_CHANNELS: ReminderChannel[] = ["push", "sms"];
-export const CHANNEL_LABELS: Record<ReminderChannel, string> = { push: "App", sms: "SMS", email: "Email" };
-export const MESSAGE_PLACEHOLDERS = "{owner} {pet} {vaccine} {clinic} {dueDate}";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -50,13 +43,6 @@ export interface Vaccination {
     updatedAt: string;
 }
 
-// One reminder as the backend takes it (same `at` key as ReminderInput in lib/reminders.ts)
-export interface VaccinationReminderInput {
-    at: string; // ISO
-    channels?: ReminderChannel[];
-    message?: string; // placeholders: {owner} {pet} {vaccine} {clinic} {dueDate}
-}
-
 // Which patient a vaccination list / form is for: a clinic patient record, or just the pet
 // (the appointment page only knows the pet)
 export type PatientRef =
@@ -73,7 +59,7 @@ export interface CreateVaccinationInput {
     batchNumber?: string;
     visitId?: string;
     notes?: string;
-    reminders?: VaccinationReminderInput[]; // omit = vaccine defaults, [] = none
+    reminders?: ReminderInput[]; // omit = vaccine defaults, [] = none. minutesBefore counts back from the due date at 09:00 Lagos
 }
 
 export interface UpdateVaccinationInput {
@@ -82,12 +68,13 @@ export interface UpdateVaccinationInput {
     batchNumber?: string | null;
     notes?: string;
     // Sending nextDueDate or reminders replaces the still-pending reminders
-    reminders?: VaccinationReminderInput[];
+    reminders?: ReminderInput[];
 }
 
 export interface ReminderOutcome {
     remindersScheduled: number;
     remindersSkipped: "plan" | null; // "plan" = clinic is on Free, records saved but no reminders
+    skippedReminders: SkippedReminder[]; // times that were already past / after the due date
 }
 
 export interface CreateVaccinationResult extends ReminderOutcome {
@@ -188,67 +175,4 @@ export function latestDoseIds(vaccinations: Vaccination[]): Set<string> {
         if (!current || new Date(v.administeredAt) > new Date(current.administeredAt)) latest.set(v.vaccineId, v);
     }
     return new Set([...latest.values()].map((v) => v._id));
-}
-
-// ─── Reminder rows (form state) ──────────────────────────────────────────────
-
-export interface ReminderRow {
-    key: string;
-    daysBefore: number;
-    time: string; // HH:mm
-    channels: ReminderChannel[];
-    message: string;
-}
-
-export const newReminderRow = (over: Partial<ReminderRow> = {}): ReminderRow => ({
-    key: Math.random().toString(36).slice(2),
-    daysBefore: 7,
-    time: "09:00",
-    channels: [...DEFAULT_REMINDER_CHANNELS],
-    message: "",
-    ...over,
-});
-
-export const rowsFromDefaults = (defaults: ReminderDefault[] = []): ReminderRow[] =>
-    defaults.map((d) =>
-        newReminderRow({
-            daysBefore: d.daysBefore,
-            time: d.time || "09:00",
-            channels: d.channels?.length ? d.channels : [...DEFAULT_REMINDER_CHANNELS],
-        })
-    );
-
-export const rowsToDefaults = (rows: ReminderRow[]): ReminderDefault[] =>
-    rows.map((r) => ({ daysBefore: r.daysBefore, time: r.time, channels: r.channels }));
-
-// When a row will go out: N days before the due date, at that time (Lagos)
-export const reminderAt = (dueYmd: string, daysBefore: number, time: string): Date =>
-    new Date(`${addDaysYmd(dueYmd, -daysBefore)}T${time}:00+01:00`);
-
-export function rowsToInputs(rows: ReminderRow[], dueYmd: string): VaccinationReminderInput[] {
-    return rows.map((r) => ({
-        at: reminderAt(dueYmd, r.daysBefore, r.time).toISOString(),
-        channels: r.channels,
-        ...(r.message.trim() ? { message: r.message.trim() } : {}),
-    }));
-}
-
-// Returns a message to show the user, or null when the rows are fine to send
-export function validateRows(rows: ReminderRow[], dueYmd: string): string | null {
-    if (!rows.length) return null;
-    if (!dueYmd) return "Set a next due date to schedule reminders";
-    if (rows.length > MAX_REMINDERS) return `You can set up to ${MAX_REMINDERS} reminders`;
-
-    for (let i = 0; i < rows.length; i++) {
-        const r = rows[i];
-        const label = `Reminder ${i + 1}`;
-        if (!Number.isInteger(r.daysBefore) || r.daysBefore < 0) return `${label}: enter how many days before (0 or more)`;
-        if (!/^\d{2}:\d{2}$/.test(r.time)) return `${label}: pick a time`;
-        if (!r.channels.length) return `${label}: choose at least one channel`;
-        if (r.message.length > MAX_MESSAGE_LENGTH) return `${label}: message is longer than ${MAX_MESSAGE_LENGTH} characters`;
-        if (reminderAt(dueYmd, r.daysBefore, r.time).getTime() <= Date.now()) {
-            return `${label} would already be in the past. Use fewer days before, or a later due date.`;
-        }
-    }
-    return null;
 }

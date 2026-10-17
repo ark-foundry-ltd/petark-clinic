@@ -55,7 +55,8 @@ interface ReminderListProps {
     referenceLabel?: string;
     allowAfterReference?: boolean;
     canAdd?: boolean;                // false for finished appointments: history only
-    locked?: boolean;                // plan doesn't include reminders
+    locked?: boolean;
+    presets?: boolean;
 }
 
 export default function ReminderList({
@@ -66,6 +67,7 @@ export default function ReminderList({
     allowAfterReference = false,
     canAdd = true,
     locked = false,
+    presets = true,
 }: Readonly<ReminderListProps>) {
     const [reminders, setReminders] = useState<Reminder[]>([]);
     const [loading, setLoading] = useState(true);
@@ -96,7 +98,7 @@ export default function ReminderList({
     }, [sourceType, sourceId, refreshKey]);
 
     function startAdding() {
-        setRows(defaultReminderRows());
+        setRows(defaultReminderRows(presets));
         setAdding(true);
     }
 
@@ -178,6 +180,7 @@ export default function ReminderList({
                             referenceDate={referenceDate}
                             referenceLabel={referenceLabel}
                             allowAfterReference={allowAfterReference}
+                            presets={presets}
                             disabled={saving}
                         />
                         <div className="flex items-center gap-3">

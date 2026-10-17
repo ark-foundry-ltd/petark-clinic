@@ -2,8 +2,9 @@
 
 import { Bell, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { formatDate, getDueStatus, latestDoseIds, type DueStatus, type Vaccination } from "@/lib/vaccination";
-import VaccinationReminders from "./vaccination-reminders";
+import ReminderList from "@/components/reminders/reminder-list";
+import { formatDate, getDueStatus, lagosYmd, latestDoseIds, type DueStatus, type Vaccination } from "@/lib/vaccination";
+import { dueReferenceISO } from "./reminder-rows";
 
 const BADGES: Record<Exclude<DueStatus, "none">, { label: string; className: string }> = {
     overdue: { label: "Overdue", className: "bg-red-50 text-red-700" },
@@ -79,7 +80,14 @@ export default function ListVaccination({ vaccinations, canManage, canRemind, on
 
                         {remindersOpen && (
                             <div className="mt-3 border-t border-gray-100 pt-3">
-                                <VaccinationReminders vaccinationId={v._id} readOnly={!canManage} />
+                                <ReminderList
+                                    sourceType="vaccination"
+                                    sourceId={v._id}
+                                    referenceDate={v.nextDueDate ? dueReferenceISO(lagosYmd(v.nextDueDate)) : null}
+                                    referenceLabel="vaccination"
+                                    canAdd={false}
+                                    locked={!canRemind}
+                                />
                             </div>
                         )}
                     </li>

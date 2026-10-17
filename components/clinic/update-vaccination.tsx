@@ -1,24 +1,25 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import ReminderList from "@/components/reminders/reminder-list";
+import ReminderPicker, {
+    toReminderInputs,
+    validateReminderRows,
+    type ReminderRow,
+} from "@/components/reminders/reminder-picker";
 import {
     addDaysYmd,
     getErrorMessage,
     getVaccines,
     lagosYmd,
-    rowsFromDefaults,
-    rowsToInputs,
     toApiDate,
     updateVaccination,
-    validateRows,
-    type ReminderRow,
     type UpdateVaccinationInput,
     type Vaccination,
     type VaccineDefinition,
 } from "@/lib/vaccination";
+import { dueReferenceISO, rowsFromDefaults } from "./reminder-rows";
 import VaccinationModal, { fieldClass, labelClass, primaryBtn, secondaryBtn } from "./vaccination-modal";
-import VaccinationReminderFields from "./vaccination-reminder-field";
-import VaccinationReminders from "./vaccination-reminders";
 
 interface Props {
     vaccination: Vaccination;
@@ -54,11 +55,11 @@ export default function UpdateVaccination({ vaccination, canRemind, onClose, onS
 
     // First time the reminder section opens, start from the vaccine's defaults
     useEffect(() => {
-        if (rescheduling && !seeded) {
+        if (rescheduling && dueYmd && !seeded) {
             setSeeded(true);
-            if (definition?.reminderDefaults.length) setRows(rowsFromDefaults(definition.reminderDefaults));
+            if (definition?.reminderDefaults.length) setRows(rowsFromDefaults(definition.reminderDefaults, dueYmd));
         }
-    }, [rescheduling, seeded, definition]);
+    }, [rescheduling, seeded, definition, dueYmd]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -67,7 +68,7 @@ export default function UpdateVaccination({ vaccination, canRemind, onClose, onS
         if (!givenYmd) return setError("Pick the date it was given");
         if (dueYmd && dueYmd <= givenYmd) return setError("Next due date must be after the date given");
         if (rescheduling && dueYmd) {
-            const problem = validateRows(rows, dueYmd);
+            const problem = validateReminderRows(rows, true);
             if (problem) return setError(problem);
         }
 
@@ -76,18 +77,19 @@ export default function UpdateVaccination({ vaccination, canRemind, onClose, onS
         if (dueChanged) payload.nextDueDate = dueYmd ? toApiDate(dueYmd) : null;
         if (batch.trim() !== (vaccination.batchNumber ?? "")) payload.batchNumber = batch.trim() || null;
         if (notes.trim() !== (vaccination.notes ?? "")) payload.notes = notes.trim();
-        if (rescheduling && dueYmd) payload.reminders = rowsToInputs(rows, dueYmd);
+        if (rescheduling && dueYmd) payload.reminders = toReminderInputs(rows);
 
         if (Object.keys(payload).length === 0) return onClose();
 
         setSubmitting(true);
         try {
             const result = await updateVaccination(vaccination._id, payload);
-            onSaved(
-                result.remindersSkipped === "plan"
-                    ? "Vaccination updated. Reminders aren't included in the Free plan."
-                    : undefined
-            );
+            const notices: string[] = [];
+            if (result.remindersSkipped === "plan") notices.push("Reminders aren't included in the Free plan.");
+            if (result.skippedReminders.length > 0) {
+                notices.push(`${result.skippedReminders.length} reminder(s) skipped: ${result.skippedReminders[0].reason}.`);
+            }
+            onSaved(notices.length ? `Vaccination updated. ${notices.join(" ")}` : undefined);
             onClose();
         } catch (err) {
             setError(getErrorMessage(err, "Could not update the vaccination"));
@@ -132,15 +134,18 @@ export default function UpdateVaccination({ vaccination, canRemind, onClose, onS
                     <textarea rows={2} className={fieldClass} value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
 
-                <div className="border-t border-gray-100 pt-4">
-                    <h3 className="mb-2 text-sm font-semibold text-gray-900">Reminders to the owner</h3>
+                <div className="space-y-4 border-t border-gray-100 pt-4">
+                    <ReminderList
+                        sourceType="vaccination"
+                        sourceId={vaccination._id}
+                        referenceDate={originalDue ? dueReferenceISO(originalDue) : null}
+                        referenceLabel="vaccination"
+                        canAdd={false}
+                        locked={!canRemind}
+                    />
 
-                    <VaccinationReminders vaccinationId={vaccination._id} />
-
-                    {!canRemind ? (
-                        <p className="mt-3 text-sm text-gray-500">Reminders are available on paid plans.</p>
-                    ) : (
-                        <div className="mt-4">
+                    {canRemind && (
+                        <div>
                             {dueChanged ? (
                                 <p className="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
                                     You changed the due date, so the reminders still waiting to go out will be replaced.
@@ -159,7 +164,13 @@ export default function UpdateVaccination({ vaccination, canRemind, onClose, onS
                             )}
 
                             {rescheduling && dueYmd && (
-                                <VaccinationReminderFields rows={rows} dueYmd={dueYmd} onChange={setRows} />
+                                <ReminderPicker
+                                    value={rows}
+                                    onChange={setRows}
+                                    referenceDate={dueReferenceISO(dueYmd)}
+                                    referenceLabel="due date"
+                                    disabled={submitting}
+                                />
                             )}
                         </div>
                     )}
