@@ -30,6 +30,7 @@ import MarkVisitPaidBtn from "@/components/clinic/mark-visit-paid-btn";
 import Link from "next/link";
 import RescheduleAppointmentModal from "@/components/clinic/reschedule-appt-modal";
 import ReminderList from "@/components/reminders/reminder-list";
+import VaccinationTab from "@/components/clinic/vaccination-tab";
 
 const STATUS_STYLES: Record<Appointment["status"], string> = {
     pending: "bg-yellow-50 text-yellow-700 border border-yellow-200",
@@ -328,6 +329,16 @@ export default function AppointmentDetails({
     canAdd={appointment.status === "pending" || appointment.status === "confirmed"}
     locked={rescheduleLocked}
 />
+
+                        {/* Vaccinations */}
+{appointment.petId && (
+    <div className="bg-pry-clr rounded-2xl border border-gray-100 shadow-sm p-6">
+        <VaccinationTab
+            petId={appointment.petId}
+            canRemind={!rescheduleLocked} // same Free-plan / inactive-subscription check you already use
+        />
+    </div>
+)}
 
                         {/* Start Clinical — confirmed, no visit yet */}
                         {isConfirmed && !visit && (

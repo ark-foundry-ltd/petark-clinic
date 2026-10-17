@@ -8,7 +8,7 @@ const REMINDERS_BASE = "/reminders";
 export type ReminderChannel = "push" | "sms" | "email";
 export type ReminderStatus = "pending" | "sending" | "completed" | "failed" | "skipped" | "cancelled";
 export type ChannelResult = "sent" | "failed" | "skipped";
-export type ReminderSourceType = "appointment" | "treatment" | "visit" | "patient" | "manual";
+export type ReminderSourceType = "appointment" | "treatment" | "visit" | "patient" | "manual" | "vaccination";
 
 // What the clinic chooses: an exact time (at) OR minutes counted back from the
 // appointment / treatment date (minutesBefore).
