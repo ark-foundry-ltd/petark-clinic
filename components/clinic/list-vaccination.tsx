@@ -4,7 +4,7 @@ import { Bell, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ReminderList from "@/components/reminders/reminder-list";
 import { formatDate, getDueStatus, lagosYmd, latestDoseIds, type DueStatus, type Vaccination } from "@/lib/vaccination";
-import { dueReferenceISO } from "./reminder-rows";
+import { dueReferenceISO } from "../../lib/reminder-rows";
 
 const BADGES: Record<Exclude<DueStatus, "none">, { label: string; className: string }> = {
     overdue: { label: "Overdue", className: "bg-red-50 text-red-700" },

@@ -18,7 +18,7 @@ import {
     type PatientRef,
     type VaccineDefinition,
 } from "@/lib/vaccination";
-import { dueReferenceISO, rowsFromDefaults, rowsToDefaults } from "./reminder-rows";
+import { dueReferenceISO, rowsFromDefaults, rowsToDefaults } from "../../lib/reminder-rows";
 import VaccinationModal, { fieldClass, labelClass, primaryBtn, secondaryBtn } from "./vaccination-modal";
 
 interface Props {
