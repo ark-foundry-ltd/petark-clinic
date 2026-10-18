@@ -1,8 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { cancelReminder, getReminders, type Reminder, type ReminderStatus } from "@/lib/reminders";
-import { CHANNEL_LABELS, formatDateTime, getErrorMessage } from "@/lib/vaccination";
+import {
+    cancelReminder,
+    getReminders,
+    type Reminder,
+    type ReminderChannel,
+    type ReminderStatus,
+} from "@/lib/reminders";
+import { formatDateTime, getErrorMessage } from "@/lib/vaccination";
+
+// Was exported from lib/vaccination; it lives here now that nothing else uses it
+const CHANNEL_LABELS: Record<ReminderChannel, string> = { push: "App", sms: "SMS", email: "Email" };
 
 const STATUS_STYLES: Record<ReminderStatus, string> = {
     pending: "bg-blue-50 text-blue-700",
