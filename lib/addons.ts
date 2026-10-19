@@ -11,7 +11,7 @@ export { getClinicUsage as getUsageSummary } from "@/lib/usage";
 export type { ResourceUsage, UsageSummary } from "@/lib/usage";
 
 // Must match MAX_PACKS_PER_PURCHASE on the backend
-export const MAX_PACKS_PER_PURCHASE = 20;
+export const MAX_PACKS_PER_PURCHASE = 40;
 
 export interface AddonCheckout {
     authorizationUrl: string;

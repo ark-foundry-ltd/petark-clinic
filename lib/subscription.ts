@@ -120,7 +120,7 @@ interface AddonPricingEntry {
 
 export const ADDON_PRICING: Record<AddonResource, AddonPricingEntry> = {
     treatments: { unitsPerPurchase: 20, price: 5000 },
-    remindersPerMonth: { unitsPerPurchase: 20, price: 5000 },
+    remindersPerMonth: { unitsPerPurchase: 40, price: 5000 },
     inventorySkus: { unitsPerPurchase: 20, price: 5000 },
 };
 

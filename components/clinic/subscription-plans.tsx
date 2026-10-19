@@ -77,7 +77,7 @@ const PLANS: PlanDefinition[] = [
       "Unlimited patients",
       "25 inventory SKUs",
       "80 treatments per month",
-      "80 reminders per month",
+      "160 reminders per month",
       "Inventory and point of sale (POS)",
       "Treatment and visit summaries",
       "Basic clinic, sales and inventory reports",
@@ -99,7 +99,7 @@ const PLANS: PlanDefinition[] = [
       "Primary clinic location",
       "Unlimited patients",
       "80 treatments per month",
-      "80 reminders per month",
+      "160 reminders per month",
       "Treatment and visit summaries",
       "Basic clinic report",
       "Email support during business hours",
@@ -122,7 +122,7 @@ const PLANS: PlanDefinition[] = [
       "Unlimited patients",
       "100 inventory SKUs",
       "160 treatments per month",
-      "160 reminders per month",
+      "300 reminders per month",
       "Lab results",
       "Drug dosage calculator",
       "Receive referrals from other clinics",
@@ -146,7 +146,7 @@ const PLANS: PlanDefinition[] = [
       "Primary clinic location",
       "Unlimited patients",
       "160 treatments per month",
-      "160 reminders per month",
+      "300 reminders per month",
       "Lab results",
       "Drug dosage calculator",
       "Receive referrals from other clinics",
@@ -648,7 +648,7 @@ export default function SubscriptionPlans() {
             </div>
 
             <p className="sec-ff mx-auto mt-10 max-w-2xl text-center text-xs leading-relaxed text-slate-400">
-                Reminders are sent automatically through browser/PWA notifications
+                Reminders are sent automatically through SMS, browser/PWA notifications
                 and email. PWA notifications require a supported browser or the
                 installed app, and notification permission from your client. Email
                 is used when PWA notifications are unavailable.
