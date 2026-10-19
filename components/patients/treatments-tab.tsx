@@ -9,7 +9,6 @@ import {
     type PatientTreatment,
     type TreatmentSummary,
 } from "@/lib/patient-history";
-import { InfoRow } from "./info-blocks";
 import TabPlaceholder from "./tab-placeholder";
 
 interface TreatmentsTabProps {
@@ -20,15 +19,18 @@ interface TreatmentsTabProps {
     emptyNote: string;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-    overdue: "bg-red-50 text-red-700",
-    upcoming: "bg-blue-50 text-blue-700",
-    completed: "bg-green-50 text-green-700",
-    active: "bg-gray-100 text-gray-700",
+const STATUS_STYLES: Record<string, { pill: string; dot: string }> = {
+    overdue: { pill: "bg-red-50 text-red-800 ring-red-200", dot: "bg-red-500" },
+    upcoming: { pill: "bg-sky-50 text-sky-800 ring-sky-200", dot: "bg-sky-500" },
+    completed: { pill: "bg-emerald-50 text-emerald-800 ring-emerald-200", dot: "bg-emerald-500" },
+    active: { pill: "bg-gray-100 text-gray-700 ring-gray-200", dot: "bg-gray-400" },
 };
+const FALLBACK_STATUS = STATUS_STYLES.active;
 
 function formatDate(value?: string | null) {
-    return value ? new Date(value).toLocaleDateString() : undefined;
+    return value
+        ? new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        : undefined;
 }
 
 function doseLabel(t: PatientTreatment) {
@@ -40,6 +42,38 @@ function doseLabel(t: PatientTreatment) {
             : `${t.minDoseMg}–${t.maxDoseMg} ${unit}`;
     }
     return undefined;
+}
+
+function Badge({ status }: Readonly<{ status: string }>) {
+    const s = STATUS_STYLES[status] ?? FALLBACK_STATUS;
+    return (
+        <span
+            className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset capitalize ${s.pill}`}
+        >
+            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+            {status}
+        </span>
+    );
+}
+
+function Fact({ label, value }: Readonly<{ label: string; value?: string | null }>) {
+    if (!value) return null;
+    return (
+        <div className="min-w-0">
+            <dt className="text-xs font-medium text-gray-500">{label}</dt>
+            <dd className="mt-0.5 text-sm text-gray-900 wrap-break-word">{value}</dd>
+        </div>
+    );
+}
+
+function ListSkeleton() {
+    return (
+        <div className="space-y-3 animate-pulse" aria-busy="true" aria-label="Loading treatments">
+            {[0, 1, 2].map((i) => (
+                <div key={i} className="h-32 rounded-xl bg-gray-100" />
+            ))}
+        </div>
+    );
 }
 
 export default function TreatmentsTab({ petId, type, emptyTitle, emptyNote }: Readonly<TreatmentsTabProps>) {
@@ -78,13 +112,7 @@ export default function TreatmentsTab({ petId, type, emptyTitle, emptyNote }: Re
         load(1);
     }, [load]);
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-acc-clr" />
-            </div>
-        );
-    }
+    if (loading) return <ListSkeleton />;
 
     if (restricted) {
         return (
@@ -96,7 +124,9 @@ export default function TreatmentsTab({ petId, type, emptyTitle, emptyNote }: Re
     }
 
     if (error) {
-        return <p className="text-center text-sm text-red-600 py-10">{error}</p>;
+        return (
+            <p className="text-center text-sm text-red-700 bg-red-50 ring-1 ring-red-100 rounded-lg py-6">{error}</p>
+        );
     }
 
     if (items.length === 0) {
@@ -104,16 +134,18 @@ export default function TreatmentsTab({ petId, type, emptyTitle, emptyNote }: Re
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-5">
             {summary && (summary.overdue > 0 || summary.upcoming > 0) && (
                 <div className="flex flex-wrap gap-2">
                     {summary.overdue > 0 && (
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-800 ring-1 ring-inset ring-red-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                             {summary.overdue} overdue
                         </span>
                     )}
                     {summary.upcoming > 0 && (
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-800 ring-1 ring-inset ring-sky-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
                             {summary.upcoming} upcoming
                         </span>
                     )}
@@ -122,35 +154,31 @@ export default function TreatmentsTab({ petId, type, emptyTitle, emptyNote }: Re
 
             <ul className="space-y-3">
                 {items.map((t) => (
-                    <li key={t._id} className="border border-gray-100 rounded-lg p-4 space-y-3">
+                    <li key={t._id} className="rounded-xl border border-gray-200/80 bg-pry-clr p-4 sm:p-5">
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                                <p className="text-sm font-semibold text-sec-clr">{t.name}</p>
-                                <p className="text-xs text-gray-500 capitalize">{t.type}</p>
+                                <p className="text-sm font-semibold text-sec-clr wrap-break-word">{t.name}</p>
+                                <p className="text-xs text-gray-500 capitalize mt-0.5">{t.type}</p>
                             </div>
-                            <span
-                                className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                                    STATUS_STYLES[t.status] ?? "bg-gray-100 text-gray-700"
-                                }`}
-                            >
-                                {t.status}
-                            </span>
+                            <Badge status={t.status} />
                         </div>
 
-                        <dl className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <InfoRow label="Dosage" value={doseLabel(t)} />
-                            <InfoRow label="Frequency" value={t.frequency} />
-                            <InfoRow label="Given" value={formatDate(t.administeredAt)} />
-                            <InfoRow label="Next due" value={formatDate(t.nextDueAt)} />
-                            <InfoRow label="Vet" value={getAdministeredByDisplay(t)} />
-                            <InfoRow label="Linked to visit" value={t.visitId ? "Yes" : undefined} />
+                        <dl className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                            <Fact label="Dosage" value={doseLabel(t)} />
+                            <Fact label="Frequency" value={t.frequency} />
+                            <Fact label="Given" value={formatDate(t.administeredAt)} />
+                            <Fact label="Next due" value={formatDate(t.nextDueAt)} />
+                            <Fact label="Vet" value={getAdministeredByDisplay(t)} />
+                            <Fact label="Linked to visit" value={t.visitId ? "Yes" : undefined} />
                         </dl>
 
                         {t.notes && (
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                <span className="text-gray-400">Notes: </span>
-                                {t.notes}
-                            </p>
+                            <div className="mt-4 rounded-lg bg-gray-50 ring-1 ring-gray-200/70 px-3.5 py-3">
+                                <p className="text-xs font-medium text-gray-500">Notes</p>
+                                <p className="mt-0.5 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap wrap-break-word">
+                                    {t.notes}
+                                </p>
+                            </div>
                         )}
                     </li>
                 ))}
@@ -162,7 +190,7 @@ export default function TreatmentsTab({ petId, type, emptyTitle, emptyNote }: Re
                         type="button"
                         onClick={() => load(page + 1)}
                         disabled={loadingMore}
-                        className="px-4 py-2 rounded-lg text-sm font-medium text-sec-clr bg-gray-100 hover:bg-gray-200 transition flex items-center gap-2 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-sec-clr bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acc-clr"
                     >
                         {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
                         Load more
