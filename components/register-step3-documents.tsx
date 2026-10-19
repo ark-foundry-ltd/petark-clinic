@@ -96,6 +96,20 @@ export default function RegisterStepDocuments({
                 onAdd={onAdditionalDocuments}
                 onRemove={onRemoveAdditionalDocument}
             />
+
+            <div className="flex items-center mt-2">
+                <input type="checkbox" id="terms" required className="mr-2" />
+                <p className="text-xs text-sec-clr/50">
+                    By signing up, you agree to our{" "}
+                    <a href="/terms" target="_blank" className="text-acc-clr hover:underline">
+                        Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" target="_blank" className="text-acc-clr hover:underline">
+                        Privacy Policy
+                    </a>
+                </p>
+            </div>
         </div>
     );
 }

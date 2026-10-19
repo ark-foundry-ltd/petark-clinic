@@ -156,6 +156,8 @@ export default function RegisterStepClinicInfo({
                     Referred by another clinic? Enter their code so they get credit.
                 </p>
             </div>
+
+            
         </div>
     );
-}
+}   
