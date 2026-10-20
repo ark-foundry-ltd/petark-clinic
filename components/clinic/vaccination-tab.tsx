@@ -15,11 +15,13 @@ import DeleteVaccination from "./delete-vaccination";
 import ListVaccination from "./list-vaccination";
 import { primaryBtn } from "./vaccination-modal";
 import UpdateVaccination from "./update-vaccination";
+import MarkCompletedVaccine from "./mark-completed-vaccine";
 
 type ModalState =
     | { type: "add" }
     | { type: "edit"; vaccination: Vaccination }
     | { type: "delete"; vaccination: Vaccination }
+    | { type: "complete"; vaccination: Vaccination }
     | null;
 
 interface Props {
@@ -114,6 +116,7 @@ export default function VaccinationTab({ clinicPatientId, petId, visitId, canRem
                     canRemind={canRemind}
                     onEdit={(vaccination) => setModal({ type: "edit", vaccination })}
                     onDelete={(vaccination) => setModal({ type: "delete", vaccination })}
+                    onComplete={(vaccination) => setModal({ type: "complete", vaccination })}
                 />
             )}
 
@@ -139,6 +142,13 @@ export default function VaccinationTab({ clinicPatientId, petId, visitId, canRem
                     vaccination={modal.vaccination}
                     onClose={() => setModal(null)}
                     onDeleted={() => load()}
+                />
+            )}
+            {modal?.type === "complete" && (
+                <MarkCompletedVaccine
+                    vaccination={modal.vaccination}
+                    onClose={() => setModal(null)}
+                    onSaved={handleSaved}
                 />
             )}
         </section>

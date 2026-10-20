@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Pencil, Trash2 } from "lucide-react";
+import { Bell, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ReminderList from "@/components/reminders/reminder-list";
 import { formatDate, getDueStatus, lagosYmd, latestDoseIds, type DueStatus, type Vaccination } from "@/lib/vaccination";
@@ -18,9 +18,10 @@ interface Props {
     canRemind: boolean;
     onEdit: (v: Vaccination) => void;
     onDelete: (v: Vaccination) => void;
+    onComplete?: (v: Vaccination) => void;
 }
 
-export default function ListVaccination({ vaccinations, canManage, canRemind, onEdit, onDelete }: Props) {
+export default function ListVaccination({ vaccinations, canManage, canRemind, onEdit, onDelete, onComplete }: Props) {
     const [openReminders, setOpenReminders] = useState<string | null>(null);
     const latestIds = useMemo(() => latestDoseIds(vaccinations), [vaccinations]);
 
@@ -51,6 +52,16 @@ export default function ListVaccination({ vaccinations, canManage, canRemind, on
                                     {v.batchNumber && ` · Batch ${v.batchNumber}`}
                                 </p>
                                 {v.notes && <p className="mt-1 text-sm text-gray-500">{v.notes}</p>}
+                                {canManage && onComplete && status === "overdue" && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onComplete(v)}
+                                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
+                                    >
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                        Mark as completed
+                                    </button>
+                                )}
                             </div>
 
                             <div className="flex shrink-0 items-center gap-1">
