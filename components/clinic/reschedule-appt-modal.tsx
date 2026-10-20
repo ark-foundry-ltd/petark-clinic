@@ -54,6 +54,7 @@ interface RescheduleAppointmentModalProps {
     clinicId: string;
     currentDate: string; // ISO
     locked?: boolean;
+    compact?: boolean;
     pet: {
         name: string;
         breed?: string;
@@ -72,6 +73,7 @@ export default function RescheduleAppointmentModal({
     ownerName,
     onRescheduled,
     locked,
+    compact = false,
 }: Readonly<RescheduleAppointmentModalProps>) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState("");
@@ -218,16 +220,20 @@ export default function RescheduleAppointmentModal({
 
     return (
         <>
-            <button
+                        <button
                 onClick={() => (locked ? goToUpgrade() : setIsOpen(true))}
                 aria-disabled={locked}
-                className={`w-full py-2.5 px-4 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                className={`${
+                    compact
+                        ? "px-4 py-2 rounded-lg"
+                        : "w-full py-2.5 px-4 rounded-xl font-medium flex items-center justify-center gap-2"
+                } transition-colors cursor-pointer ${
                     locked
-                    ? "bg-gray-100 text-gray-400 border border-gray-200"
-                    : "bg-acc-clr text-pry-clr hover:bg-emerald-500"
+                        ? "bg-gray-100 text-gray-400 border border-gray-200"
+                        : "bg-acc-clr text-pry-clr hover:bg-emerald-500"
                 }`}
             >
-                {locked ? <Lock size={16} /> : <AlertCircle size={16} />}
+                {!compact && (locked ? <Lock size={16} /> : <AlertCircle size={16} />)}
                 Reschedule
             </button>
 

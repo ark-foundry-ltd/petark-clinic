@@ -12,6 +12,7 @@ import VisitBtn from "@/components/clinic/visit-btn";
 import BookAppointmentModal from "@/components/clinic/book-appointment-modal"; // NEW
 import { CalendarDays, Clock, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, CheckCircle2, XCircle, CheckCheck, CalendarX, AlarmClockOff } from "lucide-react";
 import AppointmentAnalyticsWidget from "@/components/appointments/appointment-analytics-widget";
+import RescheduleAppointmentModal from "@/components/clinic/reschedule-appt-modal";
 
 const STATUS_STYLES = {
   pending:   { className: "bg-yellow-50 text-yellow-700 border border-yellow-200", icon: Clock },
@@ -55,6 +56,14 @@ function SkeletonRow() {
 }
 
 const EMPTY_PAGE: AppointmentsPage = { appointments: [], total: 0, page: 1, totalPages: 1, count: 0 };
+function getClinicId(appt: Appointment): string {
+    const a = appt as unknown as {
+        clinicId?: string | { _id?: string };
+        clinic?: string | { _id?: string };
+    };
+    const c = a.clinicId ?? a.clinic;
+    return typeof c === "string" ? c : c?._id ?? "";
+}
 
 interface GetAppointmentsProps {
     basePath?: string;
@@ -276,9 +285,22 @@ export default function GetAppointments({
                                     <td className="px-4 py-3">
                                         <div onClick={(e) => e.stopPropagation()}>
                                             {
-                                                (appt.status === "expired") 
-                                                    ? <button className="bg-acc-clr text-pry-clr pry-ff px-4 py-2 rounded-lg"> Reschedule </button>
-                                                    :<VisitBtn
+                                                (appt.status === "expired")
+    ? <RescheduleAppointmentModal
+        compact
+        appointmentId={appt._id}
+        clinicId={getClinicId(appt)}
+        currentDate={appt.date || appt.appointmentDate || appt.createdAt}
+        pet={{
+            name: appt.pet?.name ?? "Pet",
+            breed: appt.pet?.breed || undefined,
+            species: appt.pet?.species || undefined,
+            photo: appt.pet?.photo || undefined,
+        }}
+        ownerName={appt.user?.fullname}
+        onRescheduled={() => setRefreshKey((k) => k + 1)}
+    />
+    :<VisitBtn
     appointmentId={appt._id}
     status={appt.status}
     visitStatus={visitStatusMap.get(appt._id)}
