@@ -67,6 +67,13 @@ export interface User {
         endsAt: string;
         convertedAt: string | null;
     }
+    clinicProfile?: {
+        licenseNumber?: string;
+        licenseDocument?: string | null;
+        ownerPassport?: string | null;
+        ownerIDCard?: string[];
+        description?: string;
+    };
 }
 
 export interface StaffProfile {

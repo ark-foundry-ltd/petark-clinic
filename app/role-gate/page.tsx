@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/useStore";
 import { listLocations } from "@/lib/location";
+import { getMe, isClinicResponse } from "@/lib/user";
+import { getProfileCompletion } from "@/lib/profile-completion";
 
 // Mirrors the backend's LOCATION_RELEVANT_PERMISSIONS in staffController.js —
 // any permission whose data is filtered by locationId. Keep in sync if the
@@ -48,10 +50,21 @@ export default function RoleGatePage() {
 
       if (cancelled) return;
 
-      if (currentRole === "clinic") {
-        router.replace("/dashboard");
-        return;
-      }
+if (currentRole === "clinic") {
+  let incomplete = false;
+  try {
+    const me = await getMe();
+    if (isClinicResponse(me)) {
+      incomplete = !getProfileCompletion(me.clinic).isComplete;
+    }
+  } catch {
+    // don't block login if the check fails
+  }
+
+  if (cancelled) return;
+  router.replace(incomplete ? "/dashboard/profile/settings" : "/dashboard");
+  return;
+}
 
       if (!currentRole) {
         router.replace("/login");

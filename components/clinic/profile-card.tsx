@@ -6,10 +6,12 @@ import { useEffect, useState } from "react";
 import { getUser, User } from "@/lib/user";
 import {
     Loader2, MapPin, Phone, Mail, Building2, Clock, PawPrint, UserIcon,
-    Sparkles, Rocket, Layers, Zap, Crown, Stethoscope, HeartPulse, LucideIcon
+    Sparkles, Rocket, Layers, Zap, Crown, Stethoscope, HeartPulse,
+    AlertCircle, CheckCircle2, ClipboardList, LucideIcon
 } from "lucide-react";
 import type { Plan } from "@/lib/plan";
 import UpdateServices from "@/components/clinic/update-services";
+import { getProfileCompletion, SECTION_LABELS } from "@/lib/profile-completion";
 
 type PlanKey = Plan;
 
@@ -65,6 +67,67 @@ function SubscriptionBadge({ plan }: Readonly<{ plan?: string }>) {
     );
 }
 
+function StatusChip({ done }: Readonly<{ done: boolean }>) {
+    return done ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+            <CheckCircle2 className="h-3 w-3" />
+            Done
+        </span>
+    ) : (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">
+            <AlertCircle className="h-3 w-3" />
+            Required
+        </span>
+    );
+}
+
+function SectionCard({
+    icon: Icon,
+    title,
+    done,
+    children,
+}: Readonly<{
+    icon: LucideIcon;
+    title: string;
+    done: boolean;
+    children: React.ReactNode;
+}>) {
+    return (
+        <section
+            className={`rounded-xl border p-4 sm:p-5 bg-pry-clr ${
+                done ? "border-gray-100" : "border-amber-200 ring-1 ring-amber-100"
+            }`}
+        >
+            <div className="flex items-center justify-between gap-3 mb-3">
+                <h3 className="flex items-center gap-2 font-semibold text-sec-clr pry-ff">
+                    <Icon className="w-5 h-5 text-acc-clr shrink-0" />
+                    {title}
+                </h3>
+                <StatusChip done={done} />
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function InfoRow({
+    icon: Icon,
+    label,
+    children,
+}: Readonly<{ icon: LucideIcon; label: string; children: React.ReactNode }>) {
+    return (
+        <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 shrink-0 rounded-lg bg-acc-clr/10 flex items-center justify-center">
+                <Icon className="w-4 h-4 text-acc-clr" />
+            </div>
+            <div className="min-w-0">
+                <p className="text-xs text-gray-500">{label}</p>
+                <div className="text-sm font-medium text-sec-clr break-words">{children}</div>
+            </div>
+        </div>
+    );
+}
+
 export default function ProfileCard() {
     const [profile, setProfile] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -103,12 +166,61 @@ export default function ProfileCard() {
         );
     }
 
-    return (
-        <div className="w-full p-4 sm:p-10">
+    const completion = getProfileCompletion(profile);
+    const percent = Math.round((completion.done / completion.total) * 100);
+    const address = profile.address;
+    const addressText = address
+        ? [address.street, address.city, address.state, address.country].filter(Boolean).join(", ")
+        : "";
 
-            {/* Clinic Info Card */}
+    return (
+        <div className="w-full p-4 sm:p-10 space-y-4">
+
+            {/* Complete your profile */}
+            {!completion.isComplete && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-5 pry-ff">
+                    <div className="flex items-start gap-3">
+                        <ClipboardList className="h-5 w-5 shrink-0 text-amber-600 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-amber-800">
+                                Complete your profile
+                            </p>
+                            <p className="text-sm text-amber-700 mt-0.5">
+                                Click the edit button at the top of this card to fill in the
+                                sections marked <b>Required</b>. Once they&apos;re done, you can
+                                continue using PetArk.
+                            </p>
+
+                            <div className="mt-3 flex items-center gap-3">
+                                <div className="h-2 flex-1 rounded-full bg-amber-100 overflow-hidden">
+                                    <div
+                                        className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                                        style={{ width: `${percent}%` }}
+                                    />
+                                </div>
+                                <span className="text-xs font-medium text-amber-800 shrink-0">
+                                    {completion.done} of {completion.total} done
+                                </span>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {completion.missing.map((key) => (
+                                    <span
+                                        key={key}
+                                        className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-200"
+                                    >
+                                        {SECTION_LABELS[key]}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Clinic header */}
             <div className="bg-pry-clr rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 sm:p-6 border-b border-gray-100">
+                <div className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="flex items-center gap-4 min-w-0">
                             <div className="h-16 w-16 shrink-0 rounded-full bg-acc-clr flex items-center justify-center text-pry-clr font-bold text-xl pry-ff">
@@ -149,154 +261,129 @@ export default function ProfileCard() {
                     </div>
                 </div>
 
-                <div className="p-4 sm:p-6 space-y-4 pry-ff">
-                    {/* Contact Information */}
+                {/* Contact details */}
+                <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-4 border-t border-gray-100 pry-ff">
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="flex items-center gap-3">
-                            <Mail className="w-5 h-5 text-acc-clr shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm text-gray-500 pry-ff">Email</p>
-                                <p className="font-medium text-sec-clr truncate">{profile.email}</p>
-                            </div>
-                        </div>
+                        <InfoRow icon={Mail} label="Email">
+                            <span className="truncate block">{profile.email}</span>
+                        </InfoRow>
+                        <InfoRow icon={Phone} label="Phone">
+                            {profile.phoneNumber || "-"}
+                        </InfoRow>
+                        <InfoRow icon={MapPin} label="Address">
+                            {addressText || "-"}
+                        </InfoRow>
+                        <InfoRow icon={UserIcon} label="Owner">
+                            <span className="capitalize">{profile.ownerName}</span>
+                        </InfoRow>
+                        <InfoRow icon={Building2} label="Status">
+                            <span className="capitalize">{profile.status}</span>
+                        </InfoRow>
+                        <InfoRow icon={Clock} label="Trial period">
+                            {profile.trial?.startedAt ? new Date(profile.trial.startedAt).toLocaleDateString() : "-"}
+                            {" - "}
+                            {profile.trial?.endsAt ? new Date(profile.trial.endsAt).toLocaleDateString() : "-"}
+                        </InfoRow>
+                    </div>
+                </div>
+            </div>
 
-                        <div className="flex items-center gap-3">
-                            <Phone className="w-5 h-5 text-acc-clr shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm text-gray-500 pry-ff">Phone</p>
-                                <p className="font-medium text-sec-clr truncate">{profile.phoneNumber || "-"}</p>
-                            </div>
+            {/* Setup sections */}
+            <div className="grid gap-4 lg:grid-cols-2 pry-ff">
+                {/* Business hours */}
+                <SectionCard
+                    icon={Clock}
+                    title="Business hours"
+                    done={completion.sections.businessHours}
+                >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <p className="text-xs text-gray-500">Opening time</p>
+                            <p className="text-sm font-medium text-sec-clr">{profile.startingTime || "-"}</p>
                         </div>
-
-                        <div className="flex items-center gap-3">
-                            <MapPin className="w-5 h-5 text-acc-clr shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm text-gray-500">Address</p>
-                                <p className="font-medium text-sec-clr break-words">
-                                    {profile.address.street}, {profile.address.city}, {profile.address.state}, {profile.address.country}
-                                </p>
-                            </div>
+                        <div>
+                            <p className="text-xs text-gray-500">Closing time</p>
+                            <p className="text-sm font-medium text-sec-clr">{profile.closingTime || "-"}</p>
                         </div>
-
-                        <div className="flex items-center gap-3">
-                            <Building2 className="w-5 h-5 text-acc-clr shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm text-gray-500">Status</p>
-                                <p className="font-medium text-sec-clr capitalize">{profile.status}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <UserIcon className="w-5 h-5 text-acc-clr shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm text-gray-500">Owner Name</p>
-                                <p className="font-medium text-sec-clr capitalize">{profile.ownerName}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <Clock className="w-5 h-5 text-acc-clr shrink-0" />
-                            <div className="min-w-0">
-                                <p className="text-sm text-gray-500">Trial Period</p>
-                                <p className="font-medium text-sec-clr capitalize">
-                                    {profile.trial?.startedAt ? new Date(profile.trial.startedAt).toLocaleDateString() : "-"} - {profile.trial?.endsAt ? new Date(profile.trial.endsAt).toLocaleDateString() : "-"}
-                                </p>
+                        <div className="sm:col-span-2">
+                            <p className="text-xs text-gray-500">Days open</p>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                                {profile.daysOpen && profile.daysOpen.length > 0 ? (
+                                    profile.daysOpen.map((day) => (
+                                        <span key={day} className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-md">
+                                            {day}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="text-sm text-gray-400">Not set yet</span>
+                                )}
                             </div>
                         </div>
                     </div>
+                </SectionCard>
 
-                    {/* Business Hours */}
-                    <div className="pt-4 border-t border-gray-100">
-                        <h3 className="font-semibold text-sec-clr mb-3 flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-acc-clr shrink-0" />
-                            Business Hours
-                        </h3>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            <div>
-                                <p className="text-sm text-gray-500">Opening Time</p>
-                                <p className="font-medium text-sec-clr">{profile.startingTime || "-"}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Closing Time</p>
-                                <p className="font-medium text-sec-clr">{profile.closingTime || "-"}</p>
-                            </div>
-                            {/* Days Open */}
-                            <div className="sm:col-span-2">
-                                <p className="text-sm text-gray-500">Days Open</p>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                    {profile.daysOpen && profile.daysOpen.length > 0 ? (
-                                        profile.daysOpen.map((day) => (
-                                            <span key={day} className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-md">
-                                                {day}
-                                            </span>
-                                        ))
-                                    ) : (
-                                        <span className="text-sm text-gray-400">-</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Services & Animals */}
-                    <div className="pt-4 border-t border-gray-100">
-                        <h3 className="font-semibold text-sec-clr mb-3 flex items-center gap-2">
-                            <PawPrint className="w-5 h-5 text-acc-clr shrink-0" />
-                            Services & Animals
-                        </h3>
-                        <div className="space-y-4">
-                            {/* Services Offered */}
-                            <div>
-                                <p className="text-sm text-gray-500 mb-2">Services Offered</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {profile.servicesProvided && profile.servicesProvided.length > 0 ? (
-                                        profile.servicesProvided.map((service) => (
-                                            <span
-                                                key={service._id}
-                                                className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md"
-                                            >
-                                                {service.name}
-                                                <span className="font-semibold">₦{service.price.toLocaleString()}</span>
-                                            </span>
-                                        ))
-                                    ) : (
-                                        <span className="text-sm text-gray-400">-</span>
-                                    )}
-                                </div>
-                            </div>
-                            {/* Animals Handled */}
-                            <div>
-                                <p className="text-sm text-gray-500 mb-2">Animals Handled</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {profile.animalsHandled && profile.animalsHandled.length > 0 ? (
-                                        profile.animalsHandled.map((animal) => (
-                                            <span key={animal} className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded-md capitalize">
-                                                {animal}
-                                            </span>
-                                        ))
-                                    ) : (
-                                        <span className="text-sm text-gray-400">-</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Registration Fee */}
-                    <div className="pt-4 border-t border-gray-100">
-                        <h3 className="font-semibold text-sec-clr mb-3 flex items-center gap-2">
-                            <Building2 className="w-5 h-5 text-acc-clr shrink-0" />
-                            New Patient Registration
-                        </h3>
-                        {profile.registration?.enabled ? (
-                            <p className="font-medium text-sec-clr">
+                {/* Patient registration */}
+                <SectionCard
+                    icon={Building2}
+                    title="Patient registration"
+                    done={completion.sections.registration}
+                >
+                    {profile.registration ? (
+                        profile.registration.enabled ? (
+                            <p className="text-sm font-medium text-sec-clr">
                                 <b>Registration fee:</b> ₦{profile.registration.fee.toLocaleString()}
                             </p>
                         ) : (
-                            <p className="text-sm text-gray-400">No registration fee charged</p>
+                            <p className="text-sm text-gray-500">No registration fee charged</p>
+                        )
+                    ) : (
+                        <p className="text-sm text-gray-400">
+                            Not set yet. Choose whether new patients pay a registration fee.
+                        </p>
+                    )}
+                </SectionCard>
+
+                {/* Services provided */}
+                <SectionCard
+                    icon={Stethoscope}
+                    title="Services provided"
+                    done={completion.sections.services}
+                >
+                    <div className="flex flex-wrap gap-2">
+                        {profile.servicesProvided && profile.servicesProvided.length > 0 ? (
+                            profile.servicesProvided.map((service) => (
+                                <span
+                                    key={service._id}
+                                    className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md"
+                                >
+                                    {service.name}
+                                    <span className="font-semibold">₦{service.price.toLocaleString()}</span>
+                                </span>
+                            ))
+                        ) : (
+                            <span className="text-sm text-gray-400">Not set yet. Add at least one service.</span>
                         )}
                     </div>
-                </div>
+                </SectionCard>
+
+                {/* Animals handled */}
+                <SectionCard
+                    icon={PawPrint}
+                    title="Animals handled"
+                    done={completion.sections.animals}
+                >
+                    <div className="flex flex-wrap gap-2">
+                        {profile.animalsHandled && profile.animalsHandled.length > 0 ? (
+                            profile.animalsHandled.map((animal) => (
+                                <span key={animal} className="px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded-md capitalize">
+                                    {animal}
+                                </span>
+                            ))
+                        ) : (
+                            <span className="text-sm text-gray-400">Not set yet. Add the animals you treat.</span>
+                        )}
+                    </div>
+                </SectionCard>
             </div>
         </div>
     );
