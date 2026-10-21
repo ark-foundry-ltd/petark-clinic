@@ -11,6 +11,13 @@ import RegisterStepClinicInfo from "./register-step1-clinic-info";
 import RegisterStepAddress from "./register-step2-address";
 import RegisterStepDocuments from "./register-step3-documents";
 import { toast } from "sonner";
+import {
+    loadDraftText,
+    saveDraftText,
+    loadDraftFiles,
+    saveDraftFiles,
+    clearDraft,
+} from "@/lib/register-draft";
 
 interface RegisterError {
     status: number;
@@ -33,6 +40,7 @@ const REFERRAL_CODE_PATTERN = /^PA-[A-Z0-9]{6}$/;
 export default function RegisterComp() {
     const [step, setStep] = useState(1);
     const [showPassword, setShowPassword] = useState(false);
+    const [hydrated, setHydrated] = useState(false);
 
     // Step 1: Clinic Info
     const [clinicName, setClinicName] = useState("");
@@ -62,16 +70,65 @@ export default function RegisterComp() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    // Prefill the referral code from a shared link: /register?ref=PA-XXXXXX
-    // (window.location instead of useSearchParams, so the page needs no
-    // Suspense boundary)
+    // 1) Restore the saved draft once on mount. A shared link (?ref=PA-XXXXXX)
+    //    is applied last so it wins over an old saved code.
     useEffect(() => {
-        const ref = new URLSearchParams(window.location.search).get("ref");
-        if (ref) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setReferralCode(ref.trim().toUpperCase());
-        }
+        (async () => {
+            const text = loadDraftText();
+            const files = await loadDraftFiles();
+
+            /* eslint-disable react-hooks/set-state-in-effect */
+            if (text) {
+                setClinicName(text.clinicName);
+                setOwnerName(text.ownerName);
+                setEmail(text.email);
+                setPhoneNumber(text.phoneNumber);
+                setReferralCode(text.referralCode);
+                setLicenseNumber(text.licenseNumber);
+                setAddress(text.address);
+                setStep(Math.min(Math.max(text.step, 1), 3));
+            }
+            if (files) {
+                setLicenseDocument(files.licenseDocument ?? null);
+                setOwnerIDCard(files.ownerIDCard ?? null);
+                setOwnerPassport(files.ownerPassport ?? null);
+                setAdditionalDocuments(files.additionalDocuments ?? []);
+            }
+
+            const ref = new URLSearchParams(window.location.search).get("ref");
+            if (ref) {
+                setReferralCode(ref.trim().toUpperCase());
+            }
+
+            setHydrated(true);
+            /* eslint-enable react-hooks/set-state-in-effect */
+
+            if (text) {
+                toast.info("We restored your progress. Please re-enter your password.");
+            }
+        })();
     }, []);
+
+    // 2) Save text fields + current step (password is never saved)
+    useEffect(() => {
+        if (!hydrated) return;
+        saveDraftText({
+            step,
+            clinicName,
+            ownerName,
+            email,
+            phoneNumber,
+            referralCode,
+            licenseNumber,
+            address,
+        });
+    }, [hydrated, step, clinicName, ownerName, email, phoneNumber, referralCode, licenseNumber, address]);
+
+    // 3) Save files
+    useEffect(() => {
+        if (!hydrated) return;
+        saveDraftFiles({ licenseDocument, ownerIDCard, ownerPassport, additionalDocuments });
+    }, [hydrated, licenseDocument, ownerIDCard, ownerPassport, additionalDocuments]);
 
     const handleNext = () => {
         setError("");
@@ -164,6 +221,15 @@ export default function RegisterComp() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // The password isn't saved in the draft, so a restored session
+        // may reach this point without one.
+        if (!password) {
+            setStep(1);
+            setError("Please re-enter your password to continue.");
+            return;
+        }
+
         setError("");
         setLoading(true);
 
@@ -189,11 +255,13 @@ export default function RegisterComp() {
             };
 
             await registerClinic(formData);
+            clearDraft(); // only on success
             toast.success("Clinic registered successfully!");
             router.push("/login");
         } catch (error) {
             console.error("Registration error:", error);
 
+            // Nothing is cleared here: the user keeps everything they entered.
             if (isRegisterError(error)) {
                 if (error.status === 409) {
                     setError("Email or license number already exists");
