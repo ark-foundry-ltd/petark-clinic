@@ -1,3 +1,4 @@
+// components/clinic/complete-visit-btn.tsx
 "use client";
 
 import Link from "next/link";
@@ -6,7 +7,7 @@ import type { Visit } from "@/lib/visit";
 
 interface CompleteVisitBtnProps {
     visit: Visit;
-    /** e.g. "/dashboard/appointments" or "/dashboard/clinical/records" */
+    /** e.g. "/dashboard/appointments" or "/staff-dashboard/clinical/records" */
     basePath?: string;
     /** ID used in the URL. Falls back to the appointment ID. */
     routeId?: string;

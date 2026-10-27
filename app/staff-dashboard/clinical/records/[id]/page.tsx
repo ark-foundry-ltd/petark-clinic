@@ -1,6 +1,3 @@
-// app/staff-dashboard/clinical/records/[id]/page.tsx
-
-// TO-DO: there is an error here after creating a visit, it doesn't show it, fix it for both clinics and vet
 import { Metadata } from "next";
 import RecordDetails from "@/components/clinic/record-details";
 
@@ -10,14 +7,12 @@ export const metadata: Metadata = {
 };
 
 interface PageProps {
-    params: Promise<{
-        id: string;
-    }>;
+    params: Promise<{ id: string }>;
 }
 
-export default async function VisitRecordDetailPage({ params }: Readonly<PageProps>) {
+export default async function StaffVisitRecordDetailPage({ params }: PageProps) {
     const { id } = await params;
-    
+
     return (
         <main className="px-8 py-8 space-y-10 pry-ff">
             <div>

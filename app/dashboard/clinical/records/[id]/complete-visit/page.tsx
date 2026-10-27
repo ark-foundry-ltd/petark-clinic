@@ -7,11 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function CompleteVisitPage() {
-    return (
-        <CompleteVisitWorkspace
-            basePath="/dashboard/clinical/records"
-            idType="visit"
-            backLabel="Back to record"
-        />
-    );
+    return <CompleteVisitWorkspace idType="visit" backLabel="Back to record" />;
 }

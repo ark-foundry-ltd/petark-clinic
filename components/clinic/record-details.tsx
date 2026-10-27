@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getVisit, getAdministeredByDisplay, getCustomVitalFields } from "@/lib/visit";
 import type { Visit, CustomVitalField } from "@/lib/visit";
 import { getUser, getMe, getPlanInfo, type ClinicService } from "@/lib/user";
+import { useRecordsBasePath } from "@/hooks/use-records-base-path";
 import UpdateVitals from "@/components/clinic/update-vitals";
 import CompleteVisitBtn from "@/components/clinic/complete-visit-btn";
 import ReferralBtn from "@/components/clinic/referral-btn";
@@ -54,7 +55,7 @@ const NOTE_SECTIONS = [
 
 interface RecordDetailsProps {
     visitId: string;
-    /** Route base of this records page, used by the "Complete visit" link. Adjust to your records route. */
+    /** Optional override. Defaults to the records route for the current role. */
     basePath?: string;
 }
 
@@ -135,10 +136,10 @@ function RecordDetailsSkeleton() {
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
-export default function RecordDetails({
-    visitId,
-    basePath = "/dashboard/clinical/records",
-}: Readonly<RecordDetailsProps>) {
+export default function RecordDetails({ visitId, basePath }: Readonly<RecordDetailsProps>) {
+    const roleBasePath = useRecordsBasePath();
+    const resolvedBasePath = basePath ?? roleBasePath;
+
     const [visit, setVisit] = useState<Visit | null>(null);
     const [clinicServices, setClinicServices] = useState<ClinicService[]>([]);
     const [customFields, setCustomFields] = useState<CustomVitalField[]>([]);
@@ -345,7 +346,7 @@ export default function RecordDetails({
                                 Edit vitals
                             </button>
                             {visit.petId && <ReferralBtn petId={visit.petId} />}
-                            <CompleteVisitBtn visit={visit} basePath={basePath} routeId={visit._id} />
+                            <CompleteVisitBtn visit={visit} basePath={resolvedBasePath} routeId={visit._id} />
                         </div>
                     </div>
                 </header>

@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { completeVisit, getVisit, type Visit } from "@/lib/visit";
 import { useAuthStore } from "@/store/useStore";
+import { useRecordsBasePath } from "@/hooks/use-records-base-path";
 
 /* ------------------------------------------------------------------ */
 /* Types and step config                                               */
@@ -180,7 +181,11 @@ function getServicesTotal(v: Visit): number {
 /* ------------------------------------------------------------------ */
 
 interface CompleteVisitWorkspaceProps {
-    /** e.g. "/dashboard/appointments", "/staff-dashboard/appointments" or "/dashboard/clinical/records" */
+    /**
+     * Route base used for the back link and the redirect after completing.
+     * Defaults: "/dashboard/appointments" for idType "appointment",
+     * the role-based records path for idType "visit".
+     */
     basePath?: string;
     /**
      * What the [id] in the URL refers to.
@@ -193,13 +198,17 @@ interface CompleteVisitWorkspaceProps {
 }
 
 export default function CompleteVisitWorkspace({
-    basePath = "/dashboard/appointments",
+    basePath,
     idType = "appointment",
     backLabel = "Back to appointment",
 }: Readonly<CompleteVisitWorkspaceProps>) {
     const { id: routeId } = useParams<{ id: string }>();
     const router = useRouter();
     const { profile, role } = useAuthStore();
+    const roleBasePath = useRecordsBasePath();
+
+    const resolvedBasePath = basePath ?? (idType === "visit" ? roleBasePath : "/dashboard/appointments");
+    const backHref = `${resolvedBasePath}/${routeId}`;
 
     const [visit, setVisit] = useState<Visit | null>(null);
     const [loading, setLoading] = useState(true);
@@ -276,8 +285,6 @@ export default function CompleteVisitWorkspace({
     const filled = (k: FieldKey) => form[k].trim().length > 0;
     const missing = NOTE_STEPS.filter((s) => s.required && !filled(s.key));
     const stepIndex = ALL_STEP_KEYS.indexOf(step);
-
-    const backHref = `${basePath}/${routeId}`;
 
     function updateField(field: FieldKey, value: string) {
         setForm((prev) => ({ ...prev, [field]: value }));

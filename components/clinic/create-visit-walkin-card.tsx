@@ -10,6 +10,7 @@ import { getClinicPatientById } from "@/lib/clinic-patient";
 import type { ClinicPatientRecord } from "@/lib/clinic-patient";
 import { createVisit, type CreateVisitPayload, type CustomVitalValue } from "@/lib/visit";
 import { useAuthStore } from "@/store/useStore";
+import { useRecordsBasePath } from "@/hooks/use-records-base-path";
 import CustomVitalsFields from "@/components/clinic/custom-vitals-fields";
 
 interface Vitals {
@@ -36,16 +37,18 @@ const EMPTY_VITALS: Vitals = {
 interface CreateVisitWalkInCardProps {
     /** The patient to create a visit for */
     patientId: string;
-    /** Where to redirect after a successful visit creation, e.g. "/dashboard/clinical/records" or "/staff-dashboard/clinical/records" */
+    /** Optional override. Defaults to the records route for the current role. */
     redirectBasePath?: string;
 }
 
 export default function CreateVisitWalkInCard({
     patientId,
-    redirectBasePath = "/dashboard/clinical/records",
+    redirectBasePath,
 }: Readonly<CreateVisitWalkInCardProps>) {
     const router = useRouter();
     const { profile, role } = useAuthStore();
+    const roleBasePath = useRecordsBasePath();
+    const basePath = redirectBasePath ?? roleBasePath;
 
     const clinicServices: ClinicService[] = profile
         ? "servicesProvided" in profile
@@ -143,7 +146,7 @@ export default function CreateVisitWalkInCard({
         try {
             const created = await createVisit(payload);
             toast.success("Visit created successfully.");
-            router.push(`${redirectBasePath}/${created._id}`);
+            router.push(`${basePath}/${created._id}`);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to create visit.");
         } finally {
