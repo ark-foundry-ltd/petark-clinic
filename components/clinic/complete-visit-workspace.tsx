@@ -180,14 +180,24 @@ function getServicesTotal(v: Visit): number {
 /* ------------------------------------------------------------------ */
 
 interface CompleteVisitWorkspaceProps {
-    /** e.g. "/dashboard/appointments" or "/staff-dashboard/appointments" */
+    /** e.g. "/dashboard/appointments", "/staff-dashboard/appointments" or "/dashboard/clinical/records" */
     basePath?: string;
+    /**
+     * What the [id] in the URL refers to.
+     * "appointment" (default): the id is an appointment id.
+     * "visit": the id is the visit's own _id (used by the records pages).
+     */
+    idType?: "appointment" | "visit";
+    /** Text for the back link and button. */
+    backLabel?: string;
 }
 
 export default function CompleteVisitWorkspace({
     basePath = "/dashboard/appointments",
+    idType = "appointment",
+    backLabel = "Back to appointment",
 }: Readonly<CompleteVisitWorkspaceProps>) {
-    const { id: appointmentId } = useParams<{ id: string }>();
+    const { id: routeId } = useParams<{ id: string }>();
     const router = useRouter();
     const { profile, role } = useAuthStore();
 
@@ -217,13 +227,14 @@ export default function CompleteVisitWorkspace({
 
     /* ----------------------------- Load ----------------------------- */
     useEffect(() => {
-        if (!appointmentId) return;
+        if (!routeId) return;
         let cancelled = false;
         (async () => {
             try {
                 const all = await getVisit();
                 if (cancelled) return;
-                const found = all.find((v) => v.appointmentId === appointmentId) ?? null;
+                const found =
+                    all.find((v) => (idType === "visit" ? v._id === routeId : v.appointmentId === routeId)) ?? null;
                 setVisit(found);
                 if (found) {
                     const draft = readDraft(found._id);
@@ -248,7 +259,7 @@ export default function CompleteVisitWorkspace({
         return () => {
             cancelled = true;
         };
-    }, [appointmentId]);
+    }, [routeId, idType]);
 
     /* --------------------------- Autosave --------------------------- */
     useEffect(() => {
@@ -265,6 +276,8 @@ export default function CompleteVisitWorkspace({
     const filled = (k: FieldKey) => form[k].trim().length > 0;
     const missing = NOTE_STEPS.filter((s) => s.required && !filled(s.key));
     const stepIndex = ALL_STEP_KEYS.indexOf(step);
+
+    const backHref = `${basePath}/${routeId}`;
 
     function updateField(field: FieldKey, value: string) {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -301,7 +314,7 @@ export default function CompleteVisitWorkspace({
             });
             clearDraft(visit._id);
             toast.success("Visit marked as completed");
-            router.push(`${basePath}/${appointmentId}`);
+            router.push(backHref);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Failed to complete visit");
         } finally {
@@ -321,13 +334,13 @@ export default function CompleteVisitWorkspace({
         );
     }
 
-    const backHref = `${basePath}/${appointmentId}`;
-
     if (loadError || !visit || visit.status !== "in-progress") {
         const message =
             loadError ??
             (!visit
-                ? "No visit has been started for this appointment."
+                ? idType === "visit"
+                    ? "This visit record could not be found."
+                    : "No visit has been started for this appointment."
                 : `This visit is already ${visit.status.replace("-", " ")}.`);
         return (
             <div className="pry-ff max-w-sm mx-auto text-center py-20 px-4">
@@ -339,7 +352,7 @@ export default function CompleteVisitWorkspace({
                     href={backHref}
                     className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
                 >
-                    <ArrowLeft size={15} /> Back to appointment
+                    <ArrowLeft size={15} /> {backLabel}
                 </Link>
             </div>
         );
@@ -364,7 +377,7 @@ export default function CompleteVisitWorkspace({
                 href={backHref}
                 className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
             >
-                <ArrowLeft size={15} /> Back to appointment
+                <ArrowLeft size={15} /> {backLabel}
             </Link>
 
             {/* ------------------------ Banner ------------------------ */}

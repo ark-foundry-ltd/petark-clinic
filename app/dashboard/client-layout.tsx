@@ -5,7 +5,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useStore";
 import { SidebarProvider, useSidebar } from "@/context/sidebar-context";
-import { MobileTopBar, MobileBottomNav, Sidebar } from "@/components/clinic/sidebar";
+import { MobileBottomNav, Sidebar } from "@/components/clinic/sidebar";
+import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { NotificationPermissionBanner } from "@/components/notifications/NotificationPermissionBanner";
 import { Loader2 } from "lucide-react";
 import { IOSInstallBanner } from "@/components/notifications/IOSInstallBanner";
@@ -17,7 +18,7 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen overflow-hidden bg-gray-50">
-        <MobileTopBar />
+        <DashboardHeader />
         <main className="relative flex-1 min-w-0 overflow-y-auto pb-16">
           <div className="absolute top-0 inset-x-0 z-20 p-4">
             <IOSInstallBanner />
@@ -34,14 +35,18 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
-      <main className="relative flex-1 min-w-0 overflow-y-auto">
-        <div className="absolute top-0 inset-x-0 z-20 p-4">
-          <NotificationPermissionBanner />
-          <IOSInstallBanner />
-          <InstallBanner />
-        </div>
-        {children}
-      </main>
+      {/* Header and page content share the column to the right of the sidebar */}
+      <div className="flex flex-col flex-1 min-w-0">
+        <DashboardHeader />
+        <main className="relative flex-1 min-w-0 overflow-y-auto">
+          <div className="absolute top-0 inset-x-0 z-20 p-4">
+            <NotificationPermissionBanner />
+            <IOSInstallBanner />
+            <InstallBanner />
+          </div>
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

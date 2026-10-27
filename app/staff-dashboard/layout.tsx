@@ -1,4 +1,3 @@
-// app/staff-dashboard/layout.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -6,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useStore";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 import IdleWarningModal from "@/components/shared/idle-warning-modal";
-import { StaffSidebar, StaffMobileTopBar, StaffMobileBottomNav } from "@/components/staff-dashboard/sidebar";
+import { StaffSidebar, StaffMobileBottomNav } from "@/components/staff-dashboard/sidebar";
 import { SidebarProvider } from "@/context/sidebar-context";
+// Adjust this path to wherever your DashboardHeader lives
+import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { Loader2 } from "lucide-react";
 
 export default function StaffDashboardLayout({
@@ -49,9 +50,7 @@ export default function StaffDashboardLayout({
         {showWarning && <IdleWarningModal secondsLeft={secondsLeft} onStay={stay} onLogout={logoutNow} />}
         <StaffSidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="md:hidden">
-            <StaffMobileTopBar />
-          </div>
+          <DashboardHeader />
           <main className="flex-1 overflow-y-auto max-w-5xl w-full mx-auto px-4 py-6 pb-20 md:pb-6">
             {children}
           </main>

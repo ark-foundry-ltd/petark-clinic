@@ -1,9 +1,11 @@
+// components/clinic/sidebar.tsx  (clinic owner)
+// The account block, plan badge and top bar moved to DashboardHeader; the sidebar keeps navigation
+// and the clinic name only.
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Calendar,
@@ -12,15 +14,10 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Settings,
-  ChevronDown,
-  Users,
-  UserCircle2,
 } from "lucide-react";
 import { useSidebar } from "@/context/sidebar-context";
 import { useAuthStore } from "@/store/useStore";
-import { logoutClinic } from "@/lib/auth";
-import { getPlanInfo, PLAN_LABELS, type Plan } from "@/lib/plan";
+import { useLogout } from "@/hooks/use-logout";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -29,141 +26,9 @@ const navItems = [
   { name: "Profile", href: "/dashboard/profile", icon: User, exact: false },
 ];
 
-function useLogout() {
-  const router = useRouter();
-  const { profile, logout: storeLogout } = useAuthStore();
-
-  return async () => {
-    if (!profile) {
-      storeLogout();
-      router.replace("/login");
-      return;
-    }
-    await logoutClinic();
-    router.replace("/login");
-  };
-}
-
 function isRouteActive(pathname: string, href: string, exact: boolean = false) {
   if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-// ─── Plan Badge ───────────────────────────────────────────────────────────────
-const BADGE_STYLES: Record<string, string> = {
-  enterprise: "bg-amber-800 text-white",
-  pro: "bg-violet-600 text-white",
-  standard: "bg-blue-600 text-white",
-  cms_standard: "bg-teal-600 text-white",
-  starter: "bg-green-600 text-white",
-  cms_starter: "bg-emerald-600 text-white",
-};
-
-function PlanBadge({ plan, status }: Readonly<{ plan?: string; status?: string }>) {
-  const style = plan && status === "active" ? BADGE_STYLES[plan] : undefined;
-
-  if (!style) {
-    return (
-      <span className="text-[9px] font-semibold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">
-        Free
-      </span>
-    );
-  }
-
-  return (
-    <span className={`text-[9px] font-semibold ${style} px-1.5 py-0.5 rounded-full shrink-0`}>
-      {plan === "pro" ? "✦ Pro" : PLAN_LABELS[plan as Plan]}
-    </span>
-  );
-}
-
-// ─── Mobile Top Bar ───────────────────────────────────────────────────────────
-export function MobileTopBar() {
-  const { profile } = useAuthStore();
-  const { plan, status } = getPlanInfo(profile);
-  const handleLogout = useLogout();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm pry-ff shrink-0">
-      <div className="flex items-center justify-between px-4 h-16">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <Image
-            src="/petark_logo.png"
-            alt="PetArk logo"
-            width={28}
-            height={28}
-            priority
-          />
-          <span className="text-lg font-bold text-gray-800 tracking-tight pry-ff">
-            PetArk
-          </span>
-        </Link>
-
-        <div className="relative">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <div className="h-8 w-8 rounded-full bg-acc-clr flex items-center justify-center text-white font-semibold text-sm pry-ff">
-              {profile?.clinicName?.charAt(0) || "P"}
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
-                isDropdownOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {isDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0"
-                style={{ zIndex: 9 }}
-                onClick={() => setIsDropdownOpen(false)}
-              />
-              <div
-                className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
-                style={{ zIndex: 10 }}
-              >
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-gray-900 truncate pry-ff">
-                      {profile?.clinicName || "Pet Owner"}
-                    </p>
-                    <PlanBadge plan={plan} status={status} />
-                  </div>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">
-                    {profile?.email || "petark@example.com"}
-                  </p>
-                </div>
-                <div className="py-1">
-                  <Link
-                    href="/dashboard/profile/settings"
-                    onClick={() => setIsDropdownOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    <UserCircle2 className="h-4 w-4 text-gray-500" />
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      handleLogout();
-                    }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
 }
 
 // ─── Mobile Bottom Nav ────────────────────────────────────────────────────────
@@ -199,8 +64,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const handleLogout = useLogout();
   const { isCollapsed, toggleSidebar } = useSidebar();
-  const { profile } = useAuthStore();
-  const { plan, status } = getPlanInfo(profile);
+  const profile = useAuthStore((s) => s.profile) as { clinicName?: string } | null;
 
   return (
     <aside
@@ -208,23 +72,17 @@ export function Sidebar() {
         isCollapsed ? "w-[72px]" : "w-64"
       }`}
     >
-      {/* Logo */}
+      {/* Logo + clinic name */}
       <div
         className={`flex items-center h-16 px-4 border-b border-gray-100 shrink-0 ${
           isCollapsed ? "justify-center" : "gap-3"
         }`}
       >
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <Image
-            src="/petark_logo.png"
-            alt="PetArk logo"
-            width={32}
-            height={32}
-            priority
-          />
+        <Link href="/dashboard" className="flex items-center gap-3 min-w-0" title={profile?.clinicName}>
+          <Image src="/petark_logo.png" alt="PetArk logo" width={32} height={32} priority />
           {!isCollapsed && (
-            <span className="text-lg font-bold text-gray-800 tracking-tight">
-              PetArk
+            <span className="text-base font-semibold text-gray-800 tracking-tight truncate">
+              {profile?.clinicName || "PetArk"}
             </span>
           )}
         </Link>
@@ -296,27 +154,6 @@ export function Sidebar() {
             </>
           )}
         </button>
-
-        {!isCollapsed && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center gap-3 px-3">
-              <div className="h-8 w-8 rounded-full bg-acc-clr flex items-center justify-center text-white font-semibold text-sm shrink-0">
-                {profile?.clinicName?.charAt(0) || "P"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium text-gray-700 truncate">
-                    {profile?.clinicName || "Clinic"}
-                  </p>
-                  <PlanBadge plan={plan} status={status} />
-                </div>
-                <p className="text-xs text-gray-500 truncate">
-                  {profile?.email || "petark@example.com"}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </aside>
   );

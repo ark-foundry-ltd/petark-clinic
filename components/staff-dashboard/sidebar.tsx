@@ -1,10 +1,11 @@
 // components/staff-dashboard/sidebar.tsx
-
+// The account block and top bar moved to DashboardHeader; the sidebar keeps navigation
+// and the clinic name only.
 "use client";
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard,
@@ -17,14 +18,13 @@ import {
   ShoppingCart,
   Receipt,
   LogOut,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
 } from "lucide-react";
 import { useSidebar } from "@/context/sidebar-context";
 import { useAuthStore } from "@/store/useStore";
-import { logoutClinic } from "@/lib/auth";
+import { useLogout } from "@/hooks/use-logout";
 
 const VISIT_PERMISSIONS = ["view_all_visits", "create_visit", "edit_visit", "manage_visits"];
 
@@ -48,12 +48,6 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Reports", href: "/staff-dashboard/reports", icon: BarChart3, need: ["view_reports"] },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
-  vet: "Vet",
-  receptionist: "Receptionist",
-  sales: "Sales",
-};
-
 function isRouteActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -67,89 +61,6 @@ function useVisibleNavItems() {
   );
 }
 
-function useLogout() {
-  const router = useRouter();
-  return async () => {
-    await logoutClinic();
-    router.replace("/login");
-  };
-}
-
-// ─── Mobile Top Bar ───────────────────────────────────────────────────────
-export function StaffMobileTopBar() {
-  const profile = useAuthStore((s) => s.profile) as {
-    fullname?: string;
-    role?: string;
-    customRoleName?: string | null;
-    clinicName?: string;
-    email?: string;
-  } | null;
-  const role = useAuthStore((s) => s.role);
-  const handleLogout = useLogout();
-  const [open, setOpen] = useState(false);
-
-  const roleLabel =
-    role === "custom" ? profile?.customRoleName ?? "Custom Role" : ROLE_LABELS[role ?? ""] ?? role;
-
-  const initials = (profile?.fullname ?? "")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <nav className="bg-white border-b border-gray-200 shadow-sm pry-ff shrink-0">
-      <div className="flex items-center justify-between px-4 h-16">
-        <Link href="/staff-dashboard" className="flex items-center gap-2">
-          <Image src="/petark_logo.png" alt="PetArk logo" width={28} height={28} priority />
-          <span className="text-lg font-bold text-gray-800 tracking-tight pry-ff">PetArk</span>
-        </Link>
-
-        <div className="relative">
-          <button
-            onClick={() => setOpen(!open)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <div className="h-8 w-8 rounded-full bg-acc-clr flex items-center justify-center text-white font-semibold text-sm">
-              {initials || "?"}
-            </div>
-            <ChevronDown className={`h-4 w-4 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
-          </button>
-
-          {open && (
-            <>
-              <div className="fixed inset-0" style={{ zIndex: 9 }} onClick={() => setOpen(false)} />
-              <div
-                className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
-                style={{ zIndex: 10 }}
-              >
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{profile?.fullname ?? "Staff"}</p>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">
-                    {roleLabel} · {profile?.clinicName ?? "Clinic"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-// ─── Mobile Bottom Nav ──────────────────────────────────────────────────────
 // ─── Mobile Bottom Nav ──────────────────────────────────────────────────────
 export function StaffMobileBottomNav() {
   const pathname = usePathname();
@@ -234,14 +145,7 @@ export function StaffSidebar() {
   const handleLogout = useLogout();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const items = useVisibleNavItems();
-  const profile = useAuthStore((s) => s.profile) as {
-    fullname?: string;
-    clinicName?: string;
-    email?: string;
-  } | null;
-  const role = useAuthStore((s) => s.role);
-
-  const roleLabel = ROLE_LABELS[role ?? ""] ?? role;
+  const profile = useAuthStore((s) => s.profile) as { clinicName?: string } | null;
 
   return (
     <aside
@@ -249,14 +153,19 @@ export function StaffSidebar() {
         isCollapsed ? "w-[72px]" : "w-64"
       }`}
     >
+      {/* Logo + clinic name */}
       <div
         className={`flex items-center h-16 px-4 border-b border-gray-100 shrink-0 ${
           isCollapsed ? "justify-center" : "gap-3"
         }`}
       >
-        <Link href="/staff-dashboard" className="flex items-center gap-3">
+        <Link href="/staff-dashboard" className="flex items-center gap-3 min-w-0" title={profile?.clinicName}>
           <Image src="/petark_logo.png" alt="PetArk logo" width={32} height={32} priority />
-          {!isCollapsed && <span className="text-lg font-bold text-gray-800 tracking-tight">PetArk</span>}
+          {!isCollapsed && (
+            <span className="text-base font-semibold text-gray-800 tracking-tight truncate">
+              {profile?.clinicName || "PetArk"}
+            </span>
+          )}
         </Link>
       </div>
 
@@ -312,20 +221,6 @@ export function StaffSidebar() {
             </>
           )}
         </button>
-
-        {!isCollapsed && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center gap-3 px-3">
-              <div className="h-8 w-8 rounded-full bg-acc-clr flex items-center justify-center text-white font-semibold text-sm shrink-0">
-                {(profile?.fullname ?? "").charAt(0) || "S"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700 truncate">{profile?.fullname ?? "Staff"}</p>
-                <p className="text-xs text-gray-500 truncate">{roleLabel} · {profile?.clinicName ?? "Clinic"}</p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </aside>
   );

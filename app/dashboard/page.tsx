@@ -2,6 +2,7 @@
 
 import DashboardStats from "@/components/dashboard/dashboard-stats";
 import UsageAddon from "@/components/clinic/usage-addon";
+import TargetProgressCard from "@/components/clinic/target-progress-card";
 
 export default function DashboardPage() {
   return (
@@ -19,6 +20,8 @@ export default function DashboardPage() {
       </div>
 
       <DashboardStats />
+
+      <TargetProgressCard />
     </div>
   );
 }

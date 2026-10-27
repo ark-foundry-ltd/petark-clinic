@@ -12,6 +12,7 @@ import {
 import type { Plan } from "@/lib/plan";
 import UpdateServices from "@/components/clinic/update-services";
 import { getProfileCompletion, SECTION_LABELS } from "@/lib/profile-completion";
+import TargetProgressCard from "./target-progress-card";
 
 type PlanKey = Plan;
 
@@ -384,6 +385,9 @@ export default function ProfileCard() {
                         )}
                     </div>
                 </SectionCard>
+            </div>
+            <div>
+                <TargetProgressCard />
             </div>
         </div>
     );

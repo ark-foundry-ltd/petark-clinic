@@ -135,7 +135,10 @@ function RecordDetailsSkeleton() {
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
-export default function RecordDetails({ visitId, basePath = "/dashboard/records" }: Readonly<RecordDetailsProps>) {
+export default function RecordDetails({
+    visitId,
+    basePath = "/dashboard/clinical/records",
+}: Readonly<RecordDetailsProps>) {
     const [visit, setVisit] = useState<Visit | null>(null);
     const [clinicServices, setClinicServices] = useState<ClinicService[]>([]);
     const [customFields, setCustomFields] = useState<CustomVitalField[]>([]);
