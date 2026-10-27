@@ -13,7 +13,7 @@ import {
 import DeleteLabResultBtn from "@/components/clinic/delete-lab-result-btn";
 import LockedFeature from "@/components/clinic/locked-feature";
 import { useAuthStore } from "@/store/useStore";
-import { getPlanInfo } from "@/lib/plan";
+import { getPlanInfo, planAtLeast } from "@/lib/plan";
 
 interface LabResultsSectionProps {
     visitId: string;
@@ -39,9 +39,9 @@ export default function LabResultsSection({ visitId, petId }: Readonly<LabResult
     const { profile } = useAuthStore();
     const { plan, status } = getPlanInfo(profile);
 
-    // Matches the backend gate: Standard or above, and the subscription is active
-    const hasStandard =
-        ["standard", "pro", "enterprise"].includes(plan ?? "") && status === "active";
+    // Matches the backend gate: Standard or above (cms_standard ranks the same),
+    // and the subscription is active
+    const hasStandard = planAtLeast(plan, "standard") && status === "active";
 
     // Set when the server says "locked" even though the profile said Standard+
     // (e.g. the plan expired since the profile was loaded)
